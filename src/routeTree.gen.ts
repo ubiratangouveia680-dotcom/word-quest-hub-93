@@ -19,6 +19,7 @@ import { Route as OracoesRouteImport } from './routes/oracoes'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PergunteRouteImport } from './routes/pergunte'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VersiculoDoDiaRouteImport } from './routes/versiculo-do-dia'
 import { Route as BibliaIndexRouteImport } from './routes/biblia.index'
@@ -79,6 +80,11 @@ const PergunteRoute = PergunteRouteImport.update({
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermosRoute = TermosRouteImport.update({
@@ -148,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof PerfilRoute
   '/pergunte': typeof PergunteRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos': typeof TermosRoute
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/perfil': typeof PerfilRoute
   '/pergunte': typeof PergunteRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos': typeof TermosRoute
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
@@ -195,6 +203,7 @@ export interface FileRoutesById {
   '/perfil': typeof PerfilRoute
   '/pergunte': typeof PergunteRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos': typeof TermosRoute
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/pergunte'
     | '/privacidade'
+    | '/sitemap.xml'
     | '/termos'
     | '/versiculo-do-dia'
     | '/devocionais/$slug'
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/pergunte'
     | '/privacidade'
+    | '/sitemap.xml'
     | '/termos'
     | '/versiculo-do-dia'
     | '/devocionais/$slug'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/pergunte'
     | '/privacidade'
+    | '/sitemap.xml'
     | '/termos'
     | '/versiculo-do-dia'
     | '/devocionais/$slug'
@@ -290,6 +302,7 @@ export interface RootRouteChildren {
   PerfilRoute: typeof PerfilRoute
   PergunteRoute: typeof PergunteRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermosRoute: typeof TermosRoute
   VersiculoDoDiaRoute: typeof VersiculoDoDiaRoute
   DevocionaisSlugRoute: typeof DevocionaisSlugRoute
@@ -373,6 +386,13 @@ declare module '@tanstack/react-router' {
       path: '/privacidade'
       fullPath: '/privacidade'
       preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/termos': {
@@ -466,6 +486,7 @@ const rootRouteChildren: RootRouteChildren = {
   PerfilRoute: PerfilRoute,
   PergunteRoute: PergunteRoute,
   PrivacidadeRoute: PrivacidadeRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermosRoute: TermosRoute,
   VersiculoDoDiaRoute: VersiculoDoDiaRoute,
   DevocionaisSlugRoute: DevocionaisSlugRoute,
