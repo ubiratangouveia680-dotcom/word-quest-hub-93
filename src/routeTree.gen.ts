@@ -10,7 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BuscaRouteImport } from './routes/busca'
+import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as OracoesRouteImport } from './routes/oracoes'
+import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as PergunteRouteImport } from './routes/pergunte'
 import { Route as VersiculoDoDiaRouteImport } from './routes/versiculo-do-dia'
 import { Route as BibliaIndexRouteImport } from './routes/biblia.index'
 import { Route as DevocionaisIndexRouteImport } from './routes/devocionais.index'
@@ -27,9 +31,29 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BuscaRoute = BuscaRouteImport.update({
+  id: '/busca',
+  path: '/busca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritosRoute = FavoritosRouteImport.update({
+  id: '/favoritos',
+  path: '/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OracoesRoute = OracoesRouteImport.update({
   id: '/oracoes',
   path: '/oracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PergunteRoute = PergunteRouteImport.update({
+  id: '/pergunte',
+  path: '/pergunte',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VersiculoDoDiaRoute = VersiculoDoDiaRouteImport.update({
@@ -85,7 +109,11 @@ const BibliaBookChapterVerseRoute = BibliaBookChapterVerseRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/busca': typeof BuscaRoute
+  '/favoritos': typeof FavoritosRoute
   '/oracoes': typeof OracoesRoute
+  '/perfil': typeof PerfilRoute
+  '/pergunte': typeof PergunteRoute
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
@@ -99,7 +127,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/busca': typeof BuscaRoute
+  '/favoritos': typeof FavoritosRoute
   '/oracoes': typeof OracoesRoute
+  '/perfil': typeof PerfilRoute
+  '/pergunte': typeof PergunteRoute
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
@@ -114,7 +146,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/busca': typeof BuscaRoute
+  '/favoritos': typeof FavoritosRoute
   '/oracoes': typeof OracoesRoute
+  '/perfil': typeof PerfilRoute
+  '/pergunte': typeof PergunteRoute
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
@@ -130,7 +166,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/busca'
+    | '/favoritos'
     | '/oracoes'
+    | '/perfil'
+    | '/pergunte'
     | '/versiculo-do-dia'
     | '/devocionais/$slug'
     | '/estudos/$slug'
@@ -144,7 +184,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/busca'
+    | '/favoritos'
     | '/oracoes'
+    | '/perfil'
+    | '/pergunte'
     | '/versiculo-do-dia'
     | '/devocionais/$slug'
     | '/estudos/$slug'
@@ -158,7 +202,11 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/busca'
+    | '/favoritos'
     | '/oracoes'
+    | '/perfil'
+    | '/pergunte'
     | '/versiculo-do-dia'
     | '/devocionais/$slug'
     | '/estudos/$slug'
@@ -173,7 +221,11 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BuscaRoute: typeof BuscaRoute
+  FavoritosRoute: typeof FavoritosRoute
   OracoesRoute: typeof OracoesRoute
+  PerfilRoute: typeof PerfilRoute
+  PergunteRoute: typeof PergunteRoute
   VersiculoDoDiaRoute: typeof VersiculoDoDiaRoute
   DevocionaisSlugRoute: typeof DevocionaisSlugRoute
   EstudosSlugRoute: typeof EstudosSlugRoute
@@ -195,11 +247,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/busca': {
+      id: '/busca'
+      path: '/busca'
+      fullPath: '/busca'
+      preLoaderRoute: typeof BuscaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favoritos': {
+      id: '/favoritos'
+      path: '/favoritos'
+      fullPath: '/favoritos'
+      preLoaderRoute: typeof FavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oracoes': {
       id: '/oracoes'
       path: '/oracoes'
       fullPath: '/oracoes'
       preLoaderRoute: typeof OracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pergunte': {
+      id: '/pergunte'
+      path: '/pergunte'
+      fullPath: '/pergunte'
+      preLoaderRoute: typeof PergunteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/versiculo-do-dia': {
@@ -277,7 +357,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BuscaRoute: BuscaRoute,
+  FavoritosRoute: FavoritosRoute,
   OracoesRoute: OracoesRoute,
+  PerfilRoute: PerfilRoute,
+  PergunteRoute: PergunteRoute,
   VersiculoDoDiaRoute: VersiculoDoDiaRoute,
   DevocionaisSlugRoute: DevocionaisSlugRoute,
   EstudosSlugRoute: EstudosSlugRoute,
