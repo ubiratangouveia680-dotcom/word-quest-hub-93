@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BuscaRouteImport } from './routes/busca'
+import { Route as ContatoRouteImport } from './routes/contato'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as OracoesRouteImport } from './routes/oracoes'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PergunteRouteImport } from './routes/pergunte'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VersiculoDoDiaRouteImport } from './routes/versiculo-do-dia'
 import { Route as BibliaIndexRouteImport } from './routes/biblia.index'
 import { Route as DevocionaisIndexRouteImport } from './routes/devocionais.index'
@@ -31,9 +37,24 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BuscaRoute = BuscaRouteImport.update({
   id: '/busca',
   path: '/busca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContatoRoute = ContatoRouteImport.update({
+  id: '/contato',
+  path: '/contato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FavoritosRoute = FavoritosRouteImport.update({
@@ -54,6 +75,21 @@ const PerfilRoute = PerfilRouteImport.update({
 const PergunteRoute = PergunteRouteImport.update({
   id: '/pergunte',
   path: '/pergunte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VersiculoDoDiaRoute = VersiculoDoDiaRouteImport.update({
@@ -109,11 +145,17 @@ const BibliaBookChapterVerseRoute = BibliaBookChapterVerseRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/busca': typeof BuscaRoute
+  '/contato': typeof ContatoRoute
+  '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
   '/oracoes': typeof OracoesRoute
   '/perfil': typeof PerfilRoute
   '/pergunte': typeof PergunteRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termos': typeof TermosRoute
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
@@ -127,11 +169,17 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/busca': typeof BuscaRoute
+  '/contato': typeof ContatoRoute
+  '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
   '/oracoes': typeof OracoesRoute
   '/perfil': typeof PerfilRoute
   '/pergunte': typeof PergunteRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termos': typeof TermosRoute
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
@@ -146,11 +194,17 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/busca': typeof BuscaRoute
+  '/contato': typeof ContatoRoute
+  '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
   '/oracoes': typeof OracoesRoute
   '/perfil': typeof PerfilRoute
   '/pergunte': typeof PergunteRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termos': typeof TermosRoute
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
@@ -166,11 +220,17 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/busca'
+    | '/contato'
+    | '/cookies'
     | '/favoritos'
     | '/oracoes'
     | '/perfil'
     | '/pergunte'
+    | '/privacidade'
+    | '/sitemap.xml'
+    | '/termos'
     | '/versiculo-do-dia'
     | '/devocionais/$slug'
     | '/estudos/$slug'
@@ -184,11 +244,17 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/busca'
+    | '/contato'
+    | '/cookies'
     | '/favoritos'
     | '/oracoes'
     | '/perfil'
     | '/pergunte'
+    | '/privacidade'
+    | '/sitemap.xml'
+    | '/termos'
     | '/versiculo-do-dia'
     | '/devocionais/$slug'
     | '/estudos/$slug'
@@ -202,11 +268,17 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/busca'
+    | '/contato'
+    | '/cookies'
     | '/favoritos'
     | '/oracoes'
     | '/perfil'
     | '/pergunte'
+    | '/privacidade'
+    | '/sitemap.xml'
+    | '/termos'
     | '/versiculo-do-dia'
     | '/devocionais/$slug'
     | '/estudos/$slug'
@@ -221,11 +293,17 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   BuscaRoute: typeof BuscaRoute
+  ContatoRoute: typeof ContatoRoute
+  CookiesRoute: typeof CookiesRoute
   FavoritosRoute: typeof FavoritosRoute
   OracoesRoute: typeof OracoesRoute
   PerfilRoute: typeof PerfilRoute
   PergunteRoute: typeof PergunteRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermosRoute: typeof TermosRoute
   VersiculoDoDiaRoute: typeof VersiculoDoDiaRoute
   DevocionaisSlugRoute: typeof DevocionaisSlugRoute
   EstudosSlugRoute: typeof EstudosSlugRoute
@@ -247,11 +325,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/busca': {
       id: '/busca'
       path: '/busca'
       fullPath: '/busca'
       preLoaderRoute: typeof BuscaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contato': {
+      id: '/contato'
+      path: '/contato'
+      fullPath: '/contato'
+      preLoaderRoute: typeof ContatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favoritos': {
@@ -280,6 +379,27 @@ declare module '@tanstack/react-router' {
       path: '/pergunte'
       fullPath: '/pergunte'
       preLoaderRoute: typeof PergunteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/versiculo-do-dia': {
@@ -357,11 +477,17 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   BuscaRoute: BuscaRoute,
+  ContatoRoute: ContatoRoute,
+  CookiesRoute: CookiesRoute,
   FavoritosRoute: FavoritosRoute,
   OracoesRoute: OracoesRoute,
   PerfilRoute: PerfilRoute,
   PergunteRoute: PergunteRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermosRoute: TermosRoute,
   VersiculoDoDiaRoute: VersiculoDoDiaRoute,
   DevocionaisSlugRoute: DevocionaisSlugRoute,
   EstudosSlugRoute: EstudosSlugRoute,

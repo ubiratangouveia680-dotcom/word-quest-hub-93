@@ -1,0 +1,3 @@
+# ads.txt — Bíblia Online
+# Substitua a linha abaixo pela fornecida pelo Google AdSense após a aprovação:
+# google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
