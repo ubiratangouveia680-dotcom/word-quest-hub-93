@@ -10,33 +10,232 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BuscaRouteImport } from './routes/busca'
+import { Route as FavoritosRouteImport } from './routes/favoritos'
+import { Route as OracoesRouteImport } from './routes/oracoes'
+import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as PergunteRouteImport } from './routes/pergunte'
+import { Route as VersiculoDoDiaRouteImport } from './routes/versiculo-do-dia'
+import { Route as BibliaIndexRouteImport } from './routes/biblia.index'
+import { Route as DevocionaisIndexRouteImport } from './routes/devocionais.index'
+import { Route as DevocionaisSlugRouteImport } from './routes/devocionais.$slug'
+import { Route as EstudosIndexRouteImport } from './routes/estudos.index'
+import { Route as EstudosSlugRouteImport } from './routes/estudos.$slug'
+import { Route as BibliaBookIndexRouteImport } from './routes/biblia.$book.index'
+import { Route as EstudosCategoriaSlugRouteImport } from './routes/estudos.categoria.$slug'
+import { Route as BibliaBookChapterIndexRouteImport } from './routes/biblia.$book.$chapter.index'
+import { Route as BibliaBookChapterVerseRouteImport } from './routes/biblia.$book.$chapter.$verse'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BuscaRoute = BuscaRouteImport.update({
+  id: '/busca',
+  path: '/busca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritosRoute = FavoritosRouteImport.update({
+  id: '/favoritos',
+  path: '/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OracoesRoute = OracoesRouteImport.update({
+  id: '/oracoes',
+  path: '/oracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PergunteRoute = PergunteRouteImport.update({
+  id: '/pergunte',
+  path: '/pergunte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VersiculoDoDiaRoute = VersiculoDoDiaRouteImport.update({
+  id: '/versiculo-do-dia',
+  path: '/versiculo-do-dia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BibliaIndexRoute = BibliaIndexRouteImport.update({
+  id: '/biblia/',
+  path: '/biblia/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevocionaisIndexRoute = DevocionaisIndexRouteImport.update({
+  id: '/devocionais/',
+  path: '/devocionais/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevocionaisSlugRoute = DevocionaisSlugRouteImport.update({
+  id: '/devocionais/$slug',
+  path: '/devocionais/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstudosIndexRoute = EstudosIndexRouteImport.update({
+  id: '/estudos/',
+  path: '/estudos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstudosSlugRoute = EstudosSlugRouteImport.update({
+  id: '/estudos/$slug',
+  path: '/estudos/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BibliaBookIndexRoute = BibliaBookIndexRouteImport.update({
+  id: '/biblia/$book/',
+  path: '/biblia/$book/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstudosCategoriaSlugRoute = EstudosCategoriaSlugRouteImport.update({
+  id: '/estudos/categoria/$slug',
+  path: '/estudos/categoria/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BibliaBookChapterIndexRoute = BibliaBookChapterIndexRouteImport.update({
+  id: '/biblia/$book/$chapter/',
+  path: '/biblia/$book/$chapter/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BibliaBookChapterVerseRoute = BibliaBookChapterVerseRouteImport.update({
+  id: '/biblia/$book/$chapter/$verse',
+  path: '/biblia/$book/$chapter/$verse',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/busca': typeof BuscaRoute
+  '/favoritos': typeof FavoritosRoute
+  '/oracoes': typeof OracoesRoute
+  '/perfil': typeof PerfilRoute
+  '/pergunte': typeof PergunteRoute
+  '/versiculo-do-dia': typeof VersiculoDoDiaRoute
+  '/devocionais/$slug': typeof DevocionaisSlugRoute
+  '/estudos/$slug': typeof EstudosSlugRoute
+  '/biblia/': typeof BibliaIndexRoute
+  '/devocionais/': typeof DevocionaisIndexRoute
+  '/estudos/': typeof EstudosIndexRoute
+  '/estudos/categoria/$slug': typeof EstudosCategoriaSlugRoute
+  '/biblia/$book/': typeof BibliaBookIndexRoute
+  '/biblia/$book/$chapter/$verse': typeof BibliaBookChapterVerseRoute
+  '/biblia/$book/$chapter/': typeof BibliaBookChapterIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/busca': typeof BuscaRoute
+  '/favoritos': typeof FavoritosRoute
+  '/oracoes': typeof OracoesRoute
+  '/perfil': typeof PerfilRoute
+  '/pergunte': typeof PergunteRoute
+  '/versiculo-do-dia': typeof VersiculoDoDiaRoute
+  '/devocionais/$slug': typeof DevocionaisSlugRoute
+  '/estudos/$slug': typeof EstudosSlugRoute
+  '/biblia': typeof BibliaIndexRoute
+  '/devocionais': typeof DevocionaisIndexRoute
+  '/estudos': typeof EstudosIndexRoute
+  '/estudos/categoria/$slug': typeof EstudosCategoriaSlugRoute
+  '/biblia/$book': typeof BibliaBookIndexRoute
+  '/biblia/$book/$chapter/$verse': typeof BibliaBookChapterVerseRoute
+  '/biblia/$book/$chapter': typeof BibliaBookChapterIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/busca': typeof BuscaRoute
+  '/favoritos': typeof FavoritosRoute
+  '/oracoes': typeof OracoesRoute
+  '/perfil': typeof PerfilRoute
+  '/pergunte': typeof PergunteRoute
+  '/versiculo-do-dia': typeof VersiculoDoDiaRoute
+  '/devocionais/$slug': typeof DevocionaisSlugRoute
+  '/estudos/$slug': typeof EstudosSlugRoute
+  '/biblia/': typeof BibliaIndexRoute
+  '/devocionais/': typeof DevocionaisIndexRoute
+  '/estudos/': typeof EstudosIndexRoute
+  '/estudos/categoria/$slug': typeof EstudosCategoriaSlugRoute
+  '/biblia/$book/': typeof BibliaBookIndexRoute
+  '/biblia/$book/$chapter/$verse': typeof BibliaBookChapterVerseRoute
+  '/biblia/$book/$chapter/': typeof BibliaBookChapterIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/busca'
+    | '/favoritos'
+    | '/oracoes'
+    | '/perfil'
+    | '/pergunte'
+    | '/versiculo-do-dia'
+    | '/devocionais/$slug'
+    | '/estudos/$slug'
+    | '/biblia/'
+    | '/devocionais/'
+    | '/estudos/'
+    | '/estudos/categoria/$slug'
+    | '/biblia/$book/'
+    | '/biblia/$book/$chapter/$verse'
+    | '/biblia/$book/$chapter/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/busca'
+    | '/favoritos'
+    | '/oracoes'
+    | '/perfil'
+    | '/pergunte'
+    | '/versiculo-do-dia'
+    | '/devocionais/$slug'
+    | '/estudos/$slug'
+    | '/biblia'
+    | '/devocionais'
+    | '/estudos'
+    | '/estudos/categoria/$slug'
+    | '/biblia/$book'
+    | '/biblia/$book/$chapter/$verse'
+    | '/biblia/$book/$chapter'
+  id:
+    | '__root__'
+    | '/'
+    | '/busca'
+    | '/favoritos'
+    | '/oracoes'
+    | '/perfil'
+    | '/pergunte'
+    | '/versiculo-do-dia'
+    | '/devocionais/$slug'
+    | '/estudos/$slug'
+    | '/biblia/'
+    | '/devocionais/'
+    | '/estudos/'
+    | '/estudos/categoria/$slug'
+    | '/biblia/$book/'
+    | '/biblia/$book/$chapter/$verse'
+    | '/biblia/$book/$chapter/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BuscaRoute: typeof BuscaRoute
+  FavoritosRoute: typeof FavoritosRoute
+  OracoesRoute: typeof OracoesRoute
+  PerfilRoute: typeof PerfilRoute
+  PergunteRoute: typeof PergunteRoute
+  VersiculoDoDiaRoute: typeof VersiculoDoDiaRoute
+  DevocionaisSlugRoute: typeof DevocionaisSlugRoute
+  EstudosSlugRoute: typeof EstudosSlugRoute
+  BibliaIndexRoute: typeof BibliaIndexRoute
+  DevocionaisIndexRoute: typeof DevocionaisIndexRoute
+  EstudosIndexRoute: typeof EstudosIndexRoute
+  EstudosCategoriaSlugRoute: typeof EstudosCategoriaSlugRoute
+  BibliaBookIndexRoute: typeof BibliaBookIndexRoute
+  BibliaBookChapterVerseRoute: typeof BibliaBookChapterVerseRoute
+  BibliaBookChapterIndexRoute: typeof BibliaBookChapterIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +247,131 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/busca': {
+      id: '/busca'
+      path: '/busca'
+      fullPath: '/busca'
+      preLoaderRoute: typeof BuscaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favoritos': {
+      id: '/favoritos'
+      path: '/favoritos'
+      fullPath: '/favoritos'
+      preLoaderRoute: typeof FavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oracoes': {
+      id: '/oracoes'
+      path: '/oracoes'
+      fullPath: '/oracoes'
+      preLoaderRoute: typeof OracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pergunte': {
+      id: '/pergunte'
+      path: '/pergunte'
+      fullPath: '/pergunte'
+      preLoaderRoute: typeof PergunteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/versiculo-do-dia': {
+      id: '/versiculo-do-dia'
+      path: '/versiculo-do-dia'
+      fullPath: '/versiculo-do-dia'
+      preLoaderRoute: typeof VersiculoDoDiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/biblia/': {
+      id: '/biblia/'
+      path: '/biblia'
+      fullPath: '/biblia/'
+      preLoaderRoute: typeof BibliaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/devocionais/': {
+      id: '/devocionais/'
+      path: '/devocionais'
+      fullPath: '/devocionais/'
+      preLoaderRoute: typeof DevocionaisIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/devocionais/$slug': {
+      id: '/devocionais/$slug'
+      path: '/devocionais/$slug'
+      fullPath: '/devocionais/$slug'
+      preLoaderRoute: typeof DevocionaisSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estudos/': {
+      id: '/estudos/'
+      path: '/estudos'
+      fullPath: '/estudos/'
+      preLoaderRoute: typeof EstudosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estudos/$slug': {
+      id: '/estudos/$slug'
+      path: '/estudos/$slug'
+      fullPath: '/estudos/$slug'
+      preLoaderRoute: typeof EstudosSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/biblia/$book/': {
+      id: '/biblia/$book/'
+      path: '/biblia/$book'
+      fullPath: '/biblia/$book/'
+      preLoaderRoute: typeof BibliaBookIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estudos/categoria/$slug': {
+      id: '/estudos/categoria/$slug'
+      path: '/estudos/categoria/$slug'
+      fullPath: '/estudos/categoria/$slug'
+      preLoaderRoute: typeof EstudosCategoriaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/biblia/$book/$chapter/': {
+      id: '/biblia/$book/$chapter/'
+      path: '/biblia/$book/$chapter'
+      fullPath: '/biblia/$book/$chapter/'
+      preLoaderRoute: typeof BibliaBookChapterIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/biblia/$book/$chapter/$verse': {
+      id: '/biblia/$book/$chapter/$verse'
+      path: '/biblia/$book/$chapter/$verse'
+      fullPath: '/biblia/$book/$chapter/$verse'
+      preLoaderRoute: typeof BibliaBookChapterVerseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BuscaRoute: BuscaRoute,
+  FavoritosRoute: FavoritosRoute,
+  OracoesRoute: OracoesRoute,
+  PerfilRoute: PerfilRoute,
+  PergunteRoute: PergunteRoute,
+  VersiculoDoDiaRoute: VersiculoDoDiaRoute,
+  DevocionaisSlugRoute: DevocionaisSlugRoute,
+  EstudosSlugRoute: EstudosSlugRoute,
+  BibliaIndexRoute: BibliaIndexRoute,
+  DevocionaisIndexRoute: DevocionaisIndexRoute,
+  EstudosIndexRoute: EstudosIndexRoute,
+  EstudosCategoriaSlugRoute: EstudosCategoriaSlugRoute,
+  BibliaBookIndexRoute: BibliaBookIndexRoute,
+  BibliaBookChapterVerseRoute: BibliaBookChapterVerseRoute,
+  BibliaBookChapterIndexRoute: BibliaBookChapterIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
