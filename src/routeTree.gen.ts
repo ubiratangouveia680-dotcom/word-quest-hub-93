@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AdsDottxtRouteImport } from './routes/ads[.]txt'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BuscaRouteImport } from './routes/busca'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as CookiesRouteImport } from './routes/cookies'
@@ -40,6 +42,16 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdsDottxtRoute = AdsDottxtRouteImport.update({
+  id: '/ads.txt',
+  path: '/ads.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuscaRoute = BuscaRouteImport.update({
@@ -146,6 +158,8 @@ const BibliaBookChapterVerseRoute = BibliaBookChapterVerseRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ads.txt': typeof AdsDottxtRoute
+  '/auth': typeof AuthRoute
   '/busca': typeof BuscaRoute
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
@@ -170,6 +184,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ads.txt': typeof AdsDottxtRoute
+  '/auth': typeof AuthRoute
   '/busca': typeof BuscaRoute
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
@@ -195,6 +211,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ads.txt': typeof AdsDottxtRoute
+  '/auth': typeof AuthRoute
   '/busca': typeof BuscaRoute
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
@@ -221,6 +239,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/ads.txt'
+    | '/auth'
     | '/busca'
     | '/contato'
     | '/cookies'
@@ -245,6 +265,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/ads.txt'
+    | '/auth'
     | '/busca'
     | '/contato'
     | '/cookies'
@@ -269,6 +291,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/ads.txt'
+    | '/auth'
     | '/busca'
     | '/contato'
     | '/cookies'
@@ -294,6 +318,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AdsDottxtRoute: typeof AdsDottxtRoute
+  AuthRoute: typeof AuthRoute
   BuscaRoute: typeof BuscaRoute
   ContatoRoute: typeof ContatoRoute
   CookiesRoute: typeof CookiesRoute
@@ -330,6 +356,20 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ads.txt': {
+      id: '/ads.txt'
+      path: '/ads.txt'
+      fullPath: '/ads.txt'
+      preLoaderRoute: typeof AdsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/busca': {
@@ -478,6 +518,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AdsDottxtRoute: AdsDottxtRoute,
+  AuthRoute: AuthRoute,
   BuscaRoute: BuscaRoute,
   ContatoRoute: ContatoRoute,
   CookiesRoute: CookiesRoute,

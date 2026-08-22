@@ -17,6 +17,9 @@ import { SiteLayout } from "@/components/SiteLayout";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieConsent } from "@/components/CookieConsent";
 import { Button } from "@/components/ui/button";
+import { getAdSettings } from "@/lib/ads.functions";
+import { AdSettingsProvider } from "@/lib/ads-context";
+import { defaultAdSettings } from "@/lib/ads-config";
 
 function NotFoundComponent() {
   return (
@@ -76,7 +79,14 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  loader: async () => {
+    try {
+      return { adSettings: await getAdSettings() };
+    } catch {
+      return { adSettings: defaultAdSettings };
+    }
+  },
+  head: ({ loaderData }) => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
@@ -116,6 +126,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         }),
       },
     ],
+    ...(loaderData?.adSettings.enabled && loaderData.adSettings.publisherId
+      ? {
+          scripts: [
+            {
+              type: "application/ld+json",
+              children: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                name: "Bíblia Online",
+                slogan: "Leia, compreenda e compartilhe a Palavra.",
+                inLanguage: "pt-BR",
+              }),
+            },
+            {
+              async: true,
+              crossOrigin: "anonymous",
+              src: `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${loaderData.adSettings.publisherId}`,
+            },
+          ],
+        }
+      : {}),
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -142,10 +173,13 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { adSettings } = Route.useLoaderData();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AdSettingsProvider value={adSettings}>
+        <Outlet />
+      </AdSettingsProvider>
       <Toaster position="top-center" />
       <CookieConsent />
     </QueryClientProvider>
