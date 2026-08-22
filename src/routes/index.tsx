@@ -170,7 +170,7 @@ function Index() {
               Tire dúvidas sobre passagens, contextos e temas bíblicos.
             </p>
             <Button asChild variant="outline" size="sm" className="mt-3 w-full">
-              <Link to="/pergunte">
+              <Link to="/pergunte" search={{ q: "" }}>
                 Abrir <ArrowRight className="ml-1 size-4" />
               </Link>
             </Button>

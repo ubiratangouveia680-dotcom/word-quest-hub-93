@@ -33,7 +33,7 @@ function NotFoundComponent() {
           <Button asChild><Link to="/biblia">Voltar para a Bíblia</Link></Button>
           <Button asChild variant="outline"><Link to="/">Ir para a página inicial</Link></Button>
           <Button asChild variant="ghost">
-            <Link to="/busca"><Search className="mr-1 size-4" /> Pesquisar</Link>
+            <Link to="/busca" search={{ q: "" }}><Search className="mr-1 size-4" /> Pesquisar</Link>
           </Button>
         </div>
       </div>

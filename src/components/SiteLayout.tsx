@@ -77,7 +77,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </nav>
           <div className="flex items-center gap-1">
             <Button asChild variant="ghost" size="icon" aria-label="Pesquisar">
-              <Link to="/busca">
+              <Link to="/busca" search={{ q: "" }}>
                 <Search className="size-4" />
               </Link>
             </Button>
@@ -137,9 +137,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             <p className="text-sm font-semibold">Recursos</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               <li><Link to="/oracoes" className="hover:text-foreground">Orações</Link></li>
-              <li><Link to="/busca" className="hover:text-foreground">Busca</Link></li>
+              <li><Link to="/busca" search={{ q: "" }} className="hover:text-foreground">Busca</Link></li>
               <li><Link to="/favoritos" className="hover:text-foreground">Favoritos</Link></li>
-              <li><Link to="/pergunte" className="hover:text-foreground">Pergunte à Bíblia</Link></li>
+              <li><Link to="/pergunte" search={{ q: "" }} className="hover:text-foreground">Pergunte à Bíblia</Link></li>
             </ul>
           </div>
           <div>
