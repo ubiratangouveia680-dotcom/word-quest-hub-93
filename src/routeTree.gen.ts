@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BibliaIndexRouteImport } from './routes/biblia.index'
 import { Route as BibliaBookIndexRouteImport } from './routes/biblia.$book.index'
+import { Route as BibliaBookChapterIndexRouteImport } from './routes/biblia.$book.$chapter.index'
+import { Route as BibliaBookChapterVerseRouteImport } from './routes/biblia.$book.$chapter.$verse'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +30,69 @@ const BibliaBookIndexRoute = BibliaBookIndexRouteImport.update({
   path: '/biblia/$book/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BibliaBookChapterIndexRoute = BibliaBookChapterIndexRouteImport.update({
+  id: '/biblia/$book/$chapter/',
+  path: '/biblia/$book/$chapter/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BibliaBookChapterVerseRoute = BibliaBookChapterVerseRouteImport.update({
+  id: '/biblia/$book/$chapter/$verse',
+  path: '/biblia/$book/$chapter/$verse',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/biblia/': typeof BibliaIndexRoute
   '/biblia/$book/': typeof BibliaBookIndexRoute
+  '/biblia/$book/$chapter/$verse': typeof BibliaBookChapterVerseRoute
+  '/biblia/$book/$chapter/': typeof BibliaBookChapterIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/biblia': typeof BibliaIndexRoute
   '/biblia/$book': typeof BibliaBookIndexRoute
+  '/biblia/$book/$chapter/$verse': typeof BibliaBookChapterVerseRoute
+  '/biblia/$book/$chapter': typeof BibliaBookChapterIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/biblia/': typeof BibliaIndexRoute
   '/biblia/$book/': typeof BibliaBookIndexRoute
+  '/biblia/$book/$chapter/$verse': typeof BibliaBookChapterVerseRoute
+  '/biblia/$book/$chapter/': typeof BibliaBookChapterIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/biblia/' | '/biblia/$book/'
+  fullPaths:
+    | '/'
+    | '/biblia/'
+    | '/biblia/$book/'
+    | '/biblia/$book/$chapter/$verse'
+    | '/biblia/$book/$chapter/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/biblia' | '/biblia/$book'
-  id: '__root__' | '/' | '/biblia/' | '/biblia/$book/'
+  to:
+    | '/'
+    | '/biblia'
+    | '/biblia/$book'
+    | '/biblia/$book/$chapter/$verse'
+    | '/biblia/$book/$chapter'
+  id:
+    | '__root__'
+    | '/'
+    | '/biblia/'
+    | '/biblia/$book/'
+    | '/biblia/$book/$chapter/$verse'
+    | '/biblia/$book/$chapter/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BibliaIndexRoute: typeof BibliaIndexRoute
   BibliaBookIndexRoute: typeof BibliaBookIndexRoute
+  BibliaBookChapterVerseRoute: typeof BibliaBookChapterVerseRoute
+  BibliaBookChapterIndexRoute: typeof BibliaBookChapterIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +118,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BibliaBookIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/biblia/$book/$chapter/': {
+      id: '/biblia/$book/$chapter/'
+      path: '/biblia/$book/$chapter'
+      fullPath: '/biblia/$book/$chapter/'
+      preLoaderRoute: typeof BibliaBookChapterIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/biblia/$book/$chapter/$verse': {
+      id: '/biblia/$book/$chapter/$verse'
+      path: '/biblia/$book/$chapter/$verse'
+      fullPath: '/biblia/$book/$chapter/$verse'
+      preLoaderRoute: typeof BibliaBookChapterVerseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +139,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BibliaIndexRoute: BibliaIndexRoute,
   BibliaBookIndexRoute: BibliaBookIndexRoute,
+  BibliaBookChapterVerseRoute: BibliaBookChapterVerseRoute,
+  BibliaBookChapterIndexRoute: BibliaBookChapterIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
