@@ -2,7 +2,7 @@ import { adsConfig } from "@/lib/ads-config";
 
 interface AdProps {
   slotName: string;
-  className?: string;
+  className?: string | undefined;
 }
 
 /**
