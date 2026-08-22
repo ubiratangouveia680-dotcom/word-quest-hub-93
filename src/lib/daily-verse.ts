@@ -34,7 +34,7 @@ export const DAILY_REFS: DailyRef[] = [
   { bookSlug: "salmos", bookId: "PSA", bookName: "Salmos", chapter: 34, verse: 18 },
   { bookSlug: "2-corintios", bookId: "2CO", bookName: "2 Coríntios", chapter: 12, verse: 9 },
   { bookSlug: "sofonias", bookId: "ZEP", bookName: "Sofonias", chapter: 3, verse: 17 },
-  { bookSlug: "provérbios" === "" ? "" : "proverbios", bookId: "PRO", bookName: "Provérbios", chapter: 16, verse: 3 },
+  { bookSlug: "proverbios", bookId: "PRO", bookName: "Provérbios", chapter: 16, verse: 3 },
   { bookSlug: "1-joao", bookId: "1JN", bookName: "1 João", chapter: 4, verse: 19 },
   { bookSlug: "apocalipse", bookId: "REV", bookName: "Apocalipse", chapter: 21, verse: 4 },
   { bookSlug: "deuteronomio", bookId: "DEU", bookName: "Deuteronômio", chapter: 31, verse: 6 },
@@ -47,5 +47,5 @@ export function dayIndex(date = new Date()): number {
 }
 
 export function getDailyRef(date = new Date()): DailyRef {
-  return DAILY_REFS[dayIndex(date) % DAILY_REFS.length];
+  return DAILY_REFS[dayIndex(date) % DAILY_REFS.length]!;
 }
