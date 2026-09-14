@@ -46,6 +46,7 @@ function SearchPage() {
 
   const nq = normalize(q.trim());
   const books = nq ? BIBLE_BOOKS.filter((b) => normalize(b.name).includes(nq)).slice(0, 8) : [];
+  const exactBook = nq ? BIBLE_BOOKS.find((b) => normalize(b.name) === nq) : undefined;
   const studies = nq
     ? STUDIES.filter((s) => normalize(s.title + s.excerpt + s.category).includes(nq))
     : [];
@@ -85,30 +86,53 @@ function SearchPage() {
 
         {q && (
           <div className="mt-8 space-y-8">
-            <section>
-              <h2 className="font-display text-xl font-semibold">Versículos</h2>
-              {isFetching ? (
-                <Skeleton className="mt-3 h-24 w-full" />
-              ) : data && data.verses.length > 0 ? (
-                <div className="mt-3 space-y-2">
-                  {data.verses.slice(0, 30).map((v) => (
-                    <p key={`${v.book}-${v.chapter}-${v.verse}`} className="surface p-3 reading-text">
-                      <span className="mr-2 text-sm font-semibold text-gold">
-                        {v.book} {v.chapter}:{v.verse}
-                      </span>
-                      {v.text}
-                    </p>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Nenhum versículo encontrado por referência. Tente algo como “João 3:16” ou
-                  “Salmos 23”.
-                </p>
-              )}
-            </section>
+            {!exactBook && (
+              <section>
+                <h2 className="font-display text-xl font-semibold">Versículos</h2>
+                {isFetching ? (
+                  <Skeleton className="mt-3 h-24 w-full" />
+                ) : data && data.verses.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {data.verses.slice(0, 30).map((v) => (
+                      <p key={`${v.book}-${v.chapter}-${v.verse}`} className="surface p-3 reading-text">
+                        <span className="mr-2 text-sm font-semibold text-gold">
+                          {v.book} {v.chapter}:{v.verse}
+                        </span>
+                        {v.text}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Nenhum versículo encontrado por referência. Tente algo como “João 3:16” ou
+                    “Salmos 23”.
+                  </p>
+                )}
+              </section>
+            )}
 
-            {books.length > 0 && (
+            {exactBook && (
+              <section>
+                <h2 className="font-display text-xl font-semibold">{exactBook.name}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Escolha um capítulo</p>
+                <div className="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-8 md:grid-cols-10">
+                  {Array.from({ length: exactBook.chapters }, (_, index) => index + 1).map(
+                    (chapter) => (
+                      <Link
+                        key={chapter}
+                        to="/biblia/$book/$chapter"
+                        params={{ book: exactBook.slug, chapter: String(chapter) }}
+                        className="surface flex h-11 items-center justify-center text-sm transition-colors hover:bg-accent"
+                      >
+                        {chapter}
+                      </Link>
+                    ),
+                  )}
+                </div>
+              </section>
+            )}
+
+            {!exactBook && books.length > 0 && (
               <section>
                 <h2 className="font-display text-xl font-semibold">Livros</h2>
                 <div className="mt-3 flex flex-wrap gap-2">
