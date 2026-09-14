@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, NotebookPen, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, NotebookPen, Pause, Play, Sparkles, Square, Volume2 } from "lucide-react";
 import { chapterQuery } from "@/lib/bible-queries";
 import { BIBLE_BOOKS, type BibleBook } from "@/lib/bible-books";
 import { VerseActions } from "@/components/VerseActions";
@@ -16,6 +16,8 @@ const SIZES: { key: FontSize; label: string }[] = [
   { key: "lg", label: "Grande" },
   { key: "xl", label: "Muito grande" },
 ];
+
+type AudioStatus = "checking" | "idle" | "speaking" | "paused" | "unsupported";
 
 export function FontSizeControls() {
   const { settings, update } = useSettings();
@@ -57,10 +59,83 @@ export function ChapterReader({
   const chapterKey = `${book.slug}:${chapter}`;
   const { notes, setNote } = useNotes(chapterKey);
   const [openNote, setOpenNote] = useState<number | null>(null);
+  const [audioStatus, setAudioStatus] = useState<AudioStatus>("checking");
+  const [spokenVerse, setSpokenVerse] = useState(0);
+  const speechSession = useRef(0);
+
+  const stopReading = () => {
+    speechSession.current += 1;
+    window.speechSynthesis.cancel();
+    setAudioStatus("idle");
+    setSpokenVerse(0);
+  };
+
+  const speakVerse = (index: number, session: number) => {
+    const verse = data.verses[index];
+    if (!verse || session !== speechSession.current) {
+      setAudioStatus("idle");
+      setSpokenVerse(0);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(`${verse.verse}. ${verse.text}`);
+    utterance.lang = "pt-BR";
+    utterance.rate = 0.95;
+    const portugueseVoice = window.speechSynthesis
+      .getVoices()
+      .find((voice) => voice.lang.toLowerCase().startsWith("pt"));
+    if (portugueseVoice) utterance.voice = portugueseVoice;
+    utterance.onstart = () => {
+      if (session === speechSession.current) {
+        setAudioStatus("speaking");
+        setSpokenVerse(index + 1);
+      }
+    };
+    utterance.onend = () => {
+      if (session === speechSession.current) speakVerse(index + 1, session);
+    };
+    utterance.onerror = () => {
+      if (session === speechSession.current) {
+        setAudioStatus("idle");
+        setSpokenVerse(0);
+      }
+    };
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const toggleReading = () => {
+    if (audioStatus === "paused") {
+      window.speechSynthesis.resume();
+      setAudioStatus("speaking");
+      return;
+    }
+    if (audioStatus === "speaking") {
+      window.speechSynthesis.pause();
+      setAudioStatus("paused");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    speechSession.current += 1;
+    const session = speechSession.current;
+    speakVerse(0, session);
+  };
 
   useEffect(() => {
     saveProgress({ bookSlug: book.slug, bookName: book.name, chapter });
   }, [book.slug, book.name, chapter]);
+
+  useEffect(() => {
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      setAudioStatus("unsupported");
+      return;
+    }
+    setAudioStatus("idle");
+    return () => {
+      speechSession.current += 1;
+      window.speechSynthesis.cancel();
+    };
+  }, [book.slug, chapter]);
 
   const bookIdx = BIBLE_BOOKS.findIndex((b) => b.slug === book.slug);
   const prev =
@@ -87,6 +162,34 @@ export function ChapterReader({
       <p className="mt-1 text-xs text-muted-foreground">
         Tradução João Ferreira de Almeida — domínio público
       </p>
+      {audioStatus === "unsupported" ? (
+        <p className="mt-3 text-sm text-muted-foreground" role="status">
+          A leitura em voz alta não está disponível neste navegador.
+        </p>
+      ) : audioStatus !== "checking" ? (
+        <div className="mt-3 flex min-h-10 flex-wrap items-center gap-2" aria-live="polite">
+          <Button variant="outline" size="sm" onClick={toggleReading}>
+            {audioStatus === "speaking" ? (
+              <Pause className="mr-1.5 size-4" />
+            ) : audioStatus === "paused" ? (
+              <Play className="mr-1.5 size-4" />
+            ) : (
+              <Volume2 className="mr-1.5 size-4" />
+            )}
+            {audioStatus === "speaking" ? "Pausar" : audioStatus === "paused" ? "Continuar" : "Ouvir capítulo"}
+          </Button>
+          {(audioStatus === "speaking" || audioStatus === "paused") && (
+            <>
+              <Button variant="ghost" size="icon" aria-label="Parar leitura" onClick={stopReading}>
+                <Square className="size-4" />
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                {audioStatus === "paused" ? "Pausado" : "Lendo"} · versículo {spokenVerse} de {data.verses.length}
+              </span>
+            </>
+          )}
+        </div>
+      ) : null}
       <div className="gold-rule my-5" />
 
       <div className="space-y-1">
