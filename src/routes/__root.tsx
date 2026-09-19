@@ -20,8 +20,10 @@ import { Button } from "@/components/ui/button";
 import { getAdSettings } from "@/lib/ads.functions";
 import { AdSettingsProvider } from "@/lib/ads-context";
 import { defaultAdSettings } from "@/lib/ads-config";
-import { AuthProvider } from "@/lib/auth-context";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { SITE_URL } from "@/lib/site";
+import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
+import { registerServiceWorker, checkAndDispatchDailyVerses } from "@/lib/notifications";
 
 function NotFoundComponent() {
   return (
@@ -219,6 +221,32 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function RootContent() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    // Registra o Service Worker
+    registerServiceWorker();
+
+    // Executa verificação inicial de versículos do dia
+    checkAndDispatchDailyVerses(user?.id);
+
+    // Agenda checagem a cada 5 minutos enquanto o app estiver em execução/aberto
+    const interval = setInterval(() => {
+      checkAndDispatchDailyVerses(user?.id);
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  return (
+    <>
+      <Outlet />
+      <NotificationPermissionBanner />
+    </>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { adSettings } = Route.useLoaderData();
@@ -227,7 +255,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AdSettingsProvider value={adSettings}>
-          <Outlet />
+          <RootContent />
         </AdSettingsProvider>
         <Toaster position="top-center" />
         <CookieConsent />

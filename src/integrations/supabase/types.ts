@@ -479,6 +479,135 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notification_settings: {
+        Row: {
+          afternoon_enabled: boolean
+          afternoon_time: string
+          created_at: string
+          evening_enabled: boolean
+          evening_time: string
+          id: string
+          morning_enabled: boolean
+          morning_time: string
+          push_subscription: Json | null
+          timezone: string
+          updated_at: string
+          user_id: string
+          verse_notifications_enabled: boolean
+        }
+        Insert: {
+          afternoon_enabled?: boolean
+          afternoon_time?: string
+          created_at?: string
+          evening_enabled?: boolean
+          evening_time?: string
+          id?: string
+          morning_enabled?: boolean
+          morning_time?: string
+          push_subscription?: Json | null
+          timezone?: string
+          updated_at?: string
+          user_id: string
+          verse_notifications_enabled?: boolean
+        }
+        Update: {
+          afternoon_enabled?: boolean
+          afternoon_time?: string
+          created_at?: string
+          evening_enabled?: boolean
+          evening_time?: string
+          id?: string
+          morning_enabled?: boolean
+          morning_time?: string
+          push_subscription?: Json | null
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          verse_notifications_enabled?: boolean
+        }
+        Relationships: []
+      }
+      verse_notification_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          idempotency_key: string
+          notification_type: string
+          scheduled_at: string | null
+          sent_at: string
+          status: string
+          user_id: string
+          verse_date: string
+          verse_reference: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key: string
+          notification_type: string
+          scheduled_at?: string | null
+          sent_at?: string
+          status?: string
+          user_id: string
+          verse_date: string
+          verse_reference: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string
+          notification_type?: string
+          scheduled_at?: string | null
+          sent_at?: string
+          status?: string
+          user_id?: string
+          verse_date?: string
+          verse_reference?: string
+        }
+        Relationships: []
+      }
+      admin_notification_settings: {
+        Row: {
+          custom_afternoon_title: string
+          custom_evening_title: string
+          custom_morning_title: string
+          default_afternoon_time: string
+          default_evening_time: string
+          default_morning_time: string
+          global_enabled: boolean
+          id: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          custom_afternoon_title?: string
+          custom_evening_title?: string
+          custom_morning_title?: string
+          default_afternoon_time?: string
+          default_evening_time?: string
+          default_morning_time?: string
+          global_enabled?: boolean
+          id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          custom_afternoon_title?: string
+          custom_evening_title?: string
+          custom_morning_title?: string
+          default_afternoon_time?: string
+          default_evening_time?: string
+          default_morning_time?: string
+          global_enabled?: boolean
+          id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           conversation_id: string | null

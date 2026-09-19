@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { Check, Edit2, KeyRound, LogOut, ShieldCheck, User as UserIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Bell, Check, Edit2, KeyRound, LogOut, ShieldCheck, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
 import { FontSizeControls } from "@/components/ChapterReader";
@@ -8,8 +8,19 @@ import { ThemeToggle } from "@/components/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useFavorites, useProgress } from "@/lib/storage";
 import { useAuth } from "@/lib/auth-context";
+import {
+  fetchNotificationSettings,
+  saveNotificationSettings,
+  requestNotificationPermission,
+  getNotificationPermission,
+  isPushNotificationSupported,
+  DEFAULT_NOTIFICATION_SETTINGS,
+  type VerseNotificationSettings,
+} from "@/lib/notifications";
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/perfil")({
@@ -35,6 +46,41 @@ function ProfilePage() {
   const { user, profile, isAuthenticated, isLoading, signOut, updatePassword, updateProfile } = useAuth();
   const { items } = useFavorites();
   const { history } = useProgress();
+
+  // Estado para notificações
+  const [notifSettings, setNotifSettings] = useState<VerseNotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
+  const [isSavingNotif, setIsSavingNotif] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<string>("default");
+  const [hasNotificationSupport, setHasNotificationSupport] = useState(false);
+
+  useEffect(() => {
+    setHasNotificationSupport(isPushNotificationSupported());
+    setPermissionStatus(getNotificationPermission());
+    fetchNotificationSettings(user?.id).then((settings) => {
+      setNotifSettings(settings);
+    });
+  }, [user?.id]);
+
+  const handleRequestPermission = async () => {
+    const status = await requestNotificationPermission();
+    setPermissionStatus(status);
+    if (status === "granted") {
+      toast.success("Notificações ativadas no seu dispositivo com sucesso!");
+    } else {
+      toast.error("Permissão de notificações não foi concedida pelo navegador.");
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    setIsSavingNotif(true);
+    const ok = await saveNotificationSettings(notifSettings, user?.id);
+    setIsSavingNotif(false);
+    if (ok) {
+      toast.success("Configurações de notificações salvas com sucesso!");
+    } else {
+      toast.error("Erro ao salvar configurações de notificações.");
+    }
+  };
 
   // Estado para edição do nome do perfil
   const [isEditingName, setIsEditingName] = useState(false);
@@ -259,6 +305,141 @@ function ProfilePage() {
               </div>
             </div>
           )}
+        </section>
+
+        {/* SEÇÃO DE NOTIFICAÇÕES DO VERSÍCULO DO DIA */}
+        <section className="surface mt-5 p-5 rounded-xl border border-border">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+              <Bell className="size-5 text-gold" /> Notificações
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground hidden sm:inline">Versículo do Dia</span>
+              <Switch
+                checked={notifSettings.verse_notifications_enabled}
+                onCheckedChange={(checked) =>
+                  setNotifSettings((prev) => ({ ...prev, verse_notifications_enabled: checked }))
+                }
+              />
+            </div>
+          </div>
+
+          <p className="mt-2 text-sm text-muted-foreground">
+            Receba uma palavra inspiradora da Bíblia Sagrada nos momentos mais importantes do seu dia: manhã, tarde e noite.
+          </p>
+
+          {/* Permissão do navegador / Push */}
+          {hasNotificationSupport && (
+            <div className="mt-3 flex items-center justify-between rounded-lg bg-accent/40 px-3.5 py-2.5 text-xs border border-border/60">
+              <div className="flex items-center gap-2">
+                <span className={`size-2 rounded-full ${permissionStatus === "granted" ? "bg-emerald-500" : "bg-amber-500"}`} />
+                <span>
+                  {permissionStatus === "granted"
+                    ? "Notificações ativadas no seu dispositivo"
+                    : "Permissão pendente no navegador/celular"}
+                </span>
+              </div>
+              {permissionStatus !== "granted" && (
+                <Button size="sm" variant="outline" onClick={handleRequestPermission} className="h-7 text-xs">
+                  Ativar no aparelho
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Horários configuráveis */}
+          <div className={`mt-4 space-y-3.5 transition-opacity ${notifSettings.verse_notifications_enabled ? "opacity-100" : "opacity-50 pointer-events-none"}`}>
+            {/* Manhã */}
+            <div className="flex items-center justify-between rounded-lg border border-border/70 p-3 bg-card">
+              <div className="flex items-center gap-2.5">
+                <Checkbox
+                  id="notif-morning"
+                  checked={notifSettings.morning_enabled}
+                  onCheckedChange={(checked) =>
+                    setNotifSettings((prev) => ({ ...prev, morning_enabled: !!checked }))
+                  }
+                />
+                <label htmlFor="notif-morning" className="cursor-pointer">
+                  <span className="block text-sm font-medium text-foreground">🌅 Manhã</span>
+                  <span className="block text-[11px] text-muted-foreground">Comece o dia edificado na Palavra</span>
+                </label>
+              </div>
+              <Input
+                type="time"
+                value={notifSettings.morning_time}
+                onChange={(e) =>
+                  setNotifSettings((prev) => ({ ...prev, morning_time: e.target.value }))
+                }
+                className="w-28 text-center text-xs h-8"
+              />
+            </div>
+
+            {/* Tarde */}
+            <div className="flex items-center justify-between rounded-lg border border-border/70 p-3 bg-card">
+              <div className="flex items-center gap-2.5">
+                <Checkbox
+                  id="notif-afternoon"
+                  checked={notifSettings.afternoon_enabled}
+                  onCheckedChange={(checked) =>
+                    setNotifSettings((prev) => ({ ...prev, afternoon_enabled: !!checked }))
+                  }
+                />
+                <label htmlFor="notif-afternoon" className="cursor-pointer">
+                  <span className="block text-sm font-medium text-foreground">☀️ Tarde</span>
+                  <span className="block text-[11px] text-muted-foreground">Renovo espiritual no meio do dia</span>
+                </label>
+              </div>
+              <Input
+                type="time"
+                value={notifSettings.afternoon_time}
+                onChange={(e) =>
+                  setNotifSettings((prev) => ({ ...prev, afternoon_time: e.target.value }))
+                }
+                className="w-28 text-center text-xs h-8"
+              />
+            </div>
+
+            {/* Noite */}
+            <div className="flex items-center justify-between rounded-lg border border-border/70 p-3 bg-card">
+              <div className="flex items-center gap-2.5">
+                <Checkbox
+                  id="notif-evening"
+                  checked={notifSettings.evening_enabled}
+                  onCheckedChange={(checked) =>
+                    setNotifSettings((prev) => ({ ...prev, evening_enabled: !!checked }))
+                  }
+                />
+                <label htmlFor="notif-evening" className="cursor-pointer">
+                  <span className="block text-sm font-medium text-foreground">🌙 Noite</span>
+                  <span className="block text-[11px] text-muted-foreground">Paz e descanso no Senhor antes de dormir</span>
+                </label>
+              </div>
+              <Input
+                type="time"
+                value={notifSettings.evening_time}
+                onChange={(e) =>
+                  setNotifSettings((prev) => ({ ...prev, evening_time: e.target.value }))
+                }
+                className="w-28 text-center text-xs h-8"
+              />
+            </div>
+          </div>
+
+          {/* Botão de Salvar */}
+          <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-border/60">
+            <span className="text-xs text-muted-foreground">
+              Fuso horário: <strong className="text-foreground">{notifSettings.timezone}</strong>
+            </span>
+            <Button
+              onClick={handleSaveNotifications}
+              disabled={isSavingNotif}
+              size="sm"
+              className="gap-1.5 font-semibold text-xs h-9"
+            >
+              <Check className="size-3.5" />
+              {isSavingNotif ? "Salvando…" : "Salvar configurações"}
+            </Button>
+          </div>
         </section>
 
         {/* SEÇÃO DE CONFIGURAÇÕES */}

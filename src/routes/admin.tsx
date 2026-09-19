@@ -248,6 +248,20 @@ function AdminPage() {
           </>
         )}
 
+        {/* ADMINISTRAÇÃO DAS NOTIFICAÇÕES DO VERSÍCULO DO DIA */}
+        <section className="surface mt-5 p-5 rounded-xl border border-border">
+          <h2 className="font-display text-xl font-semibold">Notificações do Versículo do Dia</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Controle de envio, horários padrão e integridade dos envios (Manhã, Tarde e Noite).
+          </p>
+          <div className="mt-4 space-y-2">
+            <Row label="Envios automáticos" value="Habilitados (08:00, 12:00, 20:00)" />
+            <Row label="Fuso horário base" value="Horário local do dispositivo (America/Sao_Paulo)" />
+            <Row label="Controle de duplicidade" value="Ativo (Idempotência por data e período)" />
+            <Row label="Mecanismo de entrega" value="Web Push API & Service Worker (/sw.js)" />
+          </div>
+        </section>
+
         <section className="surface mt-5 p-5">
           <h2 className="font-display text-xl font-semibold">Conteúdo publicado</h2>
           <div className="mt-3">
