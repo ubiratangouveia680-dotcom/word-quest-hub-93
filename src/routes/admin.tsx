@@ -15,6 +15,7 @@ import { getIsAdmin, updateAdSettings } from "@/lib/ads.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { DEVOTIONALS, PRAYERS, STUDIES } from "@/lib/content";
 import { BIBLE_BOOKS } from "@/lib/bible-books";
+import { useGlobalOnlinePresence } from "@/lib/presence";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -174,14 +175,14 @@ function AdsForm() {
 
 function AdminPage() {
   const settings = useAdSettings();
-  const [session, setSession] = useState<{ email: string | null } | null | undefined>(undefined);
+  const [session, setSession] = useState<{ email: string | null; id?: string } | null | undefined>(undefined);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) =>
-      setSession(data.session ? { email: data.session.user.email ?? null } : null),
+      setSession(data.session ? { email: data.session.user.email ?? null, id: data.session.user.id } : null),
     );
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) =>
-      setSession(s ? { email: s.user.email ?? null } : null),
+      setSession(s ? { email: s.user.email ?? null, id: s.user.id } : null),
     );
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -192,6 +193,8 @@ function AdminPage() {
     enabled: Boolean(session),
     retry: false,
   });
+
+  const presence = useGlobalOnlinePresence(session?.id);
 
   return (
     <SiteLayout>
@@ -247,6 +250,35 @@ function AdminPage() {
             <AdsForm />
           </>
         )}
+
+        {/* MONITORAMENTO DE USUÁRIOS ONLINE EM TEMPO REAL */}
+        <section className="surface mt-5 p-5 rounded-xl border border-border">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-xl font-semibold">Usuários online agora</h2>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+              Tempo Real
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Presença detectada em tempo real via Supabase Realtime Presence com deduplicação de abas e heartbeat de 2 minutos.
+          </p>
+
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="rounded-lg bg-card border border-border/70 p-4 text-center">
+              <span className="block text-2xl font-bold text-foreground">{presence.totalOnline}</span>
+              <span className="text-xs text-muted-foreground font-medium">Total de usuários online</span>
+            </div>
+            <div className="rounded-lg bg-card border border-border/70 p-4 text-center">
+              <span className="block text-2xl font-bold text-primary">{presence.authenticatedOnline}</span>
+              <span className="text-xs text-muted-foreground font-medium">Usuários autenticados</span>
+            </div>
+            <div className="rounded-lg bg-card border border-border/70 p-4 text-center">
+              <span className="block text-2xl font-bold text-gold">{presence.visitorsOnline}</span>
+              <span className="text-xs text-muted-foreground font-medium">Visitantes online</span>
+            </div>
+          </div>
+        </section>
 
         {/* ADMINISTRAÇÃO DAS NOTIFICAÇÕES DO VERSÍCULO DO DIA */}
         <section className="surface mt-5 p-5 rounded-xl border border-border">

@@ -5,6 +5,7 @@ import { useSettings } from "@/lib/storage";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { OnlineCounter } from "@/components/OnlineCounter";
 
 const NAV = [
   { to: "/biblia", label: "Bíblia" },
@@ -81,7 +82,10 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Contador de Usuários Online em Tempo Real */}
+            <OnlineCounter />
+
             <Button asChild variant="ghost" size="icon" aria-label="Pesquisar">
               <Link to="/busca" search={{ q: "" }}>
                 <Search className="size-4" />
@@ -117,8 +121,13 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </SheetTrigger>
               <SheetContent side="right" className="w-72 flex flex-col justify-between">
                 <div>
+                  {/* Status online mobile no topo do drawer */}
+                  <div className="mt-4 px-1 flex items-center justify-between">
+                    <OnlineCounter showDetails />
+                  </div>
+
                   {/* Mobile user status card */}
-                  <div className="mt-6 mb-2 mx-1">
+                  <div className="mt-3 mb-2 mx-1">
                     {isAuthenticated ? (
                       <div className="rounded-lg bg-accent/40 p-3 border border-border/70 flex items-center justify-between">
                         <div className="min-w-0 pr-2">

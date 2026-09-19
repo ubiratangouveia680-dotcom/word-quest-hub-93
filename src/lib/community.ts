@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import { useGlobalOnlinePresence } from "@/lib/presence";
 
 // Curated Christian reactions
 export const CHRISTIAN_REACTIONS = [
@@ -792,40 +793,11 @@ export function useUnreadNotificationsCount(userId?: string) {
 }
 
 // ----------------------------------------------------
-// Online Members (Supabase Presence) - Without chat
+// Online Members (Supabase Presence)
 // ----------------------------------------------------
 export function useOnlineMembersCount(userId?: string) {
-  const [onlineCount, setOnlineCount] = useState<number>(1);
-
-  useEffect(() => {
-    const channel = supabase.channel("community_online_presence", {
-      config: {
-        presence: {
-          key: userId || `guest_${Math.random().toString(36).substring(2, 9)}`,
-        },
-      },
-    });
-
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState();
-        const keysCount = Object.keys(state).length;
-        setOnlineCount(Math.max(1, keysCount));
-      })
-      .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          await channel.track({
-            online_at: new Date().toISOString(),
-          });
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId]);
-
-  return onlineCount;
+  const { totalOnline } = useGlobalOnlinePresence(userId);
+  return totalOnline;
 }
 
 // Format relative date in Portuguese
