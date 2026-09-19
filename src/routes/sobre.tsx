@@ -49,9 +49,10 @@ function AboutPage() {
           <section>
             <h2>Fonte do texto bíblico e direitos autorais</h2>
             <p className="mt-2">
-              O texto bíblico exibido é fornecido via API pública bible-api.com, correspondente à tradicional tradução
-              de João Ferreira de Almeida, classificada como obra em domínio público. Respeitamos integralmente os direitos
-              autorais e patrimoniais de todas as versões e conteúdos de terceiros.
+              O texto bíblico exibido é disponibilizado através de bible-api.com, baseando-se na tradicional edição
+              Almeida. Respeitamos integralmente a propriedade intelectual de traduções bíblicas e estruturamos o
+              sistema de forma flexível e modular para permitir suporte a versões devidamente licenciadas junto às
+              respectivas sociedades bíblicas detentoras dos direitos de cada edição contemporânea.
             </p>
           </section>
 
@@ -59,22 +60,25 @@ function AboutPage() {
             <h2>Tecnologia responsável e privacidade</h2>
             <p className="mt-2">
               Acreditamos que a privacidade do leitor é sagrada. Suas anotações, capítulos lidos e preferências
-              visuais permanecem armazenadas no seu próprio dispositivo. As ferramentas de inteligência artificial
-              são desenhadas para fins estritamente pedagógicos e suas respostas devem ser sempre conferidas nas Escrituras.
+              visuais permanecem armazenadas no seu próprio dispositivo. As ferramentas de inteligência pedagógica
+              são desenhadas para fins estritamente educativos e suas respostas devem ser sempre conferidas nas Escrituras.
             </p>
           </section>
 
           <section>
             <h2>Transparência e canal editorial</h2>
             <p className="mt-2">
-              Para sugestões de novos temas, correções de digitação, dúvidas teológicas ou contato com a equipe
-              editorial, colocamos à disposição o nosso canal de comunicação:
+              Para sugestões de novos temas, correções de digitação, dúvidas teológicas ou comunicação com a equipe
+              editorial, utilize a nossa página oficial de atendimento:
             </p>
-            <p className="mt-1 font-medium text-foreground">
-              E-mail editorial: <span className="underline">editorial@bibliaonline.me</span>
+            <p className="mt-2">
+              <Link to="/contato" className="font-medium text-primary hover:underline">
+                → Acessar formulário de Contato e Atendimento
+              </Link>
             </p>
           </section>
         </div>
+
 
         <div className="mt-8 flex flex-wrap gap-2">
           <Button asChild>

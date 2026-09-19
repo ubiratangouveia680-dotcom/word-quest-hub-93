@@ -122,35 +122,38 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="font-display text-lg font-semibold">Bíblia Online</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Leia, compreenda e compartilhe a Palavra. Texto bíblico de domínio público
-              (João Ferreira de Almeida).
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+              Leia, compreenda e compartilhe a Palavra. Texto bíblico: Edição Almeida
+              (disponibilizada através de bible-api.com). Plataforma para edificação e estudo das Escrituras.
             </p>
           </div>
           <div>
-            <p className="text-sm font-semibold">Navegar</p>
+            <p className="text-sm font-semibold">Navegação Principal</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               <li><Link to="/biblia" className="hover:text-foreground">Bíblia</Link></li>
               <li><Link to="/versiculo-do-dia" className="hover:text-foreground">Versículo do Dia</Link></li>
-              <li><Link to="/estudos" className="hover:text-foreground">Estudos</Link></li>
+              <li><Link to="/oracoes" className="hover:text-foreground">Orações</Link></li>
+              <li><Link to="/estudos" className="hover:text-foreground">Estudos Bíblicos</Link></li>
               <li><Link to="/devocionais" className="hover:text-foreground">Devocionais</Link></li>
             </ul>
           </div>
           <div>
-            <p className="text-sm font-semibold">Recursos</p>
+            <p className="text-sm font-semibold">Ferramentas & Recursos</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/oracoes" className="hover:text-foreground">Orações</Link></li>
-              <li><Link to="/busca" search={{ q: "" }} className="hover:text-foreground">Busca</Link></li>
-              <li><Link to="/favoritos" className="hover:text-foreground">Favoritos</Link></li>
+              <li><Link to="/busca" search={{ q: "" }} className="hover:text-foreground">Busca na Bíblia</Link></li>
+              <li><Link to="/favoritos" className="hover:text-foreground">Meus Favoritos</Link></li>
               <li><Link to="/pergunte" search={{ q: "" }} className="hover:text-foreground">Pergunte à Bíblia</Link></li>
+              <li><Link to="/perfil" className="hover:text-foreground">Meu Histórico</Link></li>
             </ul>
           </div>
           <div>
-            <p className="text-sm font-semibold">Institucional</p>
+            <p className="text-sm font-semibold">Institucional & Políticas</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/sobre" className="hover:text-foreground">Sobre Nós</Link></li>
+              <li><Link to="/contato" className="hover:text-foreground">Contato</Link></li>
               <li><Link to="/privacidade" className="hover:text-foreground">Política de Privacidade</Link></li>
-              <li><Link to="/termos" className="hover:text-foreground">Termos de Uso</Link></li>
               <li><Link to="/cookies" className="hover:text-foreground">Política de Cookies</Link></li>
+              <li><Link to="/termos" className="hover:text-foreground">Termos de Uso</Link></li>
             </ul>
           </div>
         </div>
@@ -161,6 +164,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </p>
         </div>
       </footer>
+
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur lg:hidden">
         <ul className="mx-auto flex max-w-lg">

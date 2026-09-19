@@ -131,7 +131,26 @@ function StudyPage() {
               ))}
             </div>
           </section>
+
+          <section className="mt-8 rounded-xl border border-border/70 bg-card p-5">
+            <h3 className="font-display text-base font-semibold">Aprofunde sua experiência devocional</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Conecte este estudo bíblico com meditação e momentos de oração:
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <Link to="/versiculo-do-dia" className="rounded-full border border-border px-3 py-1 text-primary hover:bg-accent">
+                → Versículo do Dia com reflexão
+              </Link>
+              <Link to="/oracoes" className="rounded-full border border-border px-3 py-1 text-primary hover:bg-accent">
+                → Orações com fundamentação bíblica
+              </Link>
+              <Link to="/devocionais" className="rounded-full border border-border px-3 py-1 text-primary hover:bg-accent">
+                → Devocionais diários
+              </Link>
+            </div>
+          </section>
         </article>
+
         <aside>
           <AdDesktop />
         </aside>

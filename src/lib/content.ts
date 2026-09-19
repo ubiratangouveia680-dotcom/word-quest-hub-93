@@ -25,8 +25,15 @@ export interface Devotional {
 export interface Prayer {
   slug: string;
   category: string;
+  categorySlug: string;
   title: string;
+  intro: string;
   text: string;
+  verses: { ref: string; link: string; text: string }[];
+  reflection: string;
+  application: string;
+  relatedStudySlug?: string;
+  relatedDevotionalSlug?: string;
 }
 
 export const STUDY_CATEGORIES = [
@@ -462,76 +469,286 @@ export const PRAYERS: Prayer[] = [
   {
     slug: "oracao-da-manha",
     category: "Oração da manhã",
-    title: "Oração da manhã",
-    text: "Senhor, obrigado por este novo dia. Antes que eu comece minhas tarefas, entrego a ti meus pensamentos, minhas palavras e minhas decisões. Guia meus passos, dá-me sabedoria nas escolhas e paciência nas dificuldades. Que eu seja instrumento de paz onde eu estiver. Em nome de Jesus, amém.",
+    categorySlug: "oracao-da-manha",
+    title: "Oração da manhã para começar o dia em paz",
+    intro:
+      "Iniciar as primeiras horas do dia na presença do Criador consagra os nossos pensamentos, traz clareza para as tomadas de decisão e renova a nossa paciência diante de qualquer imprevisto que surja ao longo da jornada.",
+    text:
+      "Senhor Deus e Pai celestial, obrigado pelo dom sagrado de mais este dia. Antes de atender às exigências da rotina e aos ruídos do mundo, consagro a ti os meus pensamentos, as palavras da minha boca e as atitudes do meu coração. Dá-me discernimento nas escolhas, prudência no falar e serenidade no agir. Guarda os meus passos onde quer que eu vá e faze-me instrumento do teu amor e da tua paz junto a todos os que cruzarem o meu caminho. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Salmos 5:3", link: "/biblia/salmos/5", text: "Pela manhã ouvirás a minha voz, ó Senhor; pela manhã me apresentarei a ti, e vigiarei." },
+      { ref: "Lamentações 3:22-23", link: "/biblia/lamentacoes/3", text: "As misericórdias do Senhor são a causa de não sermos consumidos... renovam-se cada manhã; grande é a tua fidelidade." },
+    ],
+    reflection:
+      "Entregar as primícias da manhã a Deus não é mero ritual, mas uma atitude prática de reconhecimento de que nada de duradouro se constrói sem a Sua graça e direção.",
+    application:
+      "Evite olhar notificações e redes sociais nos primeiros minutos do dia; faça desta oração seu ponto de partida para cultivar calma interior.",
+    relatedStudySlug: "como-orar-o-padrao-do-pai-nosso",
+    relatedDevotionalSlug: "comece-o-dia-com-gratidao",
   },
   {
     slug: "oracao-da-noite",
     category: "Oração da noite",
-    title: "Oração da noite",
-    text: "Pai, agradeço por tudo o que vivi hoje. Perdoa minhas falhas, cura o que ficou ferido e aquieta o meu coração. Entrego a ti as preocupações que eu não consigo resolver. Concede-me um sono tranquilo e renova minhas forças para amanhã. Em nome de Jesus, amém.",
+    categorySlug: "oracao-da-noite",
+    title: "Oração da noite e encerramento do dia",
+    intro:
+      "Ao entardecer, quando a agitação cessa, é hora de fazer uma pausa reflexiva para expressar gratidão pelas vitórias, perdoar desentendimentos e soltar as pendências nas mãos de quem sustenta o universo.",
+    text:
+      "Pai eterno, chego ao término de mais um dia com o coração grato por tua provisão e companhia constante. Perdoa as faltas que cometi em pensamentos, palavras ou omissões. Cura qualquer mágoa acumulada e dissipa as preocupações que tentam inquietar minha mente. Entrego em tuas mãos os problemas que não posso resolver agora, confiando que o Senhor trabalha enquanto eu descanso. Renova minhas energias e concede-me uma noite abençoada. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Salmos 4:8", link: "/biblia/salmos/4", text: "Em paz também me deitarei e dormirei, porque só tu, Senhor, me fazes habitar em segurança." },
+      { ref: "Salmos 121:4", link: "/biblia/salmos/121", text: "Eis que não tosquenejará nem dormirá o guarda de Israel." },
+    ],
+    reflection:
+      "Dormir em paz é um ato de fé: significa admitir com humildade que somos limitados e que Deus não cessa de zelar por nós enquanto repousamos.",
+    application:
+      "Faça um breve balanço do seu dia, perdoe mentalmente quem o aborreceu e desligue aparelhos eletrônicos antes de orar.",
+    relatedStudySlug: "como-vencer-a-ansiedade-com-a-palavra",
+    relatedDevotionalSlug: "a-paz-que-excede-todo-entendimento",
+  },
+  {
+    slug: "oracao-antes-de-dormir",
+    category: "Oração antes de dormir",
+    categorySlug: "oracao-antes-de-dormir",
+    title: "Oração antes de dormir para acalmar a mente e ter sono tranquilo",
+    intro:
+      "A insônia e o excesso de pensamentos noturnos muitas vezes decorrem do acúmulo de tensões do cotidiano. Esta oração ajuda a relaxar a mente e repousar na fidelidade protetora de Deus.",
+    text:
+      "Senhor Jesus, coloco-me sob o teu abrigo protetor neste momento de recolhimento. Desligo minha mente dos ruídos, das cobranças e das ansiedades do dia. Que a tua paz, que excede todo o entendimento humano, monte guarda ao redor do meu coração e dos meus pensamentos. Afasta todo espírito de medo ou perturbação e concede-me um sono reparador e tranquilo. Entrego o meu amanhã aos teus cuidados perfeitos. Amém.",
+    verses: [
+      { ref: "Provérbios 3:24", link: "/biblia/proverbios/3", text: "Quando te deitares, não temerás; ao contrário, deitar-te-ás, e o teu sono será suave." },
+      { ref: "Filipenses 4:7", link: "/biblia/filipenses/4", text: "E a paz de Deus, que excede todo o entendimento, guardará os vossos corações e os vossos pensamentos em Cristo Jesus." },
+    ],
+    reflection:
+      "A suavidade do sono prometida na Bíblia é consequência de uma consciência alinhada com a sabedoria e guardada pela paz divina.",
+    application:
+      "Respire lenta e profundamente enquanto recita mentalmente versículos de paz antes de fechar os olhos para o sono.",
+    relatedStudySlug: "como-vencer-a-ansiedade-com-a-palavra",
+    relatedDevotionalSlug: "a-paz-que-excede-todo-entendimento",
   },
   {
     slug: "oracao-pela-familia",
     category: "Oração pela família",
-    title: "Oração pela família",
-    text: "Senhor, abençoa minha família. Que haja amor onde há desgaste, diálogo onde há silêncio e perdão onde há mágoa. Protege cada um dos meus, sustenta nossa casa e ensina-nos a cuidar uns dos outros com paciência. Em nome de Jesus, amém.",
+    categorySlug: "oracao-pela-familia",
+    title: "Oração pela família, harmonia e união no lar",
+    intro:
+      "A família é a base da nossa vida emocional e espiritual. Orar pela casa convida a presença de Deus a sarar feridas de relacionamento, estabelecer diálogo respeitoso e cultivar amor perseverante.",
+    text:
+      "Deus gracioso e Pai da nossa família, estende tuas mãos protetoras sobre o nosso lar. Onde houver ruídos e desgaste, estabelece diálogo e tolerância; onde houver frieza, reacende o carinho; e onde houver ofensa, derrama a graça do perdão sincero. Protege cada membro da nossa casa de todo perigo visível e invisível. Que o nosso ambiente seja um refúgio de paz, honra mútua e edificação diária para todos nós. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Josué 24:15", link: "/biblia/josue/24", text: "Porém eu e a minha casa serviremos ao Senhor." },
+      { ref: "Salmos 127:1", link: "/biblia/salmos/127", text: "Se o Senhor não edificar a casa, em vão trabalham os que a edificam." },
+    ],
+    reflection:
+      "Um lar abençoado não é ausente de desentendimentos humanos, mas caracterizado pela velocidade do perdão e pelo compromisso com o bem-estar mútuo.",
+    application:
+      "Promova um momento de conversa amigável à mesa hoje, valorizando e ouvindo com atenção cada integrante da família.",
+    relatedStudySlug: "familia-e-casamento-segundo-a-biblia",
+    relatedDevotionalSlug: "amados-com-amor-eterno",
+  },
+  {
+    slug: "oracao-pelos-filhos",
+    category: "Oração pelos filhos",
+    categorySlug: "oracao-pelos-filhos",
+    title: "Oração pelos filhos: proteção, sabedoria e futuro",
+    intro:
+      "Em um mundo repleto de pressões e apelos contraditórios, a oração contínua dos pais e responsáveis atua como um escudo espiritual que cerca os filhos com amor, sabedoria e integridade moral.",
+    text:
+      "Pai amado, trago diante do teu trono a vida dos meus filhos. Guarda o coração deles das armadilhas da falsidade, do desânimo e das más influências. Concede-lhes clareza moral para discernir o bem do mal, coragem para permanecerem fiéis aos teus princípios e amigos que somem virtudes ao caminho deles. Prospera a mente deles nos estudos e capacita-os para um futuro de propósito, dignidade e serviço ao próximo. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Provérbios 22:6", link: "/biblia/proverbios/22", text: "Instrui o menino no caminho em que deve andar, e até quando envelhecer não se desviará dele." },
+      { ref: "Isaías 54:13", link: "/biblia/isaias/54", text: "E todos os teus filhos serão discípulos do Senhor; e a paz de teus filhos será abundante." },
+    ],
+    reflection:
+      "Nosso maior legado aos filhos não é financeiro, mas o testemunho de um caráter íntegro e a cobertura espiritual da intercessão diária.",
+    application:
+      "Olhe nos olhos dos seus filhos hoje e expresse com clareza o quanto você os ama e acredita no propósito deles.",
+    relatedStudySlug: "familia-e-casamento-segundo-a-biblia",
+    relatedDevotionalSlug: "confianca-no-amanha",
   },
   {
     slug: "oracao-por-protecao",
     category: "Oração por proteção",
-    title: "Oração por proteção",
-    text: "Deus, tu és meu refúgio e minha fortaleza. Guarda-me em meus caminhos, livra-me do mal e dá-me discernimento diante do perigo. Que eu descanse na certeza do teu cuidado, sem medo. Em nome de Jesus, amém.",
+    categorySlug: "oracao-por-protecao",
+    title: "Oração por proteção espiritual e livramento do mal",
+    intro:
+      "Reconhecer que somos frágeis e que Deus é a nossa muralha inexpugnável renova a nossa segurança e afasta a angústia paralisante gerada pelas ameaças do mundo.",
+    text:
+      "Senhor Deus Altíssimo, tu és meu esconderijo e minha fortaleza inabalável. Coloco minha vida, minha mente e minha família debaixo da sombra das tuas asas protetoras. Livra-nos dos laços ocultos, dos perigos das ruas, da violência e das intenções maliciosas. Envia teus anjos para nos guardarem em todos os nossos caminhos e reveste nossa alma com a armadura da fé e da verdade. Descansamos sob o teu amparo fiel. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Salmos 91:1-2", link: "/biblia/salmos/91", text: "Aquele que habita no esconderijo do Altíssimo, à sombra do Onipotente descansará. Direi do Senhor: Ele é o meu Deus, o meu refúgio, a minha fortaleza, e nele confiarei." },
+      { ref: "2 Tessalonicenses 3:3", link: "/biblia/2-tessalonicenses/3", text: "Mas fiel é o Senhor, que vos confortará, e guardará do maligno." },
+    ],
+    reflection:
+      "A proteção bíblica não nos isenta de ventos fortes, mas nos ancora em rocha sólida para que não sejamos levados pelas tempestades.",
+    application:
+      "Quando sentir medo ou apreensão no trajeto diário, repita mentalmente o Salmo 91 com fé convicta na presença de Deus.",
+    relatedStudySlug: "a-armadura-de-deus-efesios-6",
+    relatedDevotionalSlug: "deus-e-nosso-refugio",
   },
   {
     slug: "oracao-por-saude",
     category: "Oração por saúde",
-    title: "Oração por saúde",
-    text: "Senhor, tu conheces meu corpo e minha alma. Peço saúde, restauração e ânimo. Abençoa os profissionais que cuidam de mim e dá-me paciência durante o tratamento. Que a tua paz sustente meu coração em cada etapa. Em nome de Jesus, amém.",
+    categorySlug: "oracao-por-saude",
+    title: "Oração por saúde física, mental e restauração",
+    intro:
+      "O cuidado integral com o ser humano abrange corpo, mente e espírito. Esta oração busca o conforto de Deus, a sabedoria para os profissionais de saúde e a serenidade durante processos de recuperação.",
+    text:
+      "Deus da vida e da restauração, tu conheces cada célula do meu corpo e os recônditos mais íntimos da minha mente. Peço a tua graça sobre a minha saúde física e mental. Alivia as dores, fortalece minha imunidade e renova o meu ânimo diário. Ilumina os médicos e profissionais que cuidam de mim, dando-lhes sabedoria e precisão. Que a tua presença seja bálsamo consolador para a minha alma em cada etapa do tratamento. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Jeremias 17:14", link: "/biblia/jeremias/17", text: "Cura-me, Senhor, e sararei; salva-me, e serei salvo; porque tu és o meu louvor." },
+      { ref: "3 João 1:2", link: "/biblia/3-joao/1", text: "Amado, desejo que te vá bem em todas as coisas, e que tenhas saúde, assim como bem vai a tua alma." },
+    ],
+    reflection:
+      "A oração pela cura caminha de mãos dadas com o respeito à ciência médica e aos hábitos diários saudáveis, ambos instrumentos sob a providência divina.",
+    application:
+      "Pratique o autocuidado com disciplina hoje: beba água, alimente-se com equilíbrio e siga rigorosamente as orientações dos profissionais de saúde.",
+    relatedStudySlug: "versiculos-para-momentos-dificeis",
+    relatedDevotionalSlug: "o-descanso-que-jesus-oferece",
   },
   {
     slug: "oracao-pelo-trabalho",
     category: "Oração pelo trabalho",
-    title: "Oração pelo trabalho",
-    text: "Pai, entrego a ti minha vida profissional. Abre portas de oportunidade, dá-me dedicação e integridade no que faço e provisão para as minhas necessidades. Ajuda-me a trabalhar com excelência e a confiar em ti nos períodos de espera. Em nome de Jesus, amém.",
+    categorySlug: "oracao-pelo-trabalho",
+    title: "Oração pelo trabalho, dedicação e provisão",
+    intro:
+      "O trabalho é uma forma nobre de honrar a Deus com nossos talentos e servir à comunidade. Esta prece consagra a rotina profissional, buscando ética, foco e sustento digno.",
+    text:
+      "Senhor Deus de provisão, consagro a ti o trabalho das minhas mãos e os esforços da minha mente. Capacita-me para realizar minhas tarefas com integridade, competência e paciência. Guarda-me de fofocas e disputas injustas no ambiente profissional e abre canais de cooperação sincera com meus colegas e superiores. Abençoa o fruto do meu esforço para que supra com dignidade as necessidades da minha casa e me permita abençoar quem precisa. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Salmos 90:17", link: "/biblia/salmos/90", text: "E seja sobre nós a formosura do Senhor nosso Deus, e confirma sobre nós a obra das nossas mãos." },
+      { ref: "Colossenses 3:23", link: "/biblia/colossenses/3", text: "E tudo quanto fizerdes, fazei-o de todo o coração, como ao Senhor, e não aos homens." },
+    ],
+    reflection:
+      "Quando enxergamos nosso trabalho como serviço prestado ao próprio Senhor, até as obrigações mais corriqueiras adquirem dignidade e significado.",
+    application:
+      "Dedique-se a uma tarefa difícil hoje sem reclamar, encarando seu esforço com excelência e postura construtiva.",
+    relatedStudySlug: "sabedoria-nos-proverbios-para-o-dia-a-dia",
+    relatedDevotionalSlug: "comece-o-dia-com-gratidao",
   },
   {
-    slug: "oracao-por-paz",
-    category: "Oração por paz",
-    title: "Oração por paz",
-    text: "Senhor, acalma o que está agitado dentro de mim. Onde há ansiedade, traz serenidade; onde há conflito, traz reconciliação. Que a tua paz guarde meu coração e minha mente. Em nome de Jesus, amém.",
+    slug: "oracao-por-portas-abertas",
+    category: "Oração por portas abertas",
+    categorySlug: "oracao-por-portas-abertas",
+    title: "Oração por portas abertas e novas oportunidades",
+    intro:
+      "Quando caminhos parecem bloqueados e o horizonte incerto, orar por direção divina desperta nossa sensibilidade para enxergar novas possibilidades com discernimento e prudência.",
+    text:
+      "Soberano Senhor, diante de quem nenhuma porta justa permanece fechada, apresento meus anseios e projetos. Tu sabes onde estão as oportunidades certas para o meu crescimento e para a provisão da minha vida. Abre caminhos onde parece haver apenas muros, concede-me simpatia aos olhos das pessoas certas e fecha com firmeza as portas que me levariam a caminhos de tropeço. Concede-me coragem para agir na hora certa com humildade e retidão. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Apocalipse 3:8", link: "/biblia/apocalipse/3", text: "Conheço as tuas obras; eis que diante de ti pus uma porta aberta, e ninguém a pode fechar." },
+      { ref: "1 Coríntios 16:9", link: "/biblia/1-corintios/16", text: "Porque uma porta grande e eficaz se me abriu; e há muitos adversários." },
+    ],
+    reflection:
+      "Muitas vezes Deus fecha certas portas por amor e livramento, para que estejamos preparados quando a porta do Seu propósito real se abrir.",
+    application:
+      "Atualize seus dados profissionais ou projetos e envie com confiança aquele currículo ou proposta que você hesitou em apresentar.",
+    relatedStudySlug: "o-que-e-fe-segundo-a-biblia",
+    relatedDevotionalSlug: "quando-a-resposta-demora",
+  },
+  {
+    slug: "oracao-por-sabedoria",
+    category: "Oração por sabedoria",
+    categorySlug: "oracao-por-sabedoria",
+    title: "Oração por sabedoria e discernimento nas decisões",
+    intro:
+      "Grandes encruzilhadas exigem mais do que raciocínio técnico: requerem a sabedoria que vem do alto, pura, pacífica, moderada e repleta de bons frutos.",
+    text:
+      "Deus de toda a sabedoria, reconheço a minha limitação e peço a tua luz para as escolhas que tenho diante de mim. Não permitas que eu me precipite pela emoção do momento nem que me paralise pelo medo do amanhã. Ilumina meu entendimento, concede-me clareza para distinguir o que é proveitoso do que é ilusório e cerca-me de bons conselhos. Que as minhas decisões tragam paz duradoura e honrem o teu nome. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Tiago 1:5", link: "/biblia/tiago/1", text: "E, se algum de vós tem falta de sabedoria, peça-a a Deus, que a todos dá liberalmente, e o não lança em rosto, e ser-lhe-á dada." },
+      { ref: "Provérbios 3:5-6", link: "/biblia/proverbios/3", text: "Confia no Senhor de todo o teu coração, e não te estribes no teu próprio entendimento. Reconhece-o em todos os teus caminhos, e ele endireitará as tuas veredas." },
+    ],
+    reflection:
+      "A sabedoria bíblica se manifesta no equilíbrio moral, na justiça das atitudes e na humildade de quem ouve antes de julgar.",
+    application:
+      "Antes de responder a um e-mail decisivo ou fechar um acordo importante hoje, faça dez segundos de silêncio pedindo discernimento a Deus.",
+    relatedStudySlug: "sabedoria-nos-proverbios-para-o-dia-a-dia",
+    relatedDevotionalSlug: "confianca-no-amanha",
+  },
+  {
+    slug: "oracao-em-momentos-dificeis",
+    category: "Oração em momentos difíceis",
+    categorySlug: "oracao-em-momentos-dificeis",
+    title: "Oração em momentos difíceis para encontrar consolo e sustento",
+    intro:
+      "A dor e o luto não precisam ser vividos no silêncio da desesperança. Clamar a Deus nas noites escuras da alma é o primeiro passo para encontrar a paz que sustenta o coração.",
+    text:
+      "Senhor meu refúgio, venho a ti quando o coração pesa e as lágrimas brotam sem aviso. Tu vês as batalhas silenciosas que enfrento e conheces a dor que nem sempre consigo traduzir em palavras. Sustenta-me quando minhas forças fraquejarem. Não permitas que a amargura crie raízes em meu interior. Lembra-me de que nenhuma noite dura para sempre e que o teu socorro é presente e fiel na angústia. Segura minhas mãos e renova a minha esperança. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Salmos 34:18", link: "/biblia/salmos/34", text: "Perto está o Senhor dos que têm o coração quebrantado, e salva os contritos de espírito." },
+      { ref: "Salmos 46:1", link: "/biblia/salmos/46", text: "Deus é o nosso refúgio e fortaleza, socorro bem presente na angústia." },
+    ],
+    reflection:
+      "A proximidade de Deus se faz mais palpável nos momentos de dor. O choro compartilhado em oração torna-se o solo de uma maturidade espiritual profunda.",
+    application:
+      "Permita-se chorar diante de Deus sem vergonha, sabendo que Ele acolhe com ternura cada lágrima sincera.",
+    relatedStudySlug: "versiculos-para-momentos-dificeis",
+    relatedDevotionalSlug: "o-descanso-que-jesus-oferece",
   },
   {
     slug: "oracao-de-agradecimento",
     category: "Oração de agradecimento",
-    title: "Oração de agradecimento",
-    text: "Deus, obrigado pela vida, pelas pessoas que me cercam e pelas bênçãos que muitas vezes passam despercebidas. Ensina-me a viver em gratidão, reconhecendo tua bondade em cada detalhe. Em nome de Jesus, amém.",
+    categorySlug: "oracao-de-agradecimento",
+    title: "Oração de agradecimento por todas as bênçãos recebidas",
+    intro:
+      "A gratidão expande a nossa capacidade de perceber o bem e nos liberta da constante insatisfação consumista, ensinando a reconhecer a mão bondosa de Deus no ordinário da vida.",
+    text:
+      "Deus bondoso e eterno, hoje não trago pedidos, mas um coração transbordante de gratidão. Obrigado pelo ar que respiro, pelo alimento em minha mesa, pelo teto que me abriga e pela saúde preservada. Agradeço pelas pessoas que me amam e pelas lições que aprendi nas dificuldades superadas. Ensina-me a manter um espírito permanentemente grato, capaz de louvar tanto nas vitórias quanto nos dias de espera. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "1 Tessalonicenses 5:18", link: "/biblia/1-tessalonicenses/5", text: "Em tudo dai graças, porque esta é a vontade de Deus em Cristo Jesus para convosco." },
+      { ref: "Salmos 103:2", link: "/biblia/salmos/103", text: "Bendize, ó minha alma, ao Senhor, e não te esqueças de nenhum de seus benefícios." },
+    ],
+    reflection:
+      "A gratidão bíblica não depende de condições perfeitas, mas da certeza inabalável de que o Senhor é bom em todo o tempo.",
+    application:
+      "Envie uma mensagem de sincero agradecimento a alguém que fez a diferença na sua vida e que você não costuma elogiar com frequência.",
+    relatedStudySlug: "o-que-e-fe-segundo-a-biblia",
+    relatedDevotionalSlug: "comece-o-dia-com-gratidao",
   },
   {
-    slug: "oracao-contra-ansiedade-e-medo",
-    category: "Oração contra ansiedade",
-    title: "Oração contra a ansiedade e o medo",
-    text: "Senhor Deus, quando a mente se agita e o peito aperta com incertezas sobre o amanhã, venho a ti buscar refúgio. Entrego cada preocupação que foge ao meu controle. Desfaz o peso da aflição com a certeza do teu cuidado paternal. Substitui o medo pela tua paz serena e ajuda-me a viver um dia de cada vez, confiando na tua provisão contínua. Em nome de Jesus, amém.",
+    slug: "oracao-de-fortalecimento",
+    category: "Oração de fortalecimento",
+    categorySlug: "oracao-de-fortalecimento",
+    title: "Oração de fortalecimento espiritual contra o desânimo",
+    intro:
+      "O cansaço da batalha moral e as cobranças do dia a dia podem desgastar a nossa determinação. Esta prece busca o refrigério do Espírito Santo para reerguer os braços cansados.",
+    text:
+      "Senhor Todo-Poderoso, reconheço que as minhas forças humanas têm limites e que frequentemente me sinto esgotado pelas demandas do caminho. Rogo que o teu Santo Espírito derrame novo fôlego sobre minha alma. Reveste-me de ânimo, determinação e firmeza de caráter. Quando o desânimo sussurrar para eu desistir, recorda-me das tuas promessas eternas e da vitória que já nos foi garantida na cruz. Permaneço de pé pela tua força. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Isaías 40:29", link: "/biblia/isaias/40", text: "Dá força ao cansado, e multiplica as forças ao que não tem nenhum vigor." },
+      { ref: "Efésios 6:10", link: "/biblia/efesios/6", text: "No demais, irmãos meus, fortalecei-vos no Senhor e na força do seu poder." },
+    ],
+    reflection:
+      "A verdadeira fortaleza do cristão não reside na ausência de fraqueza, mas no abandono completo nos braços daquele cujo poder se aperfeiçoa na nossa fragilidade.",
+    application:
+      "Identifique o ponto exato que tem roubado sua energia e estabeleça limites saudáveis de descanso e oração.",
+    relatedStudySlug: "a-armadura-de-deus-efesios-6",
+    relatedDevotionalSlug: "renovo-nas-tribulacoes",
   },
   {
-    slug: "oracao-pelos-filhos-e-juventude",
-    category: "Oração pelos filhos",
-    title: "Oração pelos filhos e novas gerações",
-    text: "Pai amoroso, coloco meus filhos e a juventude sob a tua proteção. Guarda o coração deles das armadilhas do mundo, das más influências e do desânimo. Concede-lhes discernimento, amigos leais e amor pela tua verdade. Que cresçam em sabedoria, graça e respeito ao próximo, desenvolvendo um caráter íntegro e propósito de vida alinhado aos teus ensinamentos. Em nome de Jesus, amém.",
-  },
-  {
-    slug: "oracao-de-libertacao-e-perdao",
-    category: "Oração por perdão",
-    title: "Oração por cura interior e perdão",
-    text: "Senhor, perdoa meus erros e limpa meu coração de toda mágoa acumulada. Reconheço que guardar ressentimento apenas fere a minha própria alma. Decido hoje, pela tua graça, perdoar aqueles que me ofenderam e soltar qualquer desejo de retaliação. Restaura minhas emoções, cura feridas do passado e faz brotar em mim um espírito manso e acolhedor. Em nome de Jesus, amém.",
-  },
-  {
-    slug: "oracao-por-sabedoria-nas-decisoes",
-    category: "Oração por sabedoria",
-    title: "Oração por sabedoria e discernimento",
-    text: "Deus de infinita sabedoria, coloco diante de ti as escolhas e encruzilhadas que tenho pela frente. Ilumina meu entendimento para que eu não decida no calor da emoção nem na pressa da ansiedade. Dá-me clareza para distinguir o que é lícito do que é conveniente, e coragem para fazer o que é justo e agradável aos teus olhos. Em nome de Jesus, amém.",
+    slug: "oracao-de-esperanca",
+    category: "Oração de esperança",
+    categorySlug: "oracao-de-esperanca",
+    title: "Oração de esperança para renovar a confiança no futuro",
+    intro:
+      "A esperança bíblica não é mera expectativa vaga, mas uma âncora firme da alma fincada na imutabilidade do caráter divino e nas Suas promessas de redenção.",
+    text:
+      "Deus da esperança, que enches os corações de alegria e paz na fé, dissipa as nuvens de pessimismo que obscurecem o meu olhar sobre o futuro. Ajuda-me a lembrar que o Senhor tem o controle de todos os tempos e que a minha história está guardada em tuas mãos. Que a chama da santa esperança aqueça meus passos, inspire minhas metas e me impulsione a semear amor e perseverança todos os dias. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Romanos 15:13", link: "/biblia/romanos/15", text: "Ora o Deus de esperança vos encha de todo o gozo e paz em crença, para que abundeis em esperança pela virtude do Espírito Santo." },
+      { ref: "Hebreus 6:19", link: "/biblia/hebreus/6", text: "A qual temos como âncora da alma, segura e firme." },
+    ],
+    reflection:
+      "A esperança que brota da fé transforma o presente: ela nos capacita a enfrentar o sofrimento sabendo que ele é passageiro comparado à glória porvir.",
+    application:
+      "Escreva um versículo de esperança e cole-o em local visível no seu espaço de trabalho ou no espelho do banheiro.",
+    relatedStudySlug: "versiculos-para-momentos-dificeis",
+    relatedDevotionalSlug: "quando-a-resposta-demora",
   },
 ];
 
 export const getStudy = (slug: string) => STUDIES.find((s) => s.slug === slug);
 export const getDevotional = (slug: string) => DEVOTIONALS.find((d) => d.slug === slug);
+export const getPrayer = (slug: string) => PRAYERS.find((p) => p.slug === slug);
+

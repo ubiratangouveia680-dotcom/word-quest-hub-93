@@ -31,10 +31,12 @@ export const Route = createFileRoute("/pergunte")({
 });
 
 const EXAMPLES = [
-  "Explique João 3:16.",
-  "Qual o contexto do Salmo 23?",
+  "Como fortalecer minha fé?",
+  "O que a Bíblia ensina sobre perdão?",
+  "Como lidar com momentos difíceis?",
   "Quais versículos falam sobre esperança?",
-  "Resuma o livro de Romanos.",
+  "Explique o Salmo 23 versículo por versículo",
+  "O que significa a armadura de Deus em Efésios 6?",
 ];
 
 interface Message {
@@ -54,7 +56,7 @@ function AskPage() {
     onError: () =>
       setMessages((m) => [
         ...m,
-        { role: "assistant", content: "Não foi possível responder agora. Tente novamente." },
+        { role: "assistant", content: "Não foi possível consultar agora. Por favor, tente novamente em instantes." },
       ]),
   });
 
@@ -78,49 +80,76 @@ function AskPage() {
   return (
     <SiteLayout>
       <div className="mx-auto w-full max-w-3xl px-4 py-8">
-        <h1 className="font-display text-3xl font-semibold">Pergunte sobre a Bíblia</h1>
-        <p className="mt-2 text-muted-foreground">
-          Respostas geradas por inteligência artificial com base em contexto bíblico. Podem conter
-          interpretações; confira sempre o texto nas Escrituras.
+        <h1 className="font-display text-3xl font-semibold sm:text-4xl">Pergunte à Bíblia</h1>
+        <p className="mt-2 text-muted-foreground leading-relaxed">
+          Tire dúvidas sobre passagens, temas teológicos, contexto histórico e referências bíblicas.
         </p>
+
+        {/* Nota pedagógica e aviso de transparência */}
+        <div className="mt-5 rounded-lg border border-gold/40 bg-gold-soft/50 p-4 text-xs text-foreground/80 leading-relaxed">
+          <p className="font-semibold text-foreground">Aviso sobre o uso de inteligência pedagógica:</p>
+          <p className="mt-1">
+            As respostas apresentadas nesta ferramenta têm finalidade exclusivamente educativa e reflexiva, baseadas
+            em contextos bíblicos. O conteúdo sintetizado reflete explicações e interpretações históricas e nunca deve
+            ser confundido com citações literais das Sagradas Escrituras. Recomendamos sempre a verificação direta
+            nos capítulos completos da Bíblia.
+          </p>
+        </div>
 
         <AdBanner className="mt-6" />
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {EXAMPLES.map((e) => (
-            <button
-              key={e}
-              type="button"
-              onClick={() => send(e)}
-              className="rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground"
-            >
-              {e}
-            </button>
-          ))}
+        <div className="mt-6">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Perguntas frequentes sugeridas:</p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {EXAMPLES.map((e) => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => send(e)}
+                className="rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-gold hover:text-foreground"
+              >
+                {e}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="mt-6 space-y-3">
+        <div className="mt-8 space-y-4">
+          {messages.length === 0 && (
+            <div className="surface rounded-xl p-8 text-center text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">Nenhuma conversa iniciada ainda.</p>
+              <p className="mt-1">Clique em um dos exemplos sugeridos acima ou digite sua pergunta abaixo.</p>
+            </div>
+          )}
+
           {messages.map((m, i) => (
             <div
               key={i}
               className={
                 m.role === "user"
-                  ? "ml-auto max-w-[85%] rounded-2xl bg-primary px-4 py-3 text-sm text-primary-foreground"
-                  : "surface max-w-[95%] whitespace-pre-wrap p-4 text-sm"
+                  ? "ml-auto max-w-[85%] rounded-2xl bg-primary px-4 py-3 text-sm text-primary-foreground shadow-xs"
+                  : "surface max-w-[95%] rounded-xl border border-border/70 p-5 text-sm leading-relaxed whitespace-pre-wrap"
               }
             >
+              {m.role === "assistant" && (
+                <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gold">
+                  <span>Explicação Bíblica</span>
+                </div>
+              )}
               {m.content}
             </div>
           ))}
+
           {mutation.isPending && (
-            <div className="surface max-w-[95%] p-4 text-sm text-muted-foreground">
-              Consultando…
+            <div className="surface flex items-center gap-2 max-w-[95%] rounded-xl p-4 text-sm text-muted-foreground">
+              <div className="size-3 animate-spin rounded-full border-2 border-gold border-t-transparent" />
+              <span>Consultando Escrituras e elaborando explicação...</span>
             </div>
           )}
         </div>
 
         <form
-          className="sticky bottom-20 mt-6 flex gap-2 lg:bottom-4"
+          className="sticky bottom-20 mt-8 flex gap-2 rounded-xl bg-background/90 backdrop-blur lg:bottom-4 pt-2"
           onSubmit={(e) => {
             e.preventDefault();
             send(input);
@@ -129,11 +158,11 @@ function AskPage() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Escreva sua pergunta sobre a Bíblia..."
-            className="h-12 bg-background"
-            aria-label="Sua pergunta"
+            placeholder="Digite sua pergunta sobre a Bíblia..."
+            className="h-12 bg-background shadow-xs"
+            aria-label="Sua pergunta sobre a Bíblia"
           />
-          <Button type="submit" className="h-12" disabled={mutation.isPending}>
+          <Button type="submit" className="h-12 px-5" disabled={mutation.isPending || !input.trim()}>
             <Send className="size-4" />
           </Button>
         </form>
@@ -141,3 +170,4 @@ function AskPage() {
     </SiteLayout>
   );
 }
+

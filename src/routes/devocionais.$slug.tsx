@@ -94,7 +94,26 @@ function DevotionalPage() {
               ))}
             </div>
           </section>
+
+          <section className="mt-8 rounded-xl border border-border/70 bg-card p-5">
+            <h3 className="font-display text-base font-semibold">Fortaleça sua comunhão diária</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Continue sua caminhada diária com nossos estudos e orações bíblicas:
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <Link to="/estudos" className="rounded-full border border-border px-3 py-1 text-primary hover:bg-accent">
+                → Explorar Estudos Bíblicos
+              </Link>
+              <Link to="/oracoes" className="rounded-full border border-border px-3 py-1 text-primary hover:bg-accent">
+                → Orações da Manhã e Noite
+              </Link>
+              <Link to="/versiculo-do-dia" className="rounded-full border border-border px-3 py-1 text-primary hover:bg-accent">
+                → Versículo do Dia
+              </Link>
+            </div>
+          </section>
         </article>
+
         <aside>
           <AdDesktop />
         </aside>

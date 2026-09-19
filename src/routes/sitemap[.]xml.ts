@@ -18,7 +18,8 @@ export const Route = createFileRoute("/sitemap.xml")({
           { loc: "/privacidade", priority: "0.3" },
           { loc: "/termos", priority: "0.3" },
           { loc: "/cookies", priority: "0.3" },
-          { loc: "/contato", priority: "0.3" },
+          { loc: "/sobre", priority: "0.5" },
+          { loc: "/contato", priority: "0.4" },
         ];
 
         for (const c of STUDY_CATEGORIES) {
