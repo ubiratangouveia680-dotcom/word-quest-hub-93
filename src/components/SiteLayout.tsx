@@ -88,7 +88,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                   <Menu className="size-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72">
+              <SheetContent side="right" className="w-72 flex flex-col justify-between">
                 <nav className="mt-8 flex flex-col gap-1 px-2">
                   {NAV.map((item) => (
                     <Link
@@ -107,15 +107,18 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                     Meu Perfil
                   </Link>
                 </nav>
+                <div className="border-t border-border p-4 text-center text-xs text-muted-foreground">
+                  Desenvolvido por <span className="font-medium text-foreground">Ubiratan Gouveia</span>
+                </div>
               </SheetContent>
             </Sheet>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 pb-20 lg:pb-0">{children}</main>
+      <main className="flex-1">{children}</main>
 
-      <footer className="border-t border-border bg-cream">
+      <footer className="border-t border-border bg-cream pb-24 lg:pb-0">
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="font-display text-lg font-semibold">Bíblia Online</p>
@@ -151,10 +154,10 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             </ul>
           </div>
         </div>
-        <div className="border-t border-border py-4 text-center text-xs text-muted-foreground space-y-1">
+        <div className="border-t border-border py-4 text-center text-xs text-muted-foreground space-y-1.5 px-4">
           <p>© {new Date().getFullYear()} Bíblia Online. Todos os direitos reservados.</p>
-          <p className="text-[11px] text-muted-foreground/80">
-            Desenvolvido por <span className="font-medium text-foreground/90">Ubiratan Gouveia</span>
+          <p className="text-xs font-medium text-foreground">
+            Desenvolvido por <span className="font-semibold text-primary">Ubiratan Gouveia</span>
           </p>
         </div>
       </footer>
