@@ -316,6 +316,37 @@ function ProfilePage() {
           )}
         </section>
 
+        {/* SEÇÃO DA COMUNIDADE WORD QUEST */}
+        {isAuthenticated && (
+          <section className="surface mt-5 p-5 rounded-xl border border-border">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                👥 Comunidade Word Quest
+              </h2>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/comunidade">Acessar Comunidade</Link>
+              </Button>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Participe de conversas edificantes, tire dúvidas bíblicas e abençoe outros irmãos em Cristo.
+            </p>
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="rounded-lg bg-accent/40 p-3 text-center border border-border/60">
+                <span className="block text-xl font-bold text-foreground">📖 Fórum</span>
+                <span className="text-xs text-muted-foreground">10 Categorias Ativas</span>
+              </div>
+              <div className="rounded-lg bg-accent/40 p-3 text-center border border-border/60">
+                <span className="block text-xl font-bold text-primary">🕊️ Emojis</span>
+                <span className="text-xs text-muted-foreground">Reações Cristãs</span>
+              </div>
+              <div className="col-span-2 sm:col-span-1 rounded-lg bg-accent/40 p-3 text-center border border-border/60">
+                <span className="block text-xl font-bold text-gold">✅ Respostas</span>
+                <span className="text-xs text-muted-foreground">Edificação Mútua</span>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* SEÇÃO DE FAVORITOS */}
         <section className="surface mt-5 p-5 rounded-xl border border-border">
           <div className="flex items-center justify-between">

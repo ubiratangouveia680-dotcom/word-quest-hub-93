@@ -1,14 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import { BookOpen, Heart, Home, Menu, MessageCircle, Moon, Search, Sun, User } from "lucide-react";
+import { BookOpen, Heart, Home, Menu, Moon, Search, Sun, User, Users } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useSettings } from "@/lib/storage";
 import { useAuth } from "@/lib/auth-context";
-import { useUnreadChatCount } from "@/lib/chat";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const NAV = [
   { to: "/biblia", label: "Bíblia" },
+  { to: "/comunidade", label: "Comunidade" },
   { to: "/versiculo-do-dia", label: "Versículo do Dia" },
   { to: "/versiculos", label: "Versículos" },
   { to: "/estudos", label: "Estudos" },
@@ -20,7 +20,7 @@ const NAV = [
 const BOTTOM = [
   { to: "/", label: "Início", icon: Home },
   { to: "/biblia", label: "Bíblia", icon: BookOpen },
-  { to: "/chat", label: "Chat", icon: MessageCircle },
+  { to: "/comunidade", label: "Comunidade", icon: Users },
   { to: "/favoritos", label: "Favoritos", icon: Heart },
   { to: "/perfil", label: "Perfil", icon: User },
 ] as const;
@@ -61,7 +61,6 @@ function Logo() {
 export function SiteLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const { user, profile, isAuthenticated } = useAuth();
-  const unreadChatCount = useUnreadChatCount(user?.id);
 
   const userDisplayName = profile?.name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Perfil";
 
@@ -89,18 +88,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </Link>
             </Button>
             <ThemeToggle />
-
-            {/* Desktop Chat button */}
-            <Button asChild variant="ghost" size="icon" className="relative hidden sm:inline-flex" aria-label="Mensagens">
-              <Link to="/chat">
-                <MessageCircle className="size-4" />
-                {unreadChatCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-                    {unreadChatCount > 9 ? "9+" : unreadChatCount}
-                  </span>
-                )}
-              </Link>
-            </Button>
 
             {/* Desktop Auth indicator / button */}
             <div className="hidden lg:flex items-center ml-1">
@@ -177,19 +164,12 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                       </Link>
                     ))}
                     <Link
-                      to="/chat"
+                      to="/comunidade"
                       onClick={() => setOpen(false)}
                       className="rounded-md px-3 py-2.5 text-base hover:bg-accent flex items-center justify-between"
                     >
-                      <span>Mensagens & Chat</span>
-                      <div className="flex items-center gap-1.5">
-                        {unreadChatCount > 0 && (
-                          <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                            {unreadChatCount}
-                          </span>
-                        )}
-                        <MessageCircle className="size-4 text-gold" />
-                      </div>
+                      <span>👥 Comunidade</span>
+                      <Users className="size-4 text-primary" />
                     </Link>
                     <Link
                       to="/favoritos"
@@ -233,6 +213,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             <p className="text-sm font-semibold">Navegação Principal</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               <li><Link to="/biblia" className="hover:text-foreground">Bíblia Online</Link></li>
+              <li><Link to="/comunidade" className="hover:text-foreground">👥 Comunidade</Link></li>
               <li><Link to="/biblia/antigo-testamento" className="hover:text-foreground">Antigo Testamento</Link></li>
               <li><Link to="/biblia/novo-testamento" className="hover:text-foreground">Novo Testamento</Link></li>
               <li><Link to="/versiculo-do-dia" className="hover:text-foreground">Versículo do Dia</Link></li>
@@ -245,6 +226,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <div>
             <p className="text-sm font-semibold">Ferramentas & Recursos</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/comunidade" className="hover:text-foreground">Fórum da Comunidade</Link></li>
               <li><Link to="/busca" search={{ q: "" }} className="hover:text-foreground">Busca na Bíblia</Link></li>
               <li><Link to="/favoritos" className="hover:text-foreground">Meus Favoritos</Link></li>
               <li><Link to="/pergunte" search={{ q: "" }} className="hover:text-foreground">Pergunte à Bíblia</Link></li>
@@ -281,14 +263,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 className="flex flex-col items-center gap-1 py-2 text-[11px] text-muted-foreground relative"
                 activeProps={{ className: "text-primary font-medium" }}
               >
-                <div className="relative">
-                  <item.icon className="size-5" />
-                  {item.to === "/chat" && unreadChatCount > 0 && (
-                    <span className="absolute -top-1 -right-2 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-                      {unreadChatCount > 9 ? "9+" : unreadChatCount}
-                    </span>
-                  )}
-                </div>
+                <item.icon className="size-5" />
                 {item.label}
               </Link>
             </li>

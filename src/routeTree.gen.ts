@@ -14,7 +14,6 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdsDottxtRouteImport } from './routes/ads[.]txt'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BuscaRouteImport } from './routes/busca'
-import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
@@ -34,6 +33,8 @@ import { Route as VersiculosPorTemaRouteImport } from './routes/versiculos-por-t
 import { Route as BibliaIndexRouteImport } from './routes/biblia.index'
 import { Route as BibliaAntigoTestamentoRouteImport } from './routes/biblia.antigo-testamento'
 import { Route as BibliaNovoTestamentoRouteImport } from './routes/biblia.novo-testamento'
+import { Route as ComunidadeIndexRouteImport } from './routes/comunidade.index'
+import { Route as ComunidadeIdRouteImport } from './routes/comunidade.$id'
 import { Route as DevocionaisIndexRouteImport } from './routes/devocionais.index'
 import { Route as DevocionaisSlugRouteImport } from './routes/devocionais.$slug'
 import { Route as EstudosIndexRouteImport } from './routes/estudos.index'
@@ -74,11 +75,6 @@ const AuthRoute = AuthRouteImport.update({
 const BuscaRoute = BuscaRouteImport.update({
   id: '/busca',
   path: '/busca',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChatRoute = ChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContatoRoute = ContatoRouteImport.update({
@@ -176,6 +172,16 @@ const BibliaNovoTestamentoRoute = BibliaNovoTestamentoRouteImport.update({
   path: '/biblia/novo-testamento',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComunidadeIndexRoute = ComunidadeIndexRouteImport.update({
+  id: '/comunidade/',
+  path: '/comunidade/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComunidadeIdRoute = ComunidadeIdRouteImport.update({
+  id: '/comunidade/$id',
+  path: '/comunidade/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevocionaisIndexRoute = DevocionaisIndexRouteImport.update({
   id: '/devocionais/',
   path: '/devocionais/',
@@ -263,7 +269,6 @@ export interface FileRoutesByFullPath {
   '/ads.txt': typeof AdsDottxtRoute
   '/auth': typeof AuthRoute
   '/busca': typeof BuscaRoute
-  '/chat': typeof ChatRoute
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
@@ -282,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/versiculos-por-tema': typeof VersiculosPorTemaRouteWithChildren
   '/biblia/antigo-testamento': typeof BibliaAntigoTestamentoRoute
   '/biblia/novo-testamento': typeof BibliaNovoTestamentoRoute
+  '/comunidade/$id': typeof ComunidadeIdRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
   '/oracoes/$slug': typeof OracoesSlugRoute
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/versiculos-por-tema/$slug': typeof VersiculosPorTemaSlugRoute
   '/versiculos/$slug': typeof VersiculosSlugRoute
   '/biblia/': typeof BibliaIndexRoute
+  '/comunidade/': typeof ComunidadeIndexRoute
   '/devocionais/': typeof DevocionaisIndexRoute
   '/estudos/': typeof EstudosIndexRoute
   '/oracoes/': typeof OracoesIndexRoute
@@ -306,7 +313,6 @@ export interface FileRoutesByTo {
   '/ads.txt': typeof AdsDottxtRoute
   '/auth': typeof AuthRoute
   '/busca': typeof BuscaRoute
-  '/chat': typeof ChatRoute
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
@@ -321,6 +327,7 @@ export interface FileRoutesByTo {
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
   '/biblia/antigo-testamento': typeof BibliaAntigoTestamentoRoute
   '/biblia/novo-testamento': typeof BibliaNovoTestamentoRoute
+  '/comunidade/$id': typeof ComunidadeIdRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
   '/oracoes/$slug': typeof OracoesSlugRoute
@@ -328,6 +335,7 @@ export interface FileRoutesByTo {
   '/versiculos-por-tema/$slug': typeof VersiculosPorTemaSlugRoute
   '/versiculos/$slug': typeof VersiculosSlugRoute
   '/biblia': typeof BibliaIndexRoute
+  '/comunidade': typeof ComunidadeIndexRoute
   '/devocionais': typeof DevocionaisIndexRoute
   '/estudos': typeof EstudosIndexRoute
   '/oracoes': typeof OracoesIndexRoute
@@ -346,7 +354,6 @@ export interface FileRoutesById {
   '/ads.txt': typeof AdsDottxtRoute
   '/auth': typeof AuthRoute
   '/busca': typeof BuscaRoute
-  '/chat': typeof ChatRoute
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
@@ -365,6 +372,7 @@ export interface FileRoutesById {
   '/versiculos-por-tema': typeof VersiculosPorTemaRouteWithChildren
   '/biblia/antigo-testamento': typeof BibliaAntigoTestamentoRoute
   '/biblia/novo-testamento': typeof BibliaNovoTestamentoRoute
+  '/comunidade/$id': typeof ComunidadeIdRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
   '/oracoes/$slug': typeof OracoesSlugRoute
@@ -372,6 +380,7 @@ export interface FileRoutesById {
   '/versiculos-por-tema/$slug': typeof VersiculosPorTemaSlugRoute
   '/versiculos/$slug': typeof VersiculosSlugRoute
   '/biblia/': typeof BibliaIndexRoute
+  '/comunidade/': typeof ComunidadeIndexRoute
   '/devocionais/': typeof DevocionaisIndexRoute
   '/estudos/': typeof EstudosIndexRoute
   '/oracoes/': typeof OracoesIndexRoute
@@ -391,7 +400,6 @@ export interface FileRouteTypes {
     | '/ads.txt'
     | '/auth'
     | '/busca'
-    | '/chat'
     | '/contato'
     | '/cookies'
     | '/favoritos'
@@ -410,6 +418,7 @@ export interface FileRouteTypes {
     | '/versiculos-por-tema'
     | '/biblia/antigo-testamento'
     | '/biblia/novo-testamento'
+    | '/comunidade/$id'
     | '/devocionais/$slug'
     | '/estudos/$slug'
     | '/oracoes/$slug'
@@ -417,6 +426,7 @@ export interface FileRouteTypes {
     | '/versiculos-por-tema/$slug'
     | '/versiculos/$slug'
     | '/biblia/'
+    | '/comunidade/'
     | '/devocionais/'
     | '/estudos/'
     | '/oracoes/'
@@ -434,7 +444,6 @@ export interface FileRouteTypes {
     | '/ads.txt'
     | '/auth'
     | '/busca'
-    | '/chat'
     | '/contato'
     | '/cookies'
     | '/favoritos'
@@ -449,6 +458,7 @@ export interface FileRouteTypes {
     | '/versiculo-do-dia'
     | '/biblia/antigo-testamento'
     | '/biblia/novo-testamento'
+    | '/comunidade/$id'
     | '/devocionais/$slug'
     | '/estudos/$slug'
     | '/oracoes/$slug'
@@ -456,6 +466,7 @@ export interface FileRouteTypes {
     | '/versiculos-por-tema/$slug'
     | '/versiculos/$slug'
     | '/biblia'
+    | '/comunidade'
     | '/devocionais'
     | '/estudos'
     | '/oracoes'
@@ -473,7 +484,6 @@ export interface FileRouteTypes {
     | '/ads.txt'
     | '/auth'
     | '/busca'
-    | '/chat'
     | '/contato'
     | '/cookies'
     | '/favoritos'
@@ -492,6 +502,7 @@ export interface FileRouteTypes {
     | '/versiculos-por-tema'
     | '/biblia/antigo-testamento'
     | '/biblia/novo-testamento'
+    | '/comunidade/$id'
     | '/devocionais/$slug'
     | '/estudos/$slug'
     | '/oracoes/$slug'
@@ -499,6 +510,7 @@ export interface FileRouteTypes {
     | '/versiculos-por-tema/$slug'
     | '/versiculos/$slug'
     | '/biblia/'
+    | '/comunidade/'
     | '/devocionais/'
     | '/estudos/'
     | '/oracoes/'
@@ -517,7 +529,6 @@ export interface RootRouteChildren {
   AdsDottxtRoute: typeof AdsDottxtRoute
   AuthRoute: typeof AuthRoute
   BuscaRoute: typeof BuscaRoute
-  ChatRoute: typeof ChatRoute
   ContatoRoute: typeof ContatoRoute
   CookiesRoute: typeof CookiesRoute
   FavoritosRoute: typeof FavoritosRoute
@@ -536,9 +547,11 @@ export interface RootRouteChildren {
   VersiculosPorTemaRoute: typeof VersiculosPorTemaRouteWithChildren
   BibliaAntigoTestamentoRoute: typeof BibliaAntigoTestamentoRoute
   BibliaNovoTestamentoRoute: typeof BibliaNovoTestamentoRoute
+  ComunidadeIdRoute: typeof ComunidadeIdRoute
   DevocionaisSlugRoute: typeof DevocionaisSlugRoute
   EstudosSlugRoute: typeof EstudosSlugRoute
   BibliaIndexRoute: typeof BibliaIndexRoute
+  ComunidadeIndexRoute: typeof ComunidadeIndexRoute
   DevocionaisIndexRoute: typeof DevocionaisIndexRoute
   EstudosIndexRoute: typeof EstudosIndexRoute
   EstudosCategoriaSlugRoute: typeof EstudosCategoriaSlugRoute
@@ -582,13 +595,6 @@ declare module '@tanstack/react-router' {
       path: '/busca'
       fullPath: '/busca'
       preLoaderRoute: typeof BuscaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chat': {
-      id: '/chat'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contato': {
@@ -722,6 +728,20 @@ declare module '@tanstack/react-router' {
       path: '/biblia/novo-testamento'
       fullPath: '/biblia/novo-testamento'
       preLoaderRoute: typeof BibliaNovoTestamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comunidade/': {
+      id: '/comunidade/'
+      path: '/comunidade'
+      fullPath: '/comunidade/'
+      preLoaderRoute: typeof ComunidadeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comunidade/$id': {
+      id: '/comunidade/$id'
+      path: '/comunidade/$id'
+      fullPath: '/comunidade/$id'
+      preLoaderRoute: typeof ComunidadeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/devocionais/': {
@@ -897,7 +917,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdsDottxtRoute: AdsDottxtRoute,
   AuthRoute: AuthRoute,
   BuscaRoute: BuscaRoute,
-  ChatRoute: ChatRoute,
   ContatoRoute: ContatoRoute,
   CookiesRoute: CookiesRoute,
   FavoritosRoute: FavoritosRoute,
@@ -916,9 +935,11 @@ const rootRouteChildren: RootRouteChildren = {
   VersiculosPorTemaRoute: VersiculosPorTemaRouteWithChildren,
   BibliaAntigoTestamentoRoute: BibliaAntigoTestamentoRoute,
   BibliaNovoTestamentoRoute: BibliaNovoTestamentoRoute,
+  ComunidadeIdRoute: ComunidadeIdRoute,
   DevocionaisSlugRoute: DevocionaisSlugRoute,
   EstudosSlugRoute: EstudosSlugRoute,
   BibliaIndexRoute: BibliaIndexRoute,
+  ComunidadeIndexRoute: ComunidadeIndexRoute,
   DevocionaisIndexRoute: DevocionaisIndexRoute,
   EstudosIndexRoute: EstudosIndexRoute,
   EstudosCategoriaSlugRoute: EstudosCategoriaSlugRoute,

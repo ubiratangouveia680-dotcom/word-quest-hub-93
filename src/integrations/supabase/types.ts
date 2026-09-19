@@ -206,96 +206,276 @@ export type Database = {
         }
         Relationships: []
       }
-      conversations: {
+      community_categories: {
         Row: {
           created_at: string
+          description: string | null
+          icon: string
           id: string
-          updated_at: string
+          name: string
+          order_index: number
         }
         Insert: {
           created_at?: string
-          id?: string
-          updated_at?: string
+          description?: string | null
+          icon: string
+          id: string
+          name: string
+          order_index?: number
         }
         Update: {
           created_at?: string
+          description?: string | null
+          icon?: string
           id?: string
-          updated_at?: string
+          name?: string
+          order_index?: number
         }
         Relationships: []
       }
-      conversation_participants: {
+      questions: {
         Row: {
-          conversation_id: string
+          answers_count: number
+          body: string
+          category_id: string
+          created_at: string
           id: string
-          joined_at: string
-          last_read_at: string
+          is_answered: boolean
+          accepted_answer_id: string | null
+          likes_count: number
+          title: string
+          updated_at: string
+          user_id: string
+          verse_reference: string | null
+          views_count: number
+        }
+        Insert: {
+          answers_count?: number
+          body: string
+          category_id: string
+          created_at?: string
+          id?: string
+          is_answered?: boolean
+          accepted_answer_id?: string | null
+          likes_count?: number
+          title: string
+          updated_at?: string
+          user_id: string
+          verse_reference?: string | null
+          views_count?: number
+        }
+        Update: {
+          answers_count?: number
+          body?: string
+          category_id?: string
+          created_at?: string
+          id?: string
+          is_answered?: boolean
+          accepted_answer_id?: string | null
+          likes_count?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+          verse_reference?: string | null
+          views_count?: number
+        }
+        Relationships: []
+      }
+      answers: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_accepted: boolean
+          likes_count: number
+          parent_id: string | null
+          question_id: string
+          updated_at: string
+          user_id: string
+          verse_reference: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_accepted?: boolean
+          likes_count?: number
+          parent_id?: string | null
+          question_id: string
+          updated_at?: string
+          user_id: string
+          verse_reference?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_accepted?: boolean
+          likes_count?: number
+          parent_id?: string | null
+          question_id?: string
+          updated_at?: string
+          user_id?: string
+          verse_reference?: string | null
+        }
+        Relationships: []
+      }
+      question_likes: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
           user_id: string
         }
         Insert: {
-          conversation_id: string
+          created_at?: string
           id?: string
-          joined_at?: string
-          last_read_at?: string
+          question_id: string
           user_id: string
         }
         Update: {
-          conversation_id?: string
+          created_at?: string
           id?: string
-          joined_at?: string
-          last_read_at?: string
+          question_id?: string
           user_id?: string
         }
         Relationships: []
       }
-      messages: {
+      answer_likes: {
         Row: {
-          content: string
-          conversation_id: string
+          answer_id: string
           created_at: string
-          deleted_at: string | null
           id: string
-          read_at: string | null
-          sender_id: string
+          user_id: string
         }
         Insert: {
-          content: string
-          conversation_id: string
+          answer_id: string
           created_at?: string
-          deleted_at?: string | null
           id?: string
-          read_at?: string | null
-          sender_id: string
+          user_id: string
         }
         Update: {
-          content?: string
-          conversation_id?: string
+          answer_id?: string
           created_at?: string
-          deleted_at?: string | null
           id?: string
-          read_at?: string | null
-          sender_id?: string
+          user_id?: string
         }
         Relationships: []
       }
-      user_blocks: {
+      reactions: {
         Row: {
-          blocked_id: string
-          blocker_id: string
           created_at: string
+          emoji: string
           id: string
+          reaction_name: string
+          target_id: string
+          target_type: string
+          user_id: string
         }
         Insert: {
-          blocked_id: string
-          blocker_id: string
           created_at?: string
+          emoji: string
           id?: string
+          reaction_name: string
+          target_id: string
+          target_type: string
+          user_id: string
         }
         Update: {
-          blocked_id?: string
-          blocker_id?: string
+          created_at?: string
+          emoji?: string
+          id?: string
+          reaction_name?: string
+          target_id?: string
+          target_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          actor_id: string
+          answer_id: string | null
+          created_at: string
+          id: string
+          message: string
+          question_id: string
+          read: boolean
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          answer_id?: string | null
           created_at?: string
           id?: string
+          message: string
+          question_id: string
+          read?: boolean
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          answer_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          question_id?: string
+          read?: boolean
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      community_reports: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string
+          reporter_id: string
+          status: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason: string
+          reporter_id: string
+          status?: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string
+          reporter_id?: string
+          status?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
+      community_blocked_users: {
+        Row: {
+          blocked_user_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          blocked_user_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          blocked_user_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
