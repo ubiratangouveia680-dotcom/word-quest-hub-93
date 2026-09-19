@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2, Mail, Send } from "lucide-react";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/contato")({
@@ -35,53 +37,117 @@ const SUBJECTS = [
   "Outro assunto",
 ];
 
+export function sanitizeText(text: string): string {
+  return text
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/javascript:/gi, "")
+    .replace(/onload=/gi, "")
+    .replace(/onerror=/gi, "");
+}
+
 function ContactPage() {
+  const { user, profile, isAuthenticated } = useAuth();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState(SUBJECTS[0]!);
   const [message, setMessage] = useState("");
+  const [honeypot, setHoneypot] = useState(""); // Bot-trap anti-spam
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Preenchimento automático para usuários autenticados
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (!name) {
+        const autoName = profile?.name || user?.user_metadata?.name || "";
+        if (autoName) setName(autoName);
+      }
+      if (!email && user?.email) {
+        setEmail(user.email);
+      }
+    }
+  }, [isAuthenticated, user, profile]);
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!name.trim() || name.trim().length < 2) {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedMessage = message.trim();
+
+    if (!trimmedName || trimmedName.length < 2) {
       errs.name = "Por favor, informe seu nome (mínimo 2 caracteres).";
     }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       errs.email = "Por favor, informe um endereço de e-mail válido.";
     }
-    if (!message.trim() || message.trim().length < 10) {
+    if (!trimmedMessage || trimmedMessage.length < 10) {
       errs.message = "Sua mensagem deve conter no mínimo 10 caracteres.";
+    } else if (trimmedMessage.length > 5000) {
+      errs.message = "A mensagem excede o limite máximo de 5.000 caracteres.";
     }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 1. Proteção anti-bot (Honeypot)
+    if (honeypot.trim().length > 0) {
+      setSent(true);
+      return;
+    }
+
+    // 2. Validação dos campos
     if (!validate()) {
       toast.error("Por favor, preencha todos os campos obrigatórios corretamente.");
       return;
     }
 
-    // Armazenamento local seguro sem fingir disparo de SMTP inexistente
-    try {
-      const stored = JSON.parse(localStorage.getItem("biblia_contact_drafts") || "[]");
-      stored.push({
-        name,
-        email,
-        subject,
-        message,
-        date: new Date().toISOString(),
-      });
-      localStorage.setItem("biblia_contact_drafts", JSON.stringify(stored));
-    } catch {
-      // Falha silenciosa de storage
+    // 3. Prevenção de múltiplos envios consecutivos (Cooldown anti-spam de 20s)
+    const lastSentAt = localStorage.getItem("bo:last_contact_sent");
+    if (lastSentAt) {
+      const diff = Date.now() - parseInt(lastSentAt, 10);
+      if (diff < 20000) {
+        toast.error("Por favor, aguarde alguns segundos antes de enviar outra mensagem.");
+        return;
+      }
     }
 
-    setSent(true);
-    toast.success("Mensagem registrada com sucesso!");
+    setSubmitting(true);
+
+    try {
+      const cleanName = sanitizeText(name.trim());
+      const cleanEmail = sanitizeText(email.trim());
+      const cleanSubject = sanitizeText(subject.trim());
+      const cleanMessage = sanitizeText(message.trim());
+
+      const { error } = await supabase.from("contact_messages").insert({
+        name: cleanName,
+        email: cleanEmail,
+        subject: cleanSubject,
+        message: cleanMessage,
+        user_id: user?.id || null,
+        status: "pending",
+      });
+
+      if (error) {
+        console.error("Erro ao salvar mensagem no Supabase:", error);
+        toast.error("Não foi possível enviar sua mensagem. Tente novamente.");
+      } else {
+        localStorage.setItem("bo:last_contact_sent", Date.now().toString());
+        setSent(true);
+        toast.success("Mensagem enviada com sucesso! Obrigado pelo contato.");
+      }
+    } catch (err) {
+      console.error("Erro inesperado no envio de contato:", err);
+      toast.error("Não foi possível enviar sua mensagem. Tente novamente.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -101,11 +167,11 @@ function ContactPage() {
             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-gold/15 text-gold">
               <CheckCircle2 className="size-7" />
             </div>
-            <h2 className="font-display text-2xl font-semibold">Mensagem Registrada</h2>
+            <h2 className="font-display text-2xl font-semibold">
+              Mensagem enviada com sucesso! Obrigado pelo contato.
+            </h2>
             <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-              Obrigado pelo seu contato, <strong>{name}</strong>! Sua mensagem sobre “<em>{subject}</em>” foi armazenada
-              com sucesso neste navegador. A infraestrutura de entrega direta de e-mail será conectada junto com as chaves
-              do servidor em produção.
+              Recebemos sua mensagem sobre “<em>{subject}</em>”. Nossa equipe editorial analisará o seu contato e responderá no e-mail informado assim que possível.
             </p>
             <Button
               variant="outline"
@@ -120,6 +186,18 @@ function ContactPage() {
           </div>
         ) : (
           <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
+            {/* Campo invisível Honeypot anti-spam */}
+            <div className="hidden" aria-hidden="true">
+              <input
+                type="text"
+                name="website_feedback_bot_trap"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
+
             <div>
               <Label htmlFor="nome" className="text-sm font-medium">
                 Nome completo <span className="text-destructive">*</span>
@@ -170,15 +248,21 @@ function ContactPage() {
             </div>
 
             <div>
-              <Label htmlFor="mensagem" className="text-sm font-medium">
-                Mensagem detalhada <span className="text-destructive">*</span>
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="mensagem" className="text-sm font-medium">
+                  Mensagem detalhada <span className="text-destructive">*</span>
+                </Label>
+                <span className="text-xs text-muted-foreground">
+                  {message.length} / 5000
+                </span>
+              </div>
               <Textarea
                 id="mensagem"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Escreva sua dúvida, sugestão de estudo ou apontamento de correção..."
                 rows={6}
+                maxLength={5000}
                 className={`mt-1.5 resize-y ${errors.message ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 aria-required="true"
               />
@@ -186,8 +270,8 @@ function ContactPage() {
             </div>
 
             <div className="pt-2">
-              <Button type="submit" size="lg" className="h-11 px-6">
-                <Send className="mr-2 size-4" /> Enviar mensagem
+              <Button type="submit" size="lg" className="h-11 px-6 font-medium" disabled={submitting}>
+                <Send className="mr-2 size-4" /> {submitting ? "Enviando…" : "Enviar mensagem"}
               </Button>
             </div>
           </form>
@@ -196,4 +280,3 @@ function ContactPage() {
     </SiteLayout>
   );
 }
-

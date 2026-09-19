@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { getAdSettings } from "@/lib/ads.functions";
 import { AdSettingsProvider } from "@/lib/ads-context";
 import { defaultAdSettings } from "@/lib/ads-config";
+import { AuthProvider } from "@/lib/auth-context";
 import { SITE_URL } from "@/lib/site";
 
 function NotFoundComponent() {
@@ -224,11 +225,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AdSettingsProvider value={adSettings}>
-        <Outlet />
-      </AdSettingsProvider>
-      <Toaster position="top-center" />
-      <CookieConsent />
+      <AuthProvider>
+        <AdSettingsProvider value={adSettings}>
+          <Outlet />
+        </AdSettingsProvider>
+        <Toaster position="top-center" />
+        <CookieConsent />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

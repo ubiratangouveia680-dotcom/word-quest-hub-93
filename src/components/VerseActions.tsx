@@ -28,7 +28,7 @@ export async function shareContent(title: string, text: string, href: string) {
 }
 
 export function VerseActions({ id, kind, title, text, href, compact }: Props) {
-  const { toggle, isFavorite } = useFavorites();
+  const { toggle, isFavorite, userId } = useFavorites();
   const fav = isFavorite(id);
   const size = compact ? "size-3.5" : "size-4";
 
@@ -39,8 +39,21 @@ export function VerseActions({ id, kind, title, text, href, compact }: Props) {
         size="icon"
         className={compact ? "size-7" : ""}
         aria-label={fav ? "Remover dos favoritos" : "Favoritar"}
-        onClick={() => {
-          const added = toggle({ id, kind, title, text, href });
+        onClick={async () => {
+          if (!userId) {
+            toast.error("Faça login para salvar seus favoritos!", {
+              action: {
+                label: "Entrar",
+                onClick: () => {
+                  window.location.href = `/auth?mode=signin&next=${encodeURIComponent(
+                    window.location.pathname + window.location.hash
+                  )}`;
+                },
+              },
+            });
+            return;
+          }
+          const added = await toggle({ id, kind, title, text, href });
           toast.success(added ? "Adicionado aos favoritos" : "Removido dos favoritos");
         }}
       >

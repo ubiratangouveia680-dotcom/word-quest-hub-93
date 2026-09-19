@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { BookOpen, Heart, Home, Menu, Moon, Search, Sun, User } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useSettings } from "@/lib/storage";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -58,6 +59,9 @@ function Logo() {
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const { user, profile, isAuthenticated } = useAuth();
+
+  const userDisplayName = profile?.name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Perfil";
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -76,13 +80,34 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <Button asChild variant="ghost" size="icon" aria-label="Pesquisar">
               <Link to="/busca" search={{ q: "" }}>
                 <Search className="size-4" />
               </Link>
             </Button>
             <ThemeToggle />
+
+            {/* Desktop Auth indicator / button */}
+            <div className="hidden lg:flex items-center ml-1">
+              {isAuthenticated ? (
+                <Button asChild variant="outline" size="sm" className="h-9 gap-1.5 border-border">
+                  <Link to="/perfil">
+                    <User className="size-3.5 text-gold" />
+                    <span className="max-w-[120px] truncate text-xs font-medium">
+                      {userDisplayName}
+                    </span>
+                  </Link>
+                </Button>
+              ) : (
+                <Button asChild size="sm" className="h-9 px-3 text-xs font-medium">
+                  <Link to="/auth" search={{ mode: "signin" }}>
+                    Entrar
+                  </Link>
+                </Button>
+              )}
+            </div>
+
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menu">
@@ -90,24 +115,72 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-72 flex flex-col justify-between">
-                <nav className="mt-8 flex flex-col gap-1 px-2">
-                  {NAV.map((item) => (
+                <div>
+                  {/* Mobile user status card */}
+                  <div className="mt-6 mb-2 mx-1">
+                    {isAuthenticated ? (
+                      <div className="rounded-lg bg-accent/40 p-3 border border-border/70 flex items-center justify-between">
+                        <div className="min-w-0 pr-2">
+                          <p className="text-xs font-semibold text-foreground truncate">
+                            {userDisplayName}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {user?.email}
+                          </p>
+                        </div>
+                        <Link
+                          to="/perfil"
+                          onClick={() => setOpen(false)}
+                          className="text-xs text-gold font-medium shrink-0 hover:underline"
+                        >
+                          Ver perfil
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button asChild size="sm" className="w-full">
+                          <Link
+                            to="/auth"
+                            search={{ mode: "signin" }}
+                            onClick={() => setOpen(false)}
+                          >
+                            Entrar / Cadastrar
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <nav className="mt-4 flex flex-col gap-1 px-1">
+                    {NAV.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setOpen(false)}
+                        className="rounded-md px-3 py-2.5 text-base hover:bg-accent"
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
                     <Link
-                      key={item.to}
-                      to={item.to}
+                      to="/favoritos"
                       onClick={() => setOpen(false)}
-                      className="rounded-md px-3 py-3 text-base hover:bg-accent"
+                      className="rounded-md px-3 py-2.5 text-base hover:bg-accent flex items-center justify-between"
                     >
-                      {item.label}
+                      <span>Meus Favoritos</span>
+                      <Heart className="size-4 text-gold" />
                     </Link>
-                  ))}
-                  <Link to="/favoritos" onClick={() => setOpen(false)} className="rounded-md px-3 py-3 text-base hover:bg-accent">
-                    Meus Favoritos
-                  </Link>
-                  <Link to="/perfil" onClick={() => setOpen(false)} className="rounded-md px-3 py-3 text-base hover:bg-accent">
-                    Meu Perfil
-                  </Link>
-                </nav>
+                    <Link
+                      to="/perfil"
+                      onClick={() => setOpen(false)}
+                      className="rounded-md px-3 py-2.5 text-base hover:bg-accent flex items-center justify-between"
+                    >
+                      <span>Meu Perfil</span>
+                      <User className="size-4 text-muted-foreground" />
+                    </Link>
+                  </nav>
+                </div>
+
                 <div className="border-t border-border p-4 text-center text-xs text-muted-foreground">
                   Desenvolvido por <span className="font-medium text-foreground">Ubiratan Gouveia</span>
                 </div>
