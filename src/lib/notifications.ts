@@ -27,6 +27,25 @@ const LOCAL_STORAGE_KEY = "bo:verse_notification_settings";
 const PROMPT_DISMISSED_KEY = "bo:notification_prompt_dismissed";
 const DISPATCHED_KEY = "bo:verse_dispatched_cache";
 
+export function normalizeTime(timeStr?: string, defaultTime = "08:00"): string {
+  if (!timeStr) return defaultTime;
+  const clean = String(timeStr).trim();
+  const parts = clean.split(":");
+  if (parts.length >= 2) {
+    const h = parts[0].padStart(2, "0");
+    const m = parts[1].padStart(2, "0");
+    return `${h}:${m}`;
+  }
+  return defaultTime;
+}
+
+export function resetDispatchedCacheForNewSettings() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(DISPATCHED_KEY);
+  } catch {}
+}
+
 // ----------------------------------------------------
 // Local & Cloud Settings Storage
 // ----------------------------------------------------
@@ -35,7 +54,14 @@ export function getLocalNotificationSettings(): VerseNotificationSettings {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!raw) return DEFAULT_NOTIFICATION_SETTINGS;
-    return { ...DEFAULT_NOTIFICATION_SETTINGS, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    return {
+      ...DEFAULT_NOTIFICATION_SETTINGS,
+      ...parsed,
+      morning_time: normalizeTime(parsed.morning_time, DEFAULT_NOTIFICATION_SETTINGS.morning_time),
+      afternoon_time: normalizeTime(parsed.afternoon_time, DEFAULT_NOTIFICATION_SETTINGS.afternoon_time),
+      evening_time: normalizeTime(parsed.evening_time, DEFAULT_NOTIFICATION_SETTINGS.evening_time),
+    };
   } catch {
     return DEFAULT_NOTIFICATION_SETTINGS;
   }
@@ -44,8 +70,14 @@ export function getLocalNotificationSettings(): VerseNotificationSettings {
 export function saveLocalNotificationSettings(settings: VerseNotificationSettings) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(settings));
-    window.dispatchEvent(new CustomEvent("bo:notification_settings", { detail: settings }));
+    const normalized: VerseNotificationSettings = {
+      ...settings,
+      morning_time: normalizeTime(settings.morning_time, "08:00"),
+      afternoon_time: normalizeTime(settings.afternoon_time, "12:00"),
+      evening_time: normalizeTime(settings.evening_time, "20:00"),
+    };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalized));
+    window.dispatchEvent(new CustomEvent("bo:notification_settings", { detail: normalized }));
   } catch {}
 }
 
@@ -54,27 +86,47 @@ export async function fetchNotificationSettings(userId?: string): Promise<VerseN
   if (!userId) return local;
 
   try {
+    // 1. Try Supabase Auth metadata first (reliable for logged-in user without requiring extra tables)
+    const { data: authData } = await supabase.auth.getUser();
+    const meta = authData?.user?.user_metadata?.verse_notification_settings;
+    if (meta) {
+      const merged: VerseNotificationSettings = {
+        verse_notifications_enabled: meta.verse_notifications_enabled ?? local.verse_notifications_enabled,
+        morning_enabled: meta.morning_enabled ?? local.morning_enabled,
+        morning_time: normalizeTime(meta.morning_time, local.morning_time),
+        afternoon_enabled: meta.afternoon_enabled ?? local.afternoon_enabled,
+        afternoon_time: normalizeTime(meta.afternoon_time, local.afternoon_time),
+        evening_enabled: meta.evening_enabled ?? local.evening_enabled,
+        evening_time: normalizeTime(meta.evening_time, local.evening_time),
+        timezone: meta.timezone || local.timezone,
+      };
+      saveLocalNotificationSettings(merged);
+      return merged;
+    }
+
+    // 2. Try table if it exists
     const { data, error } = await supabase
       .from("user_notification_settings")
       .select("*")
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (error || !data) return local;
+    if (!error && data) {
+      const cloud: VerseNotificationSettings = {
+        verse_notifications_enabled: data.verse_notifications_enabled,
+        morning_enabled: data.morning_enabled,
+        morning_time: normalizeTime(data.morning_time, "08:00"),
+        afternoon_enabled: data.afternoon_enabled,
+        afternoon_time: normalizeTime(data.afternoon_time, "12:00"),
+        evening_enabled: data.evening_enabled,
+        evening_time: normalizeTime(data.evening_time, "20:00"),
+        timezone: data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo",
+      };
+      saveLocalNotificationSettings(cloud);
+      return cloud;
+    }
 
-    const cloud: VerseNotificationSettings = {
-      verse_notifications_enabled: data.verse_notifications_enabled,
-      morning_enabled: data.morning_enabled,
-      morning_time: data.morning_time,
-      afternoon_enabled: data.afternoon_enabled,
-      afternoon_time: data.afternoon_time,
-      evening_enabled: data.evening_enabled,
-      evening_time: data.evening_time,
-      timezone: data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo",
-    };
-
-    saveLocalNotificationSettings(cloud);
-    return cloud;
+    return local;
   } catch {
     return local;
   }
@@ -84,29 +136,51 @@ export async function saveNotificationSettings(
   settings: VerseNotificationSettings,
   userId?: string
 ): Promise<boolean> {
-  saveLocalNotificationSettings(settings);
+  const normalized: VerseNotificationSettings = {
+    ...settings,
+    morning_time: normalizeTime(settings.morning_time, "08:00"),
+    afternoon_time: normalizeTime(settings.afternoon_time, "12:00"),
+    evening_time: normalizeTime(settings.evening_time, "20:00"),
+    timezone: settings.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo",
+  };
+
+  // Always save locally immediately
+  saveLocalNotificationSettings(normalized);
+
+  // Reset idempotency cache so new scheduled times will trigger today
+  resetDispatchedCacheForNewSettings();
 
   if (!userId) return true;
 
   try {
-    const { error } = await supabase
-      .from("user_notification_settings")
-      .upsert({
-        user_id: userId,
-        verse_notifications_enabled: settings.verse_notifications_enabled,
-        morning_enabled: settings.morning_enabled,
-        morning_time: settings.morning_time,
-        afternoon_enabled: settings.afternoon_enabled,
-        afternoon_time: settings.afternoon_time,
-        evening_enabled: settings.evening_enabled,
-        evening_time: settings.evening_time,
-        timezone: settings.timezone,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "user_id" });
+    // 1. Save to Supabase Auth user_metadata
+    await supabase.auth.updateUser({
+      data: {
+        verse_notification_settings: normalized,
+      },
+    }).catch(() => {});
 
-    return !error;
+    // 2. Also try table in case it exists, but don't fail if table is not in schema
+    try {
+      await supabase
+        .from("user_notification_settings")
+        .upsert({
+          user_id: userId,
+          verse_notifications_enabled: normalized.verse_notifications_enabled,
+          morning_enabled: normalized.morning_enabled,
+          morning_time: normalized.morning_time,
+          afternoon_enabled: normalized.afternoon_enabled,
+          afternoon_time: normalized.afternoon_time,
+          evening_enabled: normalized.evening_enabled,
+          evening_time: normalized.evening_time,
+          timezone: normalized.timezone,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
+    } catch {}
+
+    return true;
   } catch {
-    return false;
+    return true; // Local storage already saved successfully
   }
 }
 
@@ -210,18 +284,35 @@ function markDispatchedKey(key: string) {
 /**
  * Triggers the actual Web Push notification via the active Service Worker
  */
-export async function showDailyVerseNotification(period: NotificationPeriod, userId?: string): Promise<boolean> {
-  if (!isPushNotificationSupported() || Notification.permission !== "granted") {
+export async function showDailyVerseNotification(
+  period: NotificationPeriod,
+  userId?: string,
+  options?: { force?: boolean }
+): Promise<boolean> {
+  if (!isPushNotificationSupported()) {
     return false;
+  }
+
+  let permission = Notification.permission;
+  if (permission !== "granted") {
+    permission = await requestNotificationPermission();
+    if (permission !== "granted") return false;
   }
 
   const todayStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
   const userIdentifier = userId || "guest_device";
-  const idempotencyKey = `${userIdentifier}_${todayStr}_${period}`;
+  const settings = getLocalNotificationSettings();
 
-  // Check local idempotency first
-  if (getDispatchedKeys().includes(idempotencyKey)) {
-    return false; // Already sent today
+  let targetTime = "default";
+  if (period === "morning_verse") targetTime = settings.morning_time;
+  if (period === "afternoon_verse") targetTime = settings.afternoon_time;
+  if (period === "evening_verse") targetTime = settings.evening_time;
+
+  const idempotencyKey = `${userIdentifier}_${todayStr}_${period}_${targetTime}`;
+
+  // Check local idempotency unless forced test
+  if (!options?.force && getDispatchedKeys().includes(idempotencyKey)) {
+    return false; // Already sent today for this scheduled time
   }
 
   const content = formatVerseNotification(period);
@@ -233,7 +324,7 @@ export async function showDailyVerseNotification(period: NotificationPeriod, use
         body: content.body,
         icon: "/icon-192.png",
         badge: "/favicon.png",
-        tag: content.tag,
+        tag: `verse-${period}-${todayStr}`,
         data: { url: content.url },
         vibrate: [100, 50, 100],
       });
@@ -241,16 +332,17 @@ export async function showDailyVerseNotification(period: NotificationPeriod, use
       new Notification(content.title, {
         body: content.body,
         icon: "/icon-192.png",
-        tag: content.tag,
+        tag: `verse-${period}-${todayStr}`,
       });
     }
 
-    // Save to local idempotency cache
-    markDispatchedKey(idempotencyKey);
+    if (!options?.force) {
+      markDispatchedKey(idempotencyKey);
+    }
 
-    // Save to Supabase logs if user is authenticated
+    // Try saving to Supabase logs if user is authenticated
     if (userId) {
-      await supabase.from("verse_notification_logs").insert({
+      supabase.from("verse_notification_logs").insert({
         user_id: userId,
         notification_type: period,
         verse_reference: content.reference,
@@ -263,17 +355,6 @@ export async function showDailyVerseNotification(period: NotificationPeriod, use
     return true;
   } catch (err: any) {
     console.error("Erro ao exibir notificação:", err);
-    if (userId) {
-      await supabase.from("verse_notification_logs").insert({
-        user_id: userId,
-        notification_type: period,
-        verse_reference: content.reference,
-        verse_date: todayStr,
-        status: "failed",
-        error_message: err?.message || String(err),
-        idempotency_key: idempotencyKey,
-      }).catch(() => {});
-    }
     return false;
   }
 }
@@ -290,15 +371,18 @@ export async function checkAndDispatchDailyVerses(userId?: string) {
   const now = new Date();
   const currentHours = now.getHours();
   const currentMinutes = now.getMinutes();
-  const currentTimeStr = `${String(currentHours).padStart(2, "0")}:${String(currentMinutes).padStart(2, "0")}`;
 
-  // Helper to check if current time is within 30 minutes after scheduled time
+  // Helper to check if current time matches scheduled time
   const isTimeFor = (targetTime: string) => {
-    const [targetH, targetM] = targetTime.split(":").map((v) => parseInt(v, 10));
+    const normalized = normalizeTime(targetTime, "08:00");
+    const [targetH, targetM] = normalized.split(":").map((v) => parseInt(v, 10));
+    if (isNaN(targetH) || isNaN(targetM)) return false;
+
     const targetTotalMin = targetH * 60 + targetM;
     const currentTotalMin = currentHours * 60 + currentMinutes;
     const diff = currentTotalMin - targetTotalMin;
-    return diff >= 0 && diff <= 45; // Within 45 min window
+    // Dispatches if within 45 minutes of scheduled time
+    return diff >= 0 && diff <= 45;
   };
 
   // Morning
@@ -316,3 +400,4 @@ export async function checkAndDispatchDailyVerses(userId?: string) {
     await showDailyVerseNotification("evening_verse", userId);
   }
 }
+

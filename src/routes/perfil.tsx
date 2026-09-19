@@ -15,9 +15,11 @@ import { useAuth } from "@/lib/auth-context";
 import {
   fetchNotificationSettings,
   saveNotificationSettings,
+  saveLocalNotificationSettings,
   requestNotificationPermission,
   getNotificationPermission,
   isPushNotificationSupported,
+  showDailyVerseNotification,
   DEFAULT_NOTIFICATION_SETTINGS,
   type VerseNotificationSettings,
 } from "@/lib/notifications";
@@ -50,6 +52,7 @@ function ProfilePage() {
   // Estado para notificações
   const [notifSettings, setNotifSettings] = useState<VerseNotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
   const [isSavingNotif, setIsSavingNotif] = useState(false);
+  const [isTestingNotif, setIsTestingNotif] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<string>("default");
   const [hasNotificationSupport, setHasNotificationSupport] = useState(false);
 
@@ -61,6 +64,15 @@ function ProfilePage() {
     });
   }, [user?.id]);
 
+  const updateNotifField = (updates: Partial<VerseNotificationSettings>) => {
+    setNotifSettings((prev) => {
+      const next = { ...prev, ...updates };
+      // Salva localmente de forma instantânea para sincronizar a checagem no cliente
+      saveLocalNotificationSettings(next);
+      return next;
+    });
+  };
+
   const handleRequestPermission = async () => {
     const status = await requestNotificationPermission();
     setPermissionStatus(status);
@@ -71,12 +83,26 @@ function ProfilePage() {
     }
   };
 
+  const handleTestNotification = async () => {
+    setIsTestingNotif(true);
+    try {
+      const ok = await showDailyVerseNotification("morning_verse", user?.id, { force: true });
+      if (ok) {
+        toast.success("Notificação de teste enviada! Verifique o topo ou painel de notificações do seu aparelho.");
+      } else {
+        toast.error("Não foi possível exibir a notificação. Verifique se as permissões estão ativadas no seu navegador.");
+      }
+    } finally {
+      setIsTestingNotif(false);
+    }
+  };
+
   const handleSaveNotifications = async () => {
     setIsSavingNotif(true);
     const ok = await saveNotificationSettings(notifSettings, user?.id);
     setIsSavingNotif(false);
     if (ok) {
-      toast.success("Configurações de notificações salvas com sucesso!");
+      toast.success("Horários e configurações de notificações salvos com sucesso!");
     } else {
       toast.error("Erro ao salvar configurações de notificações.");
     }
@@ -350,95 +376,167 @@ function ProfilePage() {
           {/* Horários configuráveis */}
           <div className={`mt-4 space-y-3.5 transition-opacity ${notifSettings.verse_notifications_enabled ? "opacity-100" : "opacity-50 pointer-events-none"}`}>
             {/* Manhã */}
-            <div className="flex items-center justify-between rounded-lg border border-border/70 p-3 bg-card">
-              <div className="flex items-center gap-2.5">
-                <Checkbox
-                  id="notif-morning"
-                  checked={notifSettings.morning_enabled}
-                  onCheckedChange={(checked) =>
-                    setNotifSettings((prev) => ({ ...prev, morning_enabled: !!checked }))
+            <div className="rounded-lg border border-border/70 p-3 bg-card space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <Checkbox
+                    id="notif-morning"
+                    checked={notifSettings.morning_enabled}
+                    onCheckedChange={(checked) =>
+                      updateNotifField({ morning_enabled: !!checked })
+                    }
+                  />
+                  <label htmlFor="notif-morning" className="cursor-pointer">
+                    <span className="block text-sm font-medium text-foreground">🌅 Manhã</span>
+                    <span className="block text-[11px] text-muted-foreground">Comece o dia edificado na Palavra</span>
+                  </label>
+                </div>
+                <Input
+                  type="time"
+                  step="60"
+                  value={notifSettings.morning_time}
+                  onChange={(e) =>
+                    updateNotifField({ morning_time: e.target.value })
                   }
+                  className="w-28 text-center text-xs h-8 font-mono"
                 />
-                <label htmlFor="notif-morning" className="cursor-pointer">
-                  <span className="block text-sm font-medium text-foreground">🌅 Manhã</span>
-                  <span className="block text-[11px] text-muted-foreground">Comece o dia edificado na Palavra</span>
-                </label>
               </div>
-              <Input
-                type="time"
-                value={notifSettings.morning_time}
-                onChange={(e) =>
-                  setNotifSettings((prev) => ({ ...prev, morning_time: e.target.value }))
-                }
-                className="w-28 text-center text-xs h-8"
-              />
+              <div className="flex items-center gap-1.5 pl-6 pt-0.5">
+                <span className="text-[10px] text-muted-foreground">Sugestões:</span>
+                {["06:00", "07:00", "08:00", "09:00"].map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => updateNotifField({ morning_time: t, morning_enabled: true })}
+                    className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+                      notifSettings.morning_time === t
+                        ? "bg-primary text-primary-foreground border-primary font-medium"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted border-border/60"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Tarde */}
-            <div className="flex items-center justify-between rounded-lg border border-border/70 p-3 bg-card">
-              <div className="flex items-center gap-2.5">
-                <Checkbox
-                  id="notif-afternoon"
-                  checked={notifSettings.afternoon_enabled}
-                  onCheckedChange={(checked) =>
-                    setNotifSettings((prev) => ({ ...prev, afternoon_enabled: !!checked }))
+            <div className="rounded-lg border border-border/70 p-3 bg-card space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <Checkbox
+                    id="notif-afternoon"
+                    checked={notifSettings.afternoon_enabled}
+                    onCheckedChange={(checked) =>
+                      updateNotifField({ afternoon_enabled: !!checked })
+                    }
+                  />
+                  <label htmlFor="notif-afternoon" className="cursor-pointer">
+                    <span className="block text-sm font-medium text-foreground">☀️ Tarde</span>
+                    <span className="block text-[11px] text-muted-foreground">Renovo espiritual no meio do dia</span>
+                  </label>
+                </div>
+                <Input
+                  type="time"
+                  step="60"
+                  value={notifSettings.afternoon_time}
+                  onChange={(e) =>
+                    updateNotifField({ afternoon_time: e.target.value })
                   }
+                  className="w-28 text-center text-xs h-8 font-mono"
                 />
-                <label htmlFor="notif-afternoon" className="cursor-pointer">
-                  <span className="block text-sm font-medium text-foreground">☀️ Tarde</span>
-                  <span className="block text-[11px] text-muted-foreground">Renovo espiritual no meio do dia</span>
-                </label>
               </div>
-              <Input
-                type="time"
-                value={notifSettings.afternoon_time}
-                onChange={(e) =>
-                  setNotifSettings((prev) => ({ ...prev, afternoon_time: e.target.value }))
-                }
-                className="w-28 text-center text-xs h-8"
-              />
+              <div className="flex items-center gap-1.5 pl-6 pt-0.5">
+                <span className="text-[10px] text-muted-foreground">Sugestões:</span>
+                {["12:00", "13:00", "14:00", "15:00"].map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => updateNotifField({ afternoon_time: t, afternoon_enabled: true })}
+                    className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+                      notifSettings.afternoon_time === t
+                        ? "bg-primary text-primary-foreground border-primary font-medium"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted border-border/60"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Noite */}
-            <div className="flex items-center justify-between rounded-lg border border-border/70 p-3 bg-card">
-              <div className="flex items-center gap-2.5">
-                <Checkbox
-                  id="notif-evening"
-                  checked={notifSettings.evening_enabled}
-                  onCheckedChange={(checked) =>
-                    setNotifSettings((prev) => ({ ...prev, evening_enabled: !!checked }))
+            <div className="rounded-lg border border-border/70 p-3 bg-card space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <Checkbox
+                    id="notif-evening"
+                    checked={notifSettings.evening_enabled}
+                    onCheckedChange={(checked) =>
+                      updateNotifField({ evening_enabled: !!checked })
+                    }
+                  />
+                  <label htmlFor="notif-evening" className="cursor-pointer">
+                    <span className="block text-sm font-medium text-foreground">🌙 Noite</span>
+                    <span className="block text-[11px] text-muted-foreground">Paz e descanso no Senhor antes de dormir</span>
+                  </label>
+                </div>
+                <Input
+                  type="time"
+                  step="60"
+                  value={notifSettings.evening_time}
+                  onChange={(e) =>
+                    updateNotifField({ evening_time: e.target.value })
                   }
+                  className="w-28 text-center text-xs h-8 font-mono"
                 />
-                <label htmlFor="notif-evening" className="cursor-pointer">
-                  <span className="block text-sm font-medium text-foreground">🌙 Noite</span>
-                  <span className="block text-[11px] text-muted-foreground">Paz e descanso no Senhor antes de dormir</span>
-                </label>
               </div>
-              <Input
-                type="time"
-                value={notifSettings.evening_time}
-                onChange={(e) =>
-                  setNotifSettings((prev) => ({ ...prev, evening_time: e.target.value }))
-                }
-                className="w-28 text-center text-xs h-8"
-              />
+              <div className="flex items-center gap-1.5 pl-6 pt-0.5">
+                <span className="text-[10px] text-muted-foreground">Sugestões:</span>
+                {["19:00", "20:00", "21:00", "22:00"].map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => updateNotifField({ evening_time: t, evening_enabled: true })}
+                    className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+                      notifSettings.evening_time === t
+                        ? "bg-primary text-primary-foreground border-primary font-medium"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted border-border/60"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Botão de Salvar */}
-          <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-border/60">
+          {/* Botões de Ação */}
+          <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-border/60">
             <span className="text-xs text-muted-foreground">
               Fuso horário: <strong className="text-foreground">{notifSettings.timezone}</strong>
             </span>
-            <Button
-              onClick={handleSaveNotifications}
-              disabled={isSavingNotif}
-              size="sm"
-              className="gap-1.5 font-semibold text-xs h-9"
-            >
-              <Check className="size-3.5" />
-              {isSavingNotif ? "Salvando…" : "Salvar configurações"}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTestNotification}
+                disabled={isTestingNotif}
+                className="gap-1.5 text-xs h-9"
+              >
+                <Bell className="size-3.5 text-gold" />
+                {isTestingNotif ? "Enviando…" : "Testar notificação agora"}
+              </Button>
+              <Button
+                onClick={handleSaveNotifications}
+                disabled={isSavingNotif}
+                size="sm"
+                className="gap-1.5 font-semibold text-xs h-9"
+              >
+                <Check className="size-3.5" />
+                {isSavingNotif ? "Salvando…" : "Salvar configurações"}
+              </Button>
+            </div>
           </div>
         </section>
 

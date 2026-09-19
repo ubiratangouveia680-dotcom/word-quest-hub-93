@@ -231,12 +231,33 @@ function RootContent() {
     // Executa verificação inicial de versículos do dia
     checkAndDispatchDailyVerses(user?.id);
 
-    // Agenda checagem a cada 5 minutos enquanto o app estiver em execução/aberto
+    // Agenda checagem periódica a cada 30 segundos enquanto o site estiver aberto
     const interval = setInterval(() => {
       checkAndDispatchDailyVerses(user?.id);
-    }, 5 * 60 * 1000);
+    }, 30 * 1000);
 
-    return () => clearInterval(interval);
+    // Verifica imediatamente ao reabrir/desbloquear o aparelho ou alternar para a aba
+    const handleActive = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        checkAndDispatchDailyVerses(user?.id);
+      }
+    };
+
+    // Dispara checagem imediata quando o usuário altera os horários nas configurações
+    const handleSettingsChanged = () => {
+      checkAndDispatchDailyVerses(user?.id);
+    };
+
+    document.addEventListener("visibilitychange", handleActive);
+    window.addEventListener("focus", handleActive);
+    window.addEventListener("bo:notification_settings", handleSettingsChanged);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleActive);
+      window.removeEventListener("focus", handleActive);
+      window.removeEventListener("bo:notification_settings", handleSettingsChanged);
+    };
   }, [user?.id]);
 
   return (
