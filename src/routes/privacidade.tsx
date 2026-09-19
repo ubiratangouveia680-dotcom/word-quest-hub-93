@@ -20,34 +20,83 @@ export const Route = createFileRoute("/privacidade")({
   component: () => (
     <LegalPage title="Política de Privacidade">
       <p>
-        Esta política explica como o portal Bíblia Online trata informações de quem utiliza o
-        site, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
+        Esta política de privacidade descreve como o portal <strong>Bíblia Online</strong> coleta, utiliza,
+        armazena e protege os dados dos seus usuários, em total conformidade com a Lei Geral de Proteção de
+        Dados Pessoais (LGPD — Lei nº 13.709/2018) e as diretrizes internacionais de transparência digital.
       </p>
-      <h2>Dados que utilizamos</h2>
+
+      <h2>1. Dados de Leitura e Preferências Pessoais</h2>
       <p>
-        A leitura da Bíblia não exige cadastro. Preferências como tema, tamanho de fonte,
-        favoritos, anotações e progresso de leitura são armazenados localmente no seu
-        navegador e não são enviados aos nossos servidores.
+        O acesso à leitura dos textos bíblicos, planos, devocionais e estudos não exige a criação de conta
+        nem fornecimento de dados pessoais. Suas preferências de navegação — incluindo tema (claro ou escuro),
+        tamanho da tipografia, histórico recente de leitura e versículos favoritados — são armazenadas
+        <strong>exclusivamente na memória local do seu próprio navegador (LocalStorage)</strong>. Esses dados
+        não são transmitidos para servidores centrais e podem ser limpos a qualquer momento nas configurações do seu navegador.
       </p>
-      <h2>Dados de navegação</h2>
+
+      <h2>2. Publicidade Programática e Google AdSense</h2>
       <p>
-        Podemos utilizar ferramentas de medição de audiência para entender o uso do site
-        (páginas acessadas, dispositivo, origem do acesso). Esses dados são tratados de forma
-        agregada.
+        Para manter a gratuidade de todo o acervo e a sustentabilidade dos servidores, este portal exibe
+        anúncios veiculados pelo <strong>Google AdSense</strong> e fornecedores terceirizados parceiros.
       </p>
-      <h2>Publicidade</h2>
+      <ul>
+        <li>
+          <strong>Cookies de publicidade:</strong> O Google e outras redes de anúncios utilizam cookies para
+          veicular anúncios com base nas visitas anteriores dos usuários a este ou a outros sites na Internet.
+        </li>
+        <li>
+          <strong>Anúncios personalizados:</strong> O uso de cookies de publicidade pelo Google permite que ele e
+          seus parceiros veiculem anúncios para os usuários com base nas visitas feitas a este portal e a outros sites.
+        </li>
+        <li>
+          <strong>Desativação da personalização (Opt-Out):</strong> Os usuários podem optar por desativar a
+          publicidade personalizada acessando as{" "}
+          <a
+            href="https://www.google.com/settings/ads"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline hover:text-primary/80"
+          >
+            Configurações de Anúncios do Google
+          </a>
+          . Alternativamente, você pode desativar o uso de cookies de terceiros para publicidade personalizada
+          visitando o portal internacional{" "}
+          <a
+            href="https://www.aboutads.info/choices/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline hover:text-primary/80"
+          >
+            www.aboutads.info
+          </a>
+          .
+        </li>
+      </ul>
+
+      <h2>3. Métricas de Audiência e Google Analytics</h2>
       <p>
-        Quando anúncios estiverem ativos, parceiros de publicidade podem utilizar cookies para
-        exibir conteúdo relevante. Você pode gerenciar suas preferências pelo banner de cookies.
+        Utilizamos ferramentas de análise de tráfego, como o Google Analytics (GA4), para coletar dados estatísticos
+        anônimos e agregados sobre padrões de navegação (páginas mais lidas, tempo médio de permanência, tipo de
+        dispositivo e distribuição geográfica geral). Esses dados são estritamente estatísticos e não identificam
+        individualmente o leitor.
       </p>
-      <h2>Seus direitos</h2>
+
+      <h2>4. Seus Direitos segundo a LGPD</h2>
       <p>
-        Você pode solicitar confirmação de tratamento, acesso, correção ou exclusão de dados
-        pessoais. Limpar os dados do navegador remove imediatamente as informações salvas
-        localmente.
+        Conforme a legislação brasileira de proteção de dados, você tem pleno direito a confirmar a existência
+        de tratamento de dados, solicitar acesso, correção, anonimização, bloqueio ou eliminação de informações.
+        Como as suas anotações e histórico bíblico permanecem no seu próprio dispositivo, você pode excluí-los
+        instantaneamente limpando os dados de navegação do seu browser.
       </p>
-      <h2>Contato</h2>
-      <p>Dúvidas sobre privacidade podem ser enviadas pela nossa página de contato.</p>
+
+      <h2>5. Canal de Atendimento e Encarregado (DPO)</h2>
+      <p>
+        Para esclarecer dúvidas sobre esta Política de Privacidade, exercer seus direitos ou reportar qualquer
+        questão de conformidade com a LGPD, disponibilizamos nosso canal oficial de comunicação institucional:
+      </p>
+      <p className="font-medium text-foreground">
+        E-mail de contato e privacidade: <span className="underline">privacidade@bibliaonline.me</span>
+      </p>
     </LegalPage>
   ),
 });

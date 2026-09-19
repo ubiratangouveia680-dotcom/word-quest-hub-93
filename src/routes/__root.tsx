@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { getAdSettings } from "@/lib/ads.functions";
 import { AdSettingsProvider } from "@/lib/ads-context";
 import { defaultAdSettings } from "@/lib/ads-config";
+import { SITE_URL } from "@/lib/site";
 
 function NotFoundComponent() {
   return (
@@ -86,68 +87,87 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       return { adSettings: defaultAdSettings };
     }
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Bíblia Online — Leia a Bíblia Sagrada em português" },
-      {
-        name: "description",
-        content:
-          "Leia a Bíblia online em português, pesquise versículos, veja o versículo do dia, estudos bíblicos, devocionais e orações.",
-      },
-      { property: "og:site_name", content: "Bíblia Online" },
-      { property: "og:type", content: "website" },
-      { property: "og:locale", content: "pt_BR" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "theme-color", content: "#fbf9f4" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap",
-      },
-      { rel: "icon", type: "image/png", href: "/favicon.png" },
-      { rel: "apple-touch-icon", href: "/icon-192.png" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
-    ],
-    scripts: [
+  head: ({ loaderData }) => {
+    const scripts: Array<{
+      type?: string;
+      children?: string;
+      async?: boolean;
+      crossOrigin?: string;
+      src?: string;
+    }> = [
       {
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
           name: "Bíblia Online",
+          url: SITE_URL,
           slogan: "Leia, compreenda e compartilhe a Palavra.",
           inLanguage: "pt-BR",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: {
+              "@type": "EntryPoint",
+              urlTemplate: `${SITE_URL}/busca?q={search_term_string}`,
+            },
+            "query-input": "required name=search_term_string",
+          },
         }),
       },
-    ],
-    ...(loaderData?.adSettings.enabled && loaderData.adSettings.publisherId
-      ? {
-          scripts: [
-            {
-              type: "application/ld+json",
-              children: JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "WebSite",
-                name: "Bíblia Online",
-                slogan: "Leia, compreenda e compartilhe a Palavra.",
-                inLanguage: "pt-BR",
-              }),
-            },
-            {
-              async: true,
-              crossOrigin: "anonymous",
-              src: `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${loaderData.adSettings.publisherId}`,
-            },
-          ],
-        }
-      : {}),
-  }),
+    ];
+
+    if (loaderData?.adSettings.gaMeasurementId) {
+      const gaId = loaderData.adSettings.gaMeasurementId;
+      scripts.push(
+        {
+          async: true,
+          src: `https://www.googletagmanager.com/gtag/js?id=${gaId}`,
+        },
+        {
+          children: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${gaId}');`,
+        },
+      );
+    }
+
+    if (loaderData?.adSettings.enabled && loaderData.adSettings.publisherId) {
+      scripts.push({
+        async: true,
+        crossOrigin: "anonymous",
+        src: `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${loaderData.adSettings.publisherId}`,
+      });
+    }
+
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { title: "Bíblia Online — Leia a Bíblia Sagrada em português" },
+        {
+          name: "description",
+          content:
+            "Leia a Bíblia online em português, pesquise versículos, veja o versículo do dia, estudos bíblicos, devocionais e orações.",
+        },
+        { property: "og:site_name", content: "Bíblia Online" },
+        { property: "og:type", content: "website" },
+        { property: "og:locale", content: "pt_BR" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "theme-color", content: "#fbf9f4" },
+      ],
+      links: [
+        { rel: "stylesheet", href: appCss },
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+        {
+          rel: "stylesheet",
+          href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap",
+        },
+        { rel: "icon", type: "image/png", href: "/favicon.png" },
+        { rel: "apple-touch-icon", href: "/icon-192.png" },
+        { rel: "manifest", href: "/manifest.webmanifest" },
+      ],
+      scripts,
+    };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

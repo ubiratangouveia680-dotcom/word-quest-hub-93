@@ -27,22 +27,31 @@ function CookiesPage() {
         Cookies são pequenos arquivos armazenados no seu navegador. Utilizamos apenas o
         necessário para o funcionamento do site, medição de audiência e, quando ativos, anúncios.
       </p>
-      <h2>Cookies essenciais</h2>
+      <h2>1. Cookies estritamente essenciais</h2>
       <p>
-        Guardam preferências como tema, tamanho da fonte, favoritos e progresso de leitura.
-        Sem eles, o site perde funcionalidades básicas.
+        Necessários para o funcionamento das ferramentas de leitura. Guardam suas preferências
+        como tema escuro/claro, tamanho da tipografia, lista de versículos favoritados e progresso
+        nos livros bíblicos. Sem eles, o site não consegue memorizar seu ponto de leitura entre acessos.
       </p>
-      <h2>Cookies de medição</h2>
-      <p>Ajudam a entender quais páginas são mais acessadas, de forma agregada.</p>
-      <h2>Cookies de publicidade</h2>
+
+      <h2>2. Cookies analíticos e de desempenho</h2>
       <p>
-        Utilizados por parceiros de publicidade para exibir anúncios. Você pode recusá-los sem
-        perder acesso ao conteúdo.
+        Operados pelo Google Analytics (GA4), nos ajudam a entender de forma agrupada quais livros,
+        capítulos, estudos e devocionais despertam mais interesse, permitindo planejar melhorias de navegação
+        e desempenho de carregamento.
       </p>
-      <h2>Gerenciar preferências</h2>
+
+      <h2>3. Cookies de publicidade e Google AdSense</h2>
       <p>
-        Você pode redefinir sua escolha a qualquer momento e o banner de consentimento será
-        exibido novamente.
+        Permitem a veiculação de anúncios relevantes através da rede de parceiros do Google. Eles medem
+        a eficácia das campanhas e impedem que o mesmo anúncio seja exibido repetidamente ao mesmo leitor.
+        Você pode recusá-los ou gerenciar seus consentimentos a qualquer instante sem perder acesso ao texto bíblico.
+      </p>
+
+      <h2>4. Como gerenciar ou redefinir suas preferências</h2>
+      <p>
+        Você tem controle total: além de limpar os cookies nas opções do seu próprio navegador,
+        é possível reabrir nosso banner de consentimento clicando no botão abaixo:
       </p>
       <Button
         variant="outline"

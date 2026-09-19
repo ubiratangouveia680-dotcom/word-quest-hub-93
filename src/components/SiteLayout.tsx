@@ -148,7 +148,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               <li><Link to="/privacidade" className="hover:text-foreground">Política de Privacidade</Link></li>
               <li><Link to="/termos" className="hover:text-foreground">Termos de Uso</Link></li>
               <li><Link to="/cookies" className="hover:text-foreground">Política de Cookies</Link></li>
-              <li><Link to="/contato" className="hover:text-foreground">Contato</Link></li>
             </ul>
           </div>
         </div>

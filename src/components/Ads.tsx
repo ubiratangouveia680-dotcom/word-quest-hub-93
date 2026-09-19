@@ -31,32 +31,28 @@ function AdSlot({ slotName, className = "", minHeight }: AdProps & { minHeight: 
     }
   }, [configured, slotId]);
 
-  if (!settings.enabled) return null;
+  if (!settings.enabled || !configured) return null;
 
   return (
     <aside
       aria-label="Publicidade"
-      className={`w-full overflow-hidden rounded-xl border border-dashed border-border bg-muted/40 ${className}`}
+      className={`w-full overflow-hidden my-6 ${className}`}
       style={{ minHeight }}
     >
-      <div className="flex h-full min-h-[inherit] flex-col items-center justify-center gap-1 px-4 py-6 text-center">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Publicidade</span>
-        {!configured ? (
-          <span className="text-xs text-muted-foreground/80">
-            Espaço reservado · {AD_SLOT_LABELS[slotName]}
-          </span>
-        ) : (
-          <ins
-            key={`${settings.publisherId}-${slotId}`}
-            ref={insRef}
-            className="adsbygoogle block w-full"
-            style={{ display: "block" }}
-            data-ad-client={settings.publisherId}
-            data-ad-slot={slotId}
-            data-ad-format="auto"
-            data-full-width-responsive="true"
-          />
-        )}
+      <div className="flex flex-col items-center justify-center">
+        <span className="mb-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/60">
+          Publicidade
+        </span>
+        <ins
+          key={`${settings.publisherId}-${slotId}`}
+          ref={insRef}
+          className="adsbygoogle block w-full text-center"
+          style={{ display: "block" }}
+          data-ad-client={settings.publisherId}
+          data-ad-slot={slotId}
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+        />
       </div>
     </aside>
   );
