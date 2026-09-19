@@ -36,7 +36,7 @@ export function getFriendlyAuthErrorMessage(error: AuthError | Error | unknown):
     return "E-mail ou senha incorretos. Por favor, verifique seus dados.";
   }
   if (msg.includes("Email not confirmed")) {
-    return "E-mail ainda não confirmado. Verifique sua caixa de entrada ou spam.";
+    return "E-mail ainda não confirmado. Verifique sua caixa de entrada ou spam para confirmar seu cadastro.";
   }
   if (msg.includes("User already registered") || msg.includes("already exists")) {
     return "Já existe uma conta cadastrada com este endereço de e-mail.";
@@ -44,11 +44,20 @@ export function getFriendlyAuthErrorMessage(error: AuthError | Error | unknown):
   if (msg.includes("Password should be at least")) {
     return "A senha deve ter pelo menos 6 caracteres.";
   }
+  if (msg.includes("weak and easy to guess") || msg.includes("weak_password") || msg.includes("pwned")) {
+    return "Esta senha é considerada fraca ou muito comum. Por favor, escolha uma senha mais segura (ex: use letras maiúsculas, minúsculas, números e símbolos).";
+  }
+  if (msg.includes("over_email_send_rate_limit") || msg.includes("email_rate_limit_exceeded")) {
+    return "Limite temporário de envio de e-mails atingido pelo Supabase. Aguarde alguns minutos ou desative a confirmação de e-mail no painel do Supabase.";
+  }
   if (msg.includes("rate limit") || msg.includes("Too many requests")) {
     return "Muitas tentativas em pouco tempo. Aguarde alguns instantes e tente novamente.";
   }
   if (msg.includes("Unable to validate email address: invalid format")) {
     return "Formato de e-mail inválido. Digite um e-mail válido.";
+  }
+  if (msg.includes("Signups not allowed") || msg.includes("signup_disabled")) {
+    return "O cadastro de novos usuários está desativado nas configurações do Supabase.";
   }
   return msg || "Ocorreu um erro ao processar sua solicitação. Tente novamente.";
 }
@@ -196,6 +205,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         return { error: new Error(getFriendlyAuthErrorMessage(error)), user: null };
+      }
+
+      // Se o Supabase retornar identities vazio, significa que o e-mail já existia
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        return {
+          error: new Error("Já existe uma conta cadastrada com este endereço de e-mail. Tente entrar ou recuperar sua senha."),
+          user: null,
+        };
       }
 
       if (data.user) {
