@@ -40,7 +40,10 @@ function NotFoundComponent() {
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link to="/biblia">Bíblia</Link>
+              <Link to="/biblia">Bíblia Online</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/versiculo-do-dia">Versículo do Dia</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link to="/oracoes">Orações</Link>

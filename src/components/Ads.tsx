@@ -77,3 +77,15 @@ export const AdInArticle = ({ className }: { className?: string }) => (
 export const AdEndOfChapter = ({ className }: { className?: string }) => (
   <AdSlot slotName="endOfChapter" minHeight={120} className={className} />
 );
+
+export const AdSlotTop = ({ className }: { className?: string }) => (
+  <AdSlot slotName="banner" minHeight={90} className={className} />
+);
+
+export const AdSlotContent = ({ className }: { className?: string }) => (
+  <AdSlot slotName="inArticle" minHeight={120} className={className} />
+);
+
+export const AdSlotBottom = ({ className }: { className?: string }) => (
+  <AdSlot slotName="endOfChapter" minHeight={120} className={className} />
+);

@@ -22,6 +22,7 @@ import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PergunteRouteImport } from './routes/pergunte'
 import { Route as PergunteABibliaRouteImport } from './routes/pergunte-a-biblia'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as TemasRouteImport } from './routes/temas'
@@ -112,6 +113,11 @@ const PergunteABibliaRoute = PergunteABibliaRouteImport.update({
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -259,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/pergunte': typeof PergunteRoute
   '/pergunte-a-biblia': typeof PergunteABibliaRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
   '/temas': typeof TemasRouteWithChildren
@@ -299,6 +306,7 @@ export interface FileRoutesByTo {
   '/pergunte': typeof PergunteRoute
   '/pergunte-a-biblia': typeof PergunteABibliaRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
   '/termos': typeof TermosRoute
@@ -338,6 +346,7 @@ export interface FileRoutesById {
   '/pergunte': typeof PergunteRoute
   '/pergunte-a-biblia': typeof PergunteABibliaRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
   '/temas': typeof TemasRouteWithChildren
@@ -381,6 +390,7 @@ export interface FileRouteTypes {
     | '/pergunte'
     | '/pergunte-a-biblia'
     | '/privacidade'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/sobre'
     | '/temas'
@@ -421,6 +431,7 @@ export interface FileRouteTypes {
     | '/pergunte'
     | '/pergunte-a-biblia'
     | '/privacidade'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/sobre'
     | '/termos'
@@ -459,6 +470,7 @@ export interface FileRouteTypes {
     | '/pergunte'
     | '/pergunte-a-biblia'
     | '/privacidade'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/sobre'
     | '/temas'
@@ -501,6 +513,7 @@ export interface RootRouteChildren {
   PergunteRoute: typeof PergunteRoute
   PergunteABibliaRoute: typeof PergunteABibliaRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SobreRoute: typeof SobreRoute
   TemasRoute: typeof TemasRouteWithChildren
@@ -612,6 +625,13 @@ declare module '@tanstack/react-router' {
       path: '/privacidade'
       fullPath: '/privacidade'
       preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -865,6 +885,7 @@ const rootRouteChildren: RootRouteChildren = {
   PergunteRoute: PergunteRoute,
   PergunteABibliaRoute: PergunteABibliaRoute,
   PrivacidadeRoute: PrivacidadeRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SobreRoute: SobreRoute,
   TemasRoute: TemasRouteWithChildren,

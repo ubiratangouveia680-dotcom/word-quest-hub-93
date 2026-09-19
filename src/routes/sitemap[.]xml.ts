@@ -60,6 +60,27 @@ export const Route = createFileRoute("/sitemap.xml")({
           }
         }
 
+        // Páginas individuais de versículos
+        const verseUrls = new Set<string>();
+        for (const t of BIBLE_TOPICS) {
+          for (const v of t.verses) {
+            verseUrls.add(`/biblia/${v.book}/${v.chapter}/${v.verse}`);
+          }
+        }
+        verseUrls.add("/biblia/joao/3/16");
+        verseUrls.add("/biblia/salmos/23/1");
+        verseUrls.add("/biblia/filipenses/4/13");
+        verseUrls.add("/biblia/romanos/8/28");
+        verseUrls.add("/biblia/isaias/41/10");
+        verseUrls.add("/biblia/mateus/11/28");
+        verseUrls.add("/biblia/proverbios/3/5");
+        verseUrls.add("/biblia/salmos/91/1");
+        verseUrls.add("/biblia/jeremias/29/11");
+
+        for (const vUrl of verseUrls) {
+          urls.push({ loc: vUrl, priority: "0.8", changefreq: "weekly" });
+        }
+
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls

@@ -61,7 +61,7 @@ function ProfilePage() {
           </div>
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm">Tradução</span>
-            <span className="text-sm text-muted-foreground">João Ferreira de Almeida</span>
+            <span className="text-sm text-muted-foreground">Edição Almeida (Bible API)</span>
           </div>
         </section>
 

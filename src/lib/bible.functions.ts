@@ -32,7 +32,7 @@ export const getChapter = createServerFn({ method: "GET" })
       bookId: data.bookId,
       bookName: json.verses[0]?.book ?? "",
       chapter: data.chapter,
-      translation: json.translation?.name ?? "João Ferreira de Almeida",
+      translation: json.translation?.name ?? "Edição Almeida (Bible API)",
       verses: json.verses.map((v) => ({ verse: v.verse, text: v.text.trim().replace(/\s+/g, " ") })),
     };
   });

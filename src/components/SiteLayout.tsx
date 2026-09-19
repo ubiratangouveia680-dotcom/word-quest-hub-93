@@ -124,8 +124,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <div>
             <p className="font-display text-lg font-semibold">Bíblia Online</p>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              Leia, compreenda e compartilhe a Palavra. Texto bíblico: Edição Almeida
-              (disponibilizada através de bible-api.com). Plataforma para edificação e estudo das Escrituras.
+              Leia, compreenda e compartilhe a Palavra. Texto bíblico disponibilizado através da Bible API. Plataforma para edificação e estudo das Escrituras.
             </p>
           </div>
           <div>

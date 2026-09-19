@@ -160,7 +160,7 @@ export function ChapterReader({
         <FontSizeControls />
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Texto bíblico: Edição Almeida (disponibilizada através de bible-api.com). Verifique sempre o contexto canônico.
+        Texto bíblico disponibilizado através da Bible API. Verifique sempre o contexto canônico.
       </p>
       {audioStatus === "unsupported" ? (
         <p className="mt-3 text-sm text-muted-foreground" role="status">

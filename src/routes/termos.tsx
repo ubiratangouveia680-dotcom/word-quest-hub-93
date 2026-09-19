@@ -24,8 +24,7 @@ export const Route = createFileRoute("/termos")({
       </p>
       <h2>Conteúdo bíblico</h2>
       <p>
-        O texto bíblico exibido utiliza a tradução João Ferreira de Almeida em domínio público.
-        Traduções protegidas por direitos autorais só serão incluídas mediante licença.
+        O texto bíblico exibido é disponibilizado através da Bible API, com propósito de leitura, estudo e edificação pessoal.
       </p>
       <h2>Conteúdo editorial</h2>
       <p>
