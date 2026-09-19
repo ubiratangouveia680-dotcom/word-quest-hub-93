@@ -151,8 +151,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             </ul>
           </div>
         </div>
-        <div className="border-t border-border py-4 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Bíblia Online. Todos os direitos reservados.
+        <div className="border-t border-border py-4 text-center text-xs text-muted-foreground space-y-1">
+          <p>© {new Date().getFullYear()} Bíblia Online. Todos os direitos reservados.</p>
+          <p className="text-[11px] text-muted-foreground/80">
+            Desenvolvido por <span className="font-medium text-foreground/90">Ubiratan Gouveia</span>
+          </p>
         </div>
       </footer>
 
