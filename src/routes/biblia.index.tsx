@@ -45,9 +45,8 @@ function BibliaIndex() {
     <SiteLayout>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <h1 className="font-display text-3xl font-semibold sm:text-4xl">Bíblia Online</h1>
-        <p className="mt-2 max-w-2xl text-muted-foreground">
-          Leia a Bíblia Sagrada em português na tradução João Ferreira de Almeida
-          (domínio público). Escolha um livro para ver seus capítulos.
+        <p className="mt-2 max-w-2xl text-muted-foreground leading-relaxed">
+          Leia a Bíblia Sagrada em português na edição Almeida (disponibilizada via bible-api.com). Escolha um livro para ver seus capítulos ou explore por testamento.
         </p>
 
         <div className="mt-6">
@@ -57,11 +56,21 @@ function BibliaIndex() {
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_300px]">
           <div>
             <section>
-              <h2 className="font-display text-2xl font-semibold">Antigo Testamento</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-2xl font-semibold">Antigo Testamento</h2>
+                <Link to="/biblia/antigo-testamento" className="text-xs font-medium text-gold hover:underline">
+                  Ver página detalhada &rarr;
+                </Link>
+              </div>
               <BookGrid books={OLD_TESTAMENT} />
             </section>
             <section className="mt-10">
-              <h2 className="font-display text-2xl font-semibold">Novo Testamento</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-2xl font-semibold">Novo Testamento</h2>
+                <Link to="/biblia/novo-testamento" className="text-xs font-medium text-gold hover:underline">
+                  Ver página detalhada &rarr;
+                </Link>
+              </div>
               <BookGrid books={NEW_TESTAMENT} />
             </section>
           </div>

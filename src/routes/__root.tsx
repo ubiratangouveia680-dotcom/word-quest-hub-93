@@ -25,19 +25,43 @@ import { SITE_URL } from "@/lib/site";
 function NotFoundComponent() {
   return (
     <SiteLayout>
-      <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center px-4 text-center">
-        <p className="font-display text-6xl font-bold text-gold">404</p>
-        <h1 className="mt-4 font-display text-2xl font-semibold">
-          Ops! Não encontramos essa página.
+      <div className="mx-auto flex min-h-[65vh] max-w-xl flex-col items-center justify-center px-4 py-12 text-center">
+        <p className="font-display text-7xl font-bold text-gold">404</p>
+        <h1 className="mt-4 font-display text-2xl font-semibold sm:text-3xl">
+          Página não encontrada
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          O endereço pode ter mudado ou o conteúdo não existe mais.
+          O endereço digitado não existe ou foi movido para um novo caminho.
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <Button asChild><Link to="/biblia">Voltar para a Bíblia</Link></Button>
-          <Button asChild variant="outline"><Link to="/">Ir para a página inicial</Link></Button>
-          <Button asChild variant="ghost">
-            <Link to="/busca" search={{ q: "" }}><Search className="mr-1 size-4" /> Pesquisar</Link>
+
+        <div className="mt-8 w-full max-w-md rounded-2xl border border-border/70 bg-card p-6 shadow-xs">
+          <p className="text-sm font-medium text-foreground">
+            Talvez você encontre o que procura aqui:
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/biblia">Bíblia</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/oracoes">Orações</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/versiculos">Versículos</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/estudos">Estudos</Link>
+            </Button>
+            <Button asChild variant="default" size="sm">
+              <Link to="/busca" search={{ q: "" }}>
+                <Search className="mr-1.5 size-3.5" /> Busca
+              </Link>
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/">&larr; Voltar para a Página Inicial</Link>
           </Button>
         </div>
       </div>

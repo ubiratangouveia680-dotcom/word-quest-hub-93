@@ -746,6 +746,146 @@ export const PRAYERS: Prayer[] = [
     relatedStudySlug: "versiculos-para-momentos-dificeis",
     relatedDevotionalSlug: "quando-a-resposta-demora",
   },
+  {
+    slug: "oracao-para-ansiedade",
+    category: "Oração para ansiedade",
+    categorySlug: "oracao-para-ansiedade",
+    title: "Oração contra a ansiedade para acalmar a mente e o coração",
+    intro:
+      "Quando o coração acelera e a mente é inundada por preocupações com o futuro, a Palavra nos ensina a apresentar tudo a Deus em oração para receber a paz que excede o entendimento.",
+    text:
+      "Senhor Deus de paz, venho a ti com a respiração curta e os pensamentos agitados pelas incertezas do amanhã. Renuncio agora à ilusão de controlar o incontrolável. Deposito diante do teu altar cada medo, cada cobrança e cada pendência financeira ou familiar. Derrama o teu bálsamo consolador sobre o meu peito. Que a tua presença silencie o tumulto da minha mente e que a tua fidelidade me sustente em santa serenidade. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Filipenses 4:6-7", link: "/biblia/filipenses/4", text: "Não estejais inquietos por coisa alguma; antes as vossas petições sejam em tudo conhecidas diante de Deus... E a paz de Deus... guardará os vossos corações." },
+      { ref: "1 Pedro 5:7", link: "/biblia/1-pedro/5", text: "Lançando sobre ele toda a vossa ansiedade, porque ele tem cuidado de vós." },
+    ],
+    reflection:
+      "A oração desarma a ansiedade não porque faz os problemas desaparecerem magicamente, mas porque nos lembra que o Deus soberano está cuidando de cada detalhe.",
+    application:
+      "Feche os olhos por três minutos, respire fundo e repita mentalmente: 'O Senhor tem cuidado de mim'.",
+    relatedStudySlug: "como-vencer-a-ansiedade-com-a-palavra",
+    relatedDevotionalSlug: "a-paz-que-excede-todo-entendimento",
+  },
+  {
+    slug: "oracao-pelo-casamento",
+    category: "Oração pelo casamento",
+    categorySlug: "oracao-pelo-casamento",
+    title: "Oração pelo casamento: restauração, diálogo e amor perseverante",
+    intro:
+      "A aliança matrimonial necessita de contínua graça divina para superar incompreensões, esfriamentos afetivos e o desgaste da rotina.",
+    text:
+      "Pai celestial, criador da família e autor do matrimônio, coloco o meu casamento sob a tua bênção restauradora. Remove a dureza de coração, o orgulho e as palavras ásperas que ferem a comunhão. Restaura o carinho, a admiração mútua e a cumplicidade entre nós. Ajuda-nos a sermos rápidos em ouvir, tardios em irar e incansáveis em perdoar. Que o nosso lar seja edificado como um cordão de três dobras onde Cristo é o centro inabalável. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Efésios 4:2-3", link: "/biblia/efesios/4", text: "Com toda a humildade e mansidão, com longanimidade, suportando-vos uns aos outros em amor, procurando guardar a unidade do Espírito pelo vínculo da paz." },
+      { ref: "Eclesiastes 4:12", link: "/biblia/eclesiastes/4", text: "E o cordão de três dobras não se quebra tão depressa." },
+    ],
+    reflection:
+      "Um casamento abençoado não é fruto do acaso, mas da decisão diária de servir, perdoar e orar um pelo outro.",
+    application:
+      "Surpreenda seu cônjuge com um elogio sincero ou uma atitude concreta de carinho sem cobrar nada em troca.",
+    relatedStudySlug: "familia-e-casamento-segundo-a-biblia",
+    relatedDevotionalSlug: "amados-com-amor-eterno",
+  },
+  {
+    slug: "oracao-contra-o-medo",
+    category: "Oração contra o medo",
+    categorySlug: "oracao-contra-o-medo",
+    title: "Oração contra o medo e a insegurança interior",
+    intro:
+      "O medo paralisa iniciativas e rouba a alegria de viver. Clamar ao Senhor restabelece a certeza de que Ele é nossa luz e nossa salvação.",
+    text:
+      "Senhor Deus Todo-Poderoso, repreendo em teu santo nome todo sentimento de terror, covardia e pavor que tenta paralisar os meus passos. Tu não me deste um espírito de medo, mas de poder, amor e moderação. Quando os temores tentarem me dominar, ergue meus olhos para a tua soberania. Tu és a minha rocha inabalável e o escudo da minha vida; de quem terei medo? Renova a minha coragem para avançar com fé e dignidade. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "2 Timóteo 1:7", link: "/biblia/2-timoteo/1", text: "Porque Deus não nos deu o espírito de temor, mas de fortaleza, e de amor, e de moderação." },
+      { ref: "Salmos 27:1", link: "/biblia/salmos/27", text: "O Senhor é a minha luz e a minha salvação; a quem temerei?" },
+    ],
+    reflection:
+      "A coragem bíblica não é ausência de perigo ao redor, mas a convicção profunda de que a mão de Deus nos segura firmemente.",
+    application:
+      "Identifique o medo que mais tem limitado sua vida e dê um passo prático de fé contra ele hoje.",
+    relatedStudySlug: "a-armadura-de-deus-efesios-6",
+    relatedDevotionalSlug: "deus-e-nosso-refugio",
+  },
+  {
+    slug: "oracao-de-perdao",
+    category: "Oração de perdão",
+    categorySlug: "oracao-de-perdao",
+    title: "Oração de perdão e libertação de mágoas passadas",
+    intro:
+      "Guardar ressentimento é carregar um veneno que adoece a alma. Liberar perdão sincero é o caminho bíblico para a verdadeira cura emocional.",
+    text:
+      "Senhor Jesus, assim como foste misericordioso comigo perdoando minhas inúmeras falhas na cruz, decido hoje perdoar aqueles que me ofenderam e magoaram. Renuncio a todo desejo de vingança, amargura ou ressentimento. Liberto essas pessoas em meu coração e entrego todo julgamento em tuas mãos justas. Lava a minha alma, cura as feridas emocionais da minha história e enche meu interior com a tua graça libertadora. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Colossenses 3:13", link: "/biblia/colossenses/3", text: "Suportando-vos e perdoando-vos uns aos outros... assim como Cristo vos perdoou, assim fazei vós também." },
+      { ref: "Mateus 6:14", link: "/biblia/mateus/6", text: "Se perdoardes aos homens as suas ofensas, também vosso Pai vos perdoará." },
+    ],
+    reflection:
+      "Perdoar não significa justificar o erro alheio, mas abrir mão da prisão do ressentimento para viver em liberdade interior.",
+    application:
+      "Ore nominalmente por alguém que o magoou, pedindo a Deus que abençoe a vida dessa pessoa e cure o seu coração.",
+    relatedStudySlug: "o-que-e-fe-segundo-a-biblia",
+    relatedDevotionalSlug: "amados-com-amor-eterno",
+  },
+  {
+    slug: "oracao-por-direcao",
+    category: "Oração por direção",
+    categorySlug: "oracao-por-direcao",
+    title: "Oração por direção divina e clareza nos caminhos",
+    intro:
+      "Nas encruzilhadas da vida profissional, familiar ou ministerial, buscar a bússola infalível da Palavra livra-nos de decisões precipitadas.",
+    text:
+      "Senhor meu guia e pastor, coloco meus planos e encruzilhadas diante de ti. Não permitas que eu seja guiado pela vaidade, pela pressa ou pela opinião humana superficial. Mostra-me com clareza o caminho que devo seguir, endireita as minhas veredas e abre meus olhos espirituais para discernir as oportunidades autênticas das ciladas ocultas. Lâmpada para os meus pés é a tua Palavra e luz para o meu caminho. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Salmos 119:105", link: "/biblia/salmos/119", text: "Lâmpada para os meus pés é a tua palavra, e luz para o meu caminho." },
+      { ref: "Provérbios 3:6", link: "/biblia/proverbios/3", text: "Reconhece-o em todos os teus caminhos, e ele endireitará as tuas veredas." },
+    ],
+    reflection:
+      "A direção de Deus costuma vir passo a passo; à medida que obedecemos à luz que já temos, Ele ilumina o próximo trecho da jornada.",
+    application:
+      "Antes de assinar contratos ou assumir compromissos importantes, separe um momento para meditar em um Provérbio.",
+    relatedStudySlug: "sabedoria-nos-proverbios-para-o-dia-a-dia",
+    relatedDevotionalSlug: "confianca-no-amanha",
+  },
+  {
+    slug: "oracao-por-paz",
+    category: "Oração por paz",
+    categorySlug: "oracao-por-paz",
+    title: "Oração por paz interior e reconciliação",
+    intro:
+      "Em um mundo saturado de conflitos, pressa e ruído, a paz bíblica atua como uma fortaleza inabalável para o espírito.",
+    text:
+      "Príncipe da Paz, Jesus, invade o meu ser com a tua presença tranquilizadora. Desarma qualquer espírito de agressividade, impaciência ou discórdia em meu ambiente de convívio. Concede-me a graça de ser um agente de reconciliação onde houver desavença. Guarda meus pensamentos em ti para que nada roube a serenidade profunda que brota da tua salvação. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "João 14:27", link: "/biblia/joao/14", text: "Deixo-vos a paz, a minha paz vos dou; não vo-la dou como o mundo a dá." },
+      { ref: "Isaías 26:3", link: "/biblia/isaias/26", text: "Tu conservarás em paz aquele cuja mente está firme em ti; porque ele confia em ti." },
+    ],
+    reflection:
+      "A verdadeira paz não é a ausência de tempestades no horizonte, mas a presença tranquila de Cristo dentro do barco.",
+    application:
+      "Pratique hoje o silêncio diante de uma provocação, respondendo com brandura e gentileza.",
+    relatedStudySlug: "como-vencer-a-ansiedade-com-a-palavra",
+    relatedDevotionalSlug: "a-paz-que-excede-todo-entendimento",
+  },
+  {
+    slug: "oracao-por-prosperidade",
+    category: "Oração por prosperidade",
+    categorySlug: "oracao-por-prosperidade",
+    title: "Oração por prosperidade e bênção financeira com retidão",
+    intro:
+      "A bênção material que procede de Deus não traz dores nem avareza; ela gera contentamento, justiça e generosidade para repartir com quem precisa.",
+    text:
+      "Senhor Deus, dono da prata e do ouro e provedor de todo bem, entrego minhas finanças e meu sustento às tuas mãos. Abençoa o fruto do meu trabalho honesto, livra-me de dívidas sufocantes e concede-me sabedoria para administrar cada recurso com prudência. Afasta do meu coração a ganância e a inveja. Ensina-me a ser grato no pouco e generoso quando o Senhor me prosperar, honrando-te com as primícias dos meus bens. Em nome de Jesus, amém.",
+    verses: [
+      { ref: "Provérbios 10:22", link: "/biblia/proverbios/10", text: "A bênção do Senhor é que enriquece; e não traz consigo dores." },
+      { ref: "Malaquias 3:10", link: "/biblia/malaquias/3", text: "Trazei todos os dízimos à casa do tesouro... e provai-me nisto, diz o Senhor dos Exércitos, se eu não vos abrir as janelas do céu." },
+    ],
+    reflection:
+      "A prosperidade bíblica é a suficiência em Deus para viver com dignidade e ter com que abençoar o próximo necessitado.",
+    application:
+      "Faça uma planilha simples de gastos esta semana e corte despesas supérfluas para manter as contas em dia.",
+    relatedStudySlug: "sabedoria-nos-proverbios-para-o-dia-a-dia",
+    relatedDevotionalSlug: "comece-o-dia-com-gratidao",
+  },
 ];
 
 export const getStudy = (slug: string) => STUDIES.find((s) => s.slug === slug);

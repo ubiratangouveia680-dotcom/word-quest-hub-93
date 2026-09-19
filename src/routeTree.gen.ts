@@ -20,22 +20,30 @@ import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as OracoesRouteImport } from './routes/oracoes'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PergunteRouteImport } from './routes/pergunte'
+import { Route as PergunteABibliaRouteImport } from './routes/pergunte-a-biblia'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as TemasRouteImport } from './routes/temas'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VersiculoDoDiaRouteImport } from './routes/versiculo-do-dia'
+import { Route as VersiculosRouteImport } from './routes/versiculos'
 import { Route as VersiculosPorTemaRouteImport } from './routes/versiculos-por-tema'
 import { Route as BibliaIndexRouteImport } from './routes/biblia.index'
+import { Route as BibliaAntigoTestamentoRouteImport } from './routes/biblia.antigo-testamento'
+import { Route as BibliaNovoTestamentoRouteImport } from './routes/biblia.novo-testamento'
 import { Route as DevocionaisIndexRouteImport } from './routes/devocionais.index'
 import { Route as DevocionaisSlugRouteImport } from './routes/devocionais.$slug'
 import { Route as EstudosIndexRouteImport } from './routes/estudos.index'
 import { Route as EstudosSlugRouteImport } from './routes/estudos.$slug'
+import { Route as OracoesIndexRouteImport } from './routes/oracoes.index'
+import { Route as OracoesSlugRouteImport } from './routes/oracoes.$slug'
 import { Route as TemasIndexRouteImport } from './routes/temas.index'
 import { Route as TemasSlugRouteImport } from './routes/temas.$slug'
 import { Route as VersiculosPorTemaIndexRouteImport } from './routes/versiculos-por-tema.index'
 import { Route as VersiculosPorTemaSlugRouteImport } from './routes/versiculos-por-tema.$slug'
+import { Route as VersiculosIndexRouteImport } from './routes/versiculos.index'
+import { Route as VersiculosSlugRouteImport } from './routes/versiculos.$slug'
 import { Route as BibliaBookIndexRouteImport } from './routes/biblia.$book.index'
 import { Route as EstudosCategoriaSlugRouteImport } from './routes/estudos.categoria.$slug'
 import { Route as BibliaBookChapterIndexRouteImport } from './routes/biblia.$book.$chapter.index'
@@ -96,6 +104,11 @@ const PergunteRoute = PergunteRouteImport.update({
   path: '/pergunte',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PergunteABibliaRoute = PergunteABibliaRouteImport.update({
+  id: '/pergunte-a-biblia',
+  path: '/pergunte-a-biblia',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
@@ -126,6 +139,11 @@ const VersiculoDoDiaRoute = VersiculoDoDiaRouteImport.update({
   path: '/versiculo-do-dia',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VersiculosRoute = VersiculosRouteImport.update({
+  id: '/versiculos',
+  path: '/versiculos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VersiculosPorTemaRoute = VersiculosPorTemaRouteImport.update({
   id: '/versiculos-por-tema',
   path: '/versiculos-por-tema',
@@ -134,6 +152,16 @@ const VersiculosPorTemaRoute = VersiculosPorTemaRouteImport.update({
 const BibliaIndexRoute = BibliaIndexRouteImport.update({
   id: '/biblia/',
   path: '/biblia/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BibliaAntigoTestamentoRoute = BibliaAntigoTestamentoRouteImport.update({
+  id: '/biblia/antigo-testamento',
+  path: '/biblia/antigo-testamento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BibliaNovoTestamentoRoute = BibliaNovoTestamentoRouteImport.update({
+  id: '/biblia/novo-testamento',
+  path: '/biblia/novo-testamento',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevocionaisIndexRoute = DevocionaisIndexRouteImport.update({
@@ -156,6 +184,16 @@ const EstudosSlugRoute = EstudosSlugRouteImport.update({
   path: '/estudos/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OracoesIndexRoute = OracoesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OracoesRoute,
+} as any)
+const OracoesSlugRoute = OracoesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => OracoesRoute,
+} as any)
 const TemasIndexRoute = TemasIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -175,6 +213,16 @@ const VersiculosPorTemaSlugRoute = VersiculosPorTemaSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => VersiculosPorTemaRoute,
+} as any)
+const VersiculosIndexRoute = VersiculosIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => VersiculosRoute,
+} as any)
+const VersiculosSlugRoute = VersiculosSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => VersiculosRoute,
 } as any)
 const BibliaBookIndexRoute = BibliaBookIndexRouteImport.update({
   id: '/biblia/$book/',
@@ -206,25 +254,33 @@ export interface FileRoutesByFullPath {
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
-  '/oracoes': typeof OracoesRoute
+  '/oracoes': typeof OracoesRouteWithChildren
   '/perfil': typeof PerfilRoute
   '/pergunte': typeof PergunteRoute
+  '/pergunte-a-biblia': typeof PergunteABibliaRoute
   '/privacidade': typeof PrivacidadeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
   '/temas': typeof TemasRouteWithChildren
   '/termos': typeof TermosRoute
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
+  '/versiculos': typeof VersiculosRouteWithChildren
   '/versiculos-por-tema': typeof VersiculosPorTemaRouteWithChildren
+  '/biblia/antigo-testamento': typeof BibliaAntigoTestamentoRoute
+  '/biblia/novo-testamento': typeof BibliaNovoTestamentoRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
+  '/oracoes/$slug': typeof OracoesSlugRoute
   '/temas/$slug': typeof TemasSlugRoute
   '/versiculos-por-tema/$slug': typeof VersiculosPorTemaSlugRoute
+  '/versiculos/$slug': typeof VersiculosSlugRoute
   '/biblia/': typeof BibliaIndexRoute
   '/devocionais/': typeof DevocionaisIndexRoute
   '/estudos/': typeof EstudosIndexRoute
+  '/oracoes/': typeof OracoesIndexRoute
   '/temas/': typeof TemasIndexRoute
   '/versiculos-por-tema/': typeof VersiculosPorTemaIndexRoute
+  '/versiculos/': typeof VersiculosIndexRoute
   '/estudos/categoria/$slug': typeof EstudosCategoriaSlugRoute
   '/biblia/$book/': typeof BibliaBookIndexRoute
   '/biblia/$book/$chapter/$verse': typeof BibliaBookChapterVerseRoute
@@ -239,23 +295,29 @@ export interface FileRoutesByTo {
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
-  '/oracoes': typeof OracoesRoute
   '/perfil': typeof PerfilRoute
   '/pergunte': typeof PergunteRoute
+  '/pergunte-a-biblia': typeof PergunteABibliaRoute
   '/privacidade': typeof PrivacidadeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
   '/termos': typeof TermosRoute
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
+  '/biblia/antigo-testamento': typeof BibliaAntigoTestamentoRoute
+  '/biblia/novo-testamento': typeof BibliaNovoTestamentoRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
+  '/oracoes/$slug': typeof OracoesSlugRoute
   '/temas/$slug': typeof TemasSlugRoute
   '/versiculos-por-tema/$slug': typeof VersiculosPorTemaSlugRoute
+  '/versiculos/$slug': typeof VersiculosSlugRoute
   '/biblia': typeof BibliaIndexRoute
   '/devocionais': typeof DevocionaisIndexRoute
   '/estudos': typeof EstudosIndexRoute
+  '/oracoes': typeof OracoesIndexRoute
   '/temas': typeof TemasIndexRoute
   '/versiculos-por-tema': typeof VersiculosPorTemaIndexRoute
+  '/versiculos': typeof VersiculosIndexRoute
   '/estudos/categoria/$slug': typeof EstudosCategoriaSlugRoute
   '/biblia/$book': typeof BibliaBookIndexRoute
   '/biblia/$book/$chapter/$verse': typeof BibliaBookChapterVerseRoute
@@ -271,25 +333,33 @@ export interface FileRoutesById {
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
-  '/oracoes': typeof OracoesRoute
+  '/oracoes': typeof OracoesRouteWithChildren
   '/perfil': typeof PerfilRoute
   '/pergunte': typeof PergunteRoute
+  '/pergunte-a-biblia': typeof PergunteABibliaRoute
   '/privacidade': typeof PrivacidadeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
   '/temas': typeof TemasRouteWithChildren
   '/termos': typeof TermosRoute
   '/versiculo-do-dia': typeof VersiculoDoDiaRoute
+  '/versiculos': typeof VersiculosRouteWithChildren
   '/versiculos-por-tema': typeof VersiculosPorTemaRouteWithChildren
+  '/biblia/antigo-testamento': typeof BibliaAntigoTestamentoRoute
+  '/biblia/novo-testamento': typeof BibliaNovoTestamentoRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
+  '/oracoes/$slug': typeof OracoesSlugRoute
   '/temas/$slug': typeof TemasSlugRoute
   '/versiculos-por-tema/$slug': typeof VersiculosPorTemaSlugRoute
+  '/versiculos/$slug': typeof VersiculosSlugRoute
   '/biblia/': typeof BibliaIndexRoute
   '/devocionais/': typeof DevocionaisIndexRoute
   '/estudos/': typeof EstudosIndexRoute
+  '/oracoes/': typeof OracoesIndexRoute
   '/temas/': typeof TemasIndexRoute
   '/versiculos-por-tema/': typeof VersiculosPorTemaIndexRoute
+  '/versiculos/': typeof VersiculosIndexRoute
   '/estudos/categoria/$slug': typeof EstudosCategoriaSlugRoute
   '/biblia/$book/': typeof BibliaBookIndexRoute
   '/biblia/$book/$chapter/$verse': typeof BibliaBookChapterVerseRoute
@@ -309,22 +379,30 @@ export interface FileRouteTypes {
     | '/oracoes'
     | '/perfil'
     | '/pergunte'
+    | '/pergunte-a-biblia'
     | '/privacidade'
     | '/sitemap.xml'
     | '/sobre'
     | '/temas'
     | '/termos'
     | '/versiculo-do-dia'
+    | '/versiculos'
     | '/versiculos-por-tema'
+    | '/biblia/antigo-testamento'
+    | '/biblia/novo-testamento'
     | '/devocionais/$slug'
     | '/estudos/$slug'
+    | '/oracoes/$slug'
     | '/temas/$slug'
     | '/versiculos-por-tema/$slug'
+    | '/versiculos/$slug'
     | '/biblia/'
     | '/devocionais/'
     | '/estudos/'
+    | '/oracoes/'
     | '/temas/'
     | '/versiculos-por-tema/'
+    | '/versiculos/'
     | '/estudos/categoria/$slug'
     | '/biblia/$book/'
     | '/biblia/$book/$chapter/$verse'
@@ -339,23 +417,29 @@ export interface FileRouteTypes {
     | '/contato'
     | '/cookies'
     | '/favoritos'
-    | '/oracoes'
     | '/perfil'
     | '/pergunte'
+    | '/pergunte-a-biblia'
     | '/privacidade'
     | '/sitemap.xml'
     | '/sobre'
     | '/termos'
     | '/versiculo-do-dia'
+    | '/biblia/antigo-testamento'
+    | '/biblia/novo-testamento'
     | '/devocionais/$slug'
     | '/estudos/$slug'
+    | '/oracoes/$slug'
     | '/temas/$slug'
     | '/versiculos-por-tema/$slug'
+    | '/versiculos/$slug'
     | '/biblia'
     | '/devocionais'
     | '/estudos'
+    | '/oracoes'
     | '/temas'
     | '/versiculos-por-tema'
+    | '/versiculos'
     | '/estudos/categoria/$slug'
     | '/biblia/$book'
     | '/biblia/$book/$chapter/$verse'
@@ -373,22 +457,30 @@ export interface FileRouteTypes {
     | '/oracoes'
     | '/perfil'
     | '/pergunte'
+    | '/pergunte-a-biblia'
     | '/privacidade'
     | '/sitemap.xml'
     | '/sobre'
     | '/temas'
     | '/termos'
     | '/versiculo-do-dia'
+    | '/versiculos'
     | '/versiculos-por-tema'
+    | '/biblia/antigo-testamento'
+    | '/biblia/novo-testamento'
     | '/devocionais/$slug'
     | '/estudos/$slug'
+    | '/oracoes/$slug'
     | '/temas/$slug'
     | '/versiculos-por-tema/$slug'
+    | '/versiculos/$slug'
     | '/biblia/'
     | '/devocionais/'
     | '/estudos/'
+    | '/oracoes/'
     | '/temas/'
     | '/versiculos-por-tema/'
+    | '/versiculos/'
     | '/estudos/categoria/$slug'
     | '/biblia/$book/'
     | '/biblia/$book/$chapter/$verse'
@@ -404,16 +496,20 @@ export interface RootRouteChildren {
   ContatoRoute: typeof ContatoRoute
   CookiesRoute: typeof CookiesRoute
   FavoritosRoute: typeof FavoritosRoute
-  OracoesRoute: typeof OracoesRoute
+  OracoesRoute: typeof OracoesRouteWithChildren
   PerfilRoute: typeof PerfilRoute
   PergunteRoute: typeof PergunteRoute
+  PergunteABibliaRoute: typeof PergunteABibliaRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SobreRoute: typeof SobreRoute
   TemasRoute: typeof TemasRouteWithChildren
   TermosRoute: typeof TermosRoute
   VersiculoDoDiaRoute: typeof VersiculoDoDiaRoute
+  VersiculosRoute: typeof VersiculosRouteWithChildren
   VersiculosPorTemaRoute: typeof VersiculosPorTemaRouteWithChildren
+  BibliaAntigoTestamentoRoute: typeof BibliaAntigoTestamentoRoute
+  BibliaNovoTestamentoRoute: typeof BibliaNovoTestamentoRoute
   DevocionaisSlugRoute: typeof DevocionaisSlugRoute
   EstudosSlugRoute: typeof EstudosSlugRoute
   BibliaIndexRoute: typeof BibliaIndexRoute
@@ -504,6 +600,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PergunteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pergunte-a-biblia': {
+      id: '/pergunte-a-biblia'
+      path: '/pergunte-a-biblia'
+      fullPath: '/pergunte-a-biblia'
+      preLoaderRoute: typeof PergunteABibliaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacidade': {
       id: '/privacidade'
       path: '/privacidade'
@@ -546,6 +649,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VersiculoDoDiaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/versiculos': {
+      id: '/versiculos'
+      path: '/versiculos'
+      fullPath: '/versiculos'
+      preLoaderRoute: typeof VersiculosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/versiculos-por-tema': {
       id: '/versiculos-por-tema'
       path: '/versiculos-por-tema'
@@ -558,6 +668,20 @@ declare module '@tanstack/react-router' {
       path: '/biblia'
       fullPath: '/biblia/'
       preLoaderRoute: typeof BibliaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/biblia/antigo-testamento': {
+      id: '/biblia/antigo-testamento'
+      path: '/biblia/antigo-testamento'
+      fullPath: '/biblia/antigo-testamento'
+      preLoaderRoute: typeof BibliaAntigoTestamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/biblia/novo-testamento': {
+      id: '/biblia/novo-testamento'
+      path: '/biblia/novo-testamento'
+      fullPath: '/biblia/novo-testamento'
+      preLoaderRoute: typeof BibliaNovoTestamentoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/devocionais/': {
@@ -588,6 +712,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EstudosSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/oracoes/': {
+      id: '/oracoes/'
+      path: '/'
+      fullPath: '/oracoes/'
+      preLoaderRoute: typeof OracoesIndexRouteImport
+      parentRoute: typeof OracoesRoute
+    }
+    '/oracoes/$slug': {
+      id: '/oracoes/$slug'
+      path: '/$slug'
+      fullPath: '/oracoes/$slug'
+      preLoaderRoute: typeof OracoesSlugRouteImport
+      parentRoute: typeof OracoesRoute
+    }
     '/temas/': {
       id: '/temas/'
       path: '/'
@@ -615,6 +753,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/versiculos-por-tema/$slug'
       preLoaderRoute: typeof VersiculosPorTemaSlugRouteImport
       parentRoute: typeof VersiculosPorTemaRoute
+    }
+    '/versiculos/': {
+      id: '/versiculos/'
+      path: '/'
+      fullPath: '/versiculos/'
+      preLoaderRoute: typeof VersiculosIndexRouteImport
+      parentRoute: typeof VersiculosRoute
+    }
+    '/versiculos/$slug': {
+      id: '/versiculos/$slug'
+      path: '/$slug'
+      fullPath: '/versiculos/$slug'
+      preLoaderRoute: typeof VersiculosSlugRouteImport
+      parentRoute: typeof VersiculosRoute
     }
     '/biblia/$book/': {
       id: '/biblia/$book/'
@@ -647,6 +799,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface OracoesRouteChildren {
+  OracoesSlugRoute: typeof OracoesSlugRoute
+  OracoesIndexRoute: typeof OracoesIndexRoute
+}
+
+const OracoesRouteChildren: OracoesRouteChildren = {
+  OracoesSlugRoute: OracoesSlugRoute,
+  OracoesIndexRoute: OracoesIndexRoute,
+}
+
+const OracoesRouteWithChildren =
+  OracoesRoute._addFileChildren(OracoesRouteChildren)
+
 interface TemasRouteChildren {
   TemasSlugRoute: typeof TemasSlugRoute
   TemasIndexRoute: typeof TemasIndexRoute
@@ -658,6 +823,20 @@ const TemasRouteChildren: TemasRouteChildren = {
 }
 
 const TemasRouteWithChildren = TemasRoute._addFileChildren(TemasRouteChildren)
+
+interface VersiculosRouteChildren {
+  VersiculosSlugRoute: typeof VersiculosSlugRoute
+  VersiculosIndexRoute: typeof VersiculosIndexRoute
+}
+
+const VersiculosRouteChildren: VersiculosRouteChildren = {
+  VersiculosSlugRoute: VersiculosSlugRoute,
+  VersiculosIndexRoute: VersiculosIndexRoute,
+}
+
+const VersiculosRouteWithChildren = VersiculosRoute._addFileChildren(
+  VersiculosRouteChildren,
+)
 
 interface VersiculosPorTemaRouteChildren {
   VersiculosPorTemaSlugRoute: typeof VersiculosPorTemaSlugRoute
@@ -681,16 +860,20 @@ const rootRouteChildren: RootRouteChildren = {
   ContatoRoute: ContatoRoute,
   CookiesRoute: CookiesRoute,
   FavoritosRoute: FavoritosRoute,
-  OracoesRoute: OracoesRoute,
+  OracoesRoute: OracoesRouteWithChildren,
   PerfilRoute: PerfilRoute,
   PergunteRoute: PergunteRoute,
+  PergunteABibliaRoute: PergunteABibliaRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SobreRoute: SobreRoute,
   TemasRoute: TemasRouteWithChildren,
   TermosRoute: TermosRoute,
   VersiculoDoDiaRoute: VersiculoDoDiaRoute,
+  VersiculosRoute: VersiculosRouteWithChildren,
   VersiculosPorTemaRoute: VersiculosPorTemaRouteWithChildren,
+  BibliaAntigoTestamentoRoute: BibliaAntigoTestamentoRoute,
+  BibliaNovoTestamentoRoute: BibliaNovoTestamentoRoute,
   DevocionaisSlugRoute: DevocionaisSlugRoute,
   EstudosSlugRoute: EstudosSlugRoute,
   BibliaIndexRoute: BibliaIndexRoute,

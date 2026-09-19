@@ -8,10 +8,11 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 const NAV = [
   { to: "/biblia", label: "Bíblia" },
   { to: "/versiculo-do-dia", label: "Versículo do Dia" },
+  { to: "/versiculos", label: "Versículos" },
   { to: "/estudos", label: "Estudos" },
   { to: "/devocionais", label: "Devocionais" },
   { to: "/oracoes", label: "Orações" },
-  { to: "/pergunte", label: "Pergunte à Bíblia" },
+  { to: "/pergunte-a-biblia", label: "Pergunte à Bíblia" },
 ] as const;
 
 const BOTTOM = [
@@ -130,8 +131,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <div>
             <p className="text-sm font-semibold">Navegação Principal</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/biblia" className="hover:text-foreground">Bíblia</Link></li>
+              <li><Link to="/biblia" className="hover:text-foreground">Bíblia Online</Link></li>
+              <li><Link to="/biblia/antigo-testamento" className="hover:text-foreground">Antigo Testamento</Link></li>
+              <li><Link to="/biblia/novo-testamento" className="hover:text-foreground">Novo Testamento</Link></li>
               <li><Link to="/versiculo-do-dia" className="hover:text-foreground">Versículo do Dia</Link></li>
+              <li><Link to="/versiculos" className="hover:text-foreground">Versículos por Tema</Link></li>
               <li><Link to="/oracoes" className="hover:text-foreground">Orações</Link></li>
               <li><Link to="/estudos" className="hover:text-foreground">Estudos Bíblicos</Link></li>
               <li><Link to="/devocionais" className="hover:text-foreground">Devocionais</Link></li>
