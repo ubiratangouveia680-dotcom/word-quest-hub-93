@@ -51,6 +51,16 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/comunidade/$id")({
+  head: () => ({
+    meta: [
+      { title: "Pergunta — Comunidade Palavra Viva | Bíblia Online" },
+      {
+        name: "description",
+        content: "Um espaço para perguntar, aprender, compartilhar e crescer no conhecimento da Palavra.",
+      },
+      { property: "og:title", content: "Comunidade Palavra Viva" },
+    ],
+  }),
   component: QuestionDetailsPage,
 });
 
@@ -375,7 +385,7 @@ function QuestionDetailsPage() {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: question?.title || "Comunidade Bíblia Online",
+        title: question?.title ? `${question.title} — Comunidade Palavra Viva` : "Comunidade Palavra Viva",
         url: window.location.href,
       }).catch(() => {});
     } else {
@@ -400,7 +410,7 @@ function QuestionDetailsPage() {
         <h2 className="text-xl font-bold">Pergunta não encontrada</h2>
         <p className="text-sm text-muted-foreground mt-2 mb-4">Esta publicação pode ter sido removida.</p>
         <Button asChild>
-          <Link to="/comunidade">Voltar à Comunidade</Link>
+          <Link to="/comunidade">Voltar à Comunidade Palavra Viva</Link>
         </Button>
       </div>
     );
@@ -414,7 +424,7 @@ function QuestionDetailsPage() {
       <div className="mb-6 flex items-center justify-between">
         <Button asChild variant="ghost" size="sm" className="gap-1.5 -ml-2 text-muted-foreground">
           <Link to="/comunidade">
-            <ArrowLeft className="size-4" /> Voltar para Comunidade
+            <ArrowLeft className="size-4" /> 📖 Comunidade Palavra Viva
           </Link>
         </Button>
 

@@ -168,7 +168,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                       onClick={() => setOpen(false)}
                       className="rounded-md px-3 py-2.5 text-base hover:bg-accent flex items-center justify-between"
                     >
-                      <span>👥 Comunidade</span>
+                      <span>📖 Comunidade Palavra Viva</span>
                       <Users className="size-4 text-primary" />
                     </Link>
                     <Link
@@ -213,7 +213,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             <p className="text-sm font-semibold">Navegação Principal</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               <li><Link to="/biblia" className="hover:text-foreground">Bíblia Online</Link></li>
-              <li><Link to="/comunidade" className="hover:text-foreground">👥 Comunidade</Link></li>
+              <li><Link to="/comunidade" className="hover:text-foreground">📖 Comunidade Palavra Viva</Link></li>
               <li><Link to="/biblia/antigo-testamento" className="hover:text-foreground">Antigo Testamento</Link></li>
               <li><Link to="/biblia/novo-testamento" className="hover:text-foreground">Novo Testamento</Link></li>
               <li><Link to="/versiculo-do-dia" className="hover:text-foreground">Versículo do Dia</Link></li>
@@ -226,7 +226,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <div>
             <p className="text-sm font-semibold">Ferramentas & Recursos</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/comunidade" className="hover:text-foreground">Fórum da Comunidade</Link></li>
+              <li><Link to="/comunidade" className="hover:text-foreground">Comunidade Palavra Viva</Link></li>
               <li><Link to="/busca" search={{ q: "" }} className="hover:text-foreground">Busca na Bíblia</Link></li>
               <li><Link to="/favoritos" className="hover:text-foreground">Meus Favoritos</Link></li>
               <li><Link to="/pergunte" search={{ q: "" }} className="hover:text-foreground">Pergunte à Bíblia</Link></li>

@@ -50,7 +50,25 @@ import {
   Eye,
 } from "lucide-react";
 
+import { url } from "@/lib/site";
+
 export const Route = createFileRoute("/comunidade/")({
+  head: () => ({
+    meta: [
+      { title: "Comunidade Palavra Viva — Perguntas, Respostas e Edificação | Bíblia Online" },
+      {
+        name: "description",
+        content: "Um espaço para perguntar, aprender, compartilhar e crescer no conhecimento da Palavra.",
+      },
+      { property: "og:title", content: "📖 Comunidade Palavra Viva — Bíblia Online" },
+      {
+        property: "og:description",
+        content: "Um espaço para perguntar, aprender, compartilhar e crescer no conhecimento da Palavra.",
+      },
+      { property: "og:url", content: url("/comunidade") },
+    ],
+    links: [{ rel: "canonical", href: url("/comunidade") }],
+  }),
   component: ComunidadeFeedPage,
 });
 
@@ -219,11 +237,11 @@ function ComunidadeFeedPage() {
               <Sparkles className="size-3.5" />
               Comunidade Cristã Edificante
             </div>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-              Comunidade Word Quest
+            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground md:text-4xl flex items-center gap-2">
+              <span>📖</span> Comunidade Palavra Viva
             </h1>
             <p className="mt-2 text-sm text-muted-foreground md:text-base max-w-xl">
-              Tire dúvidas bíblicas, compartilhe testemunhos, peça oração e edifique a fé em Cristo Jesus com irmãos de todo o Brasil.
+              Um espaço para perguntar, aprender, compartilhar e crescer no conhecimento da Palavra.
             </p>
             <div className="mt-4 flex items-center gap-3 text-xs font-medium text-muted-foreground">
               <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
@@ -311,9 +329,9 @@ function ComunidadeFeedPage() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-lg">
                   <DialogHeader>
-                    <DialogTitle className="font-display text-xl">Fazer uma Pergunta na Comunidade</DialogTitle>
+                    <DialogTitle className="font-display text-xl">Fazer uma Pergunta na Comunidade Palavra Viva</DialogTitle>
                     <DialogDescription>
-                      Compartilhe sua dúvida ou reflexão bíblica com amor e respeito cristão.
+                      Um espaço para perguntar, aprender, compartilhar e crescer no conhecimento da Palavra.
                     </DialogDescription>
                   </DialogHeader>
 

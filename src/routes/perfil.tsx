@@ -497,19 +497,19 @@ function ProfilePage() {
           )}
         </section>
 
-        {/* SEÇÃO DA COMUNIDADE WORD QUEST */}
+        {/* SEÇÃO DA COMUNIDADE PALAVRA VIVA */}
         {isAuthenticated && (
           <section className="surface mt-5 p-5 rounded-xl border border-border">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl font-semibold flex items-center gap-2">
-                👥 Comunidade Word Quest
+                📖 Comunidade Palavra Viva
               </h2>
               <Button asChild variant="outline" size="sm">
                 <Link to="/comunidade">Acessar Comunidade</Link>
               </Button>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              Participe de conversas edificantes, tire dúvidas bíblicas e abençoe outros irmãos em Cristo.
+              Um espaço para perguntar, aprender, compartilhar e crescer no conhecimento da Palavra.
             </p>
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="rounded-lg bg-accent/40 p-3 text-center border border-border/60">
