@@ -83,9 +83,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             ))}
           </nav>
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Contador de Usuários Online em Tempo Real */}
-            <OnlineCounter />
-
             <Button asChild variant="ghost" size="icon" aria-label="Pesquisar">
               <Link to="/busca" search={{ q: "" }}>
                 <Search className="size-4" />
@@ -121,13 +118,8 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </SheetTrigger>
               <SheetContent side="right" className="w-72 flex flex-col justify-between">
                 <div>
-                  {/* Status online mobile no topo do drawer */}
-                  <div className="mt-4 px-1 flex items-center justify-between">
-                    <OnlineCounter showDetails />
-                  </div>
-
                   {/* Mobile user status card */}
-                  <div className="mt-3 mb-2 mx-1">
+                  <div className="mt-4 mb-2 mx-1">
                     {isAuthenticated ? (
                       <div className="rounded-lg bg-accent/40 p-3 border border-border/70 flex items-center justify-between">
                         <div className="min-w-0 pr-2">
@@ -199,8 +191,13 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                   </nav>
                 </div>
 
-                <div className="border-t border-border p-4 text-center text-xs text-muted-foreground">
-                  Desenvolvido por <span className="font-medium text-foreground">Ubiratan Gouveia</span>
+                <div className="border-t border-border p-4 text-center text-xs text-muted-foreground space-y-2.5">
+                  <div className="flex justify-center">
+                    <OnlineCounter showDetails />
+                  </div>
+                  <p>
+                    Desenvolvido por <span className="font-medium text-foreground">Ubiratan Gouveia</span>
+                  </p>
                 </div>
               </SheetContent>
             </Sheet>
@@ -253,11 +250,14 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             </ul>
           </div>
         </div>
-        <div className="border-t border-border py-4 text-center text-xs text-muted-foreground space-y-1.5 px-4">
-          <p>© {new Date().getFullYear()} Bíblia Online. Todos os direitos reservados.</p>
-          <p className="text-xs font-medium text-foreground">
-            Desenvolvido por <span className="font-semibold text-primary">Ubiratan Gouveia</span>
-          </p>
+        <div className="border-t border-border py-6 text-center text-xs text-muted-foreground space-y-3 px-4 flex flex-col items-center justify-center">
+          <OnlineCounter showDetails />
+          <div className="space-y-1">
+            <p>© {new Date().getFullYear()} Bíblia Online. Todos os direitos reservados.</p>
+            <p className="text-xs font-medium text-foreground">
+              Desenvolvido por <span className="font-semibold text-primary">Ubiratan Gouveia</span>
+            </p>
+          </div>
         </div>
       </footer>
 
