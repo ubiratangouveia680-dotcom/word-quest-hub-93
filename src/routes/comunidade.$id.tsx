@@ -9,6 +9,8 @@ import {
   createAnswer,
   deleteAnswer,
   deleteQuestion,
+  updateQuestion,
+  COMMUNITY_CATEGORIES,
   toggleQuestionLike,
   toggleAnswerLike,
   togglePrayer,
@@ -48,6 +50,7 @@ import {
   MoreVertical,
   Flag,
   Trash2,
+  Pencil,
   Share2,
   BookOpen,
   User as UserIcon,
@@ -81,6 +84,16 @@ function QuestionDetailsPage() {
   const [question, setQuestion] = useState<Question | null>(null);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  // Edit Question Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editCategoryId, setEditCategoryId] = useState("");
+  const [editVerse, setEditVerse] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState("");
 
   // New Answer State
   const [answerBody, setAnswerBody] = useState("");
@@ -91,7 +104,7 @@ function QuestionDetailsPage() {
   // Visitor prompt modal
   const [isVisitorModalOpen, setIsVisitorModalOpen] = useState(false);
   const [visitorModalMessage, setVisitorModalMessage] = useState(
-    "Entre ou crie uma conta para interagir na comunidade."
+    "Entre na sua conta para interagir na comunidade."
   );
 
   // Report Modal State
@@ -109,6 +122,7 @@ function QuestionDetailsPage() {
   // Load question and answers
   const loadData = async () => {
     setIsLoading(true);
+    setLoadError(false);
     try {
       const [qData, aData] = await Promise.all([
         fetchQuestionById(id, user?.id),
@@ -118,7 +132,8 @@ function QuestionDetailsPage() {
       setAnswers(aData);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao carregar a publicação.");
+      setLoadError(true);
+      toast.error("Não foi possível carregar a publicação.");
     } finally {
       setIsLoading(false);
     }
@@ -223,11 +238,11 @@ function QuestionDetailsPage() {
       recordPostTimestamp(user.id);
       setAnswerBody("");
       setAnswerVerse("");
-      toast.success("Comentário enviado com sucesso!");
+      toast.success("Comentário adicionado com sucesso!");
       loadData();
     } catch (err) {
       console.error(err);
-      setAnswerError("Não foi possível enviar o comentário. Tente novamente.");
+      setAnswerError("Não foi possível adicionar o comentário. Tente novamente.");
     } finally {
       setIsSubmittingAnswer(false);
     }
@@ -236,7 +251,7 @@ function QuestionDetailsPage() {
   // Handle Like Answer
   const handleLikeAnswer = async (answer: Answer) => {
     if (!isAuthenticated || !user || !question) {
-      setVisitorModalMessage("Entre para curtir este comentário.");
+      setVisitorModalMessage("Entre na sua conta para curtir este comentário.");
       setIsVisitorModalOpen(true);
       return;
     }
@@ -261,16 +276,70 @@ function QuestionDetailsPage() {
     }
   };
 
+  // Open Edit Modal
+  const handleOpenEditModal = () => {
+    if (!question) return;
+    setEditTitle(question.title || "");
+    setEditBody(question.body);
+    setEditCategoryId(question.category_id);
+    setEditVerse(question.verse_reference || "");
+    setEditError("");
+    setIsEditModalOpen(true);
+  };
+
+  // Save Edit Publication
+  const handleSaveEditPublication = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!question) return;
+
+    const cleanBody = sanitizeText(editBody.trim());
+    if (!cleanBody || cleanBody.length < 5) {
+      setEditError("Por favor, escreva uma mensagem com pelo menos 5 caracteres.");
+      return;
+    }
+
+    try {
+      setIsSavingEdit(true);
+      setEditError("");
+
+      await updateQuestion(question.id, {
+        title: editTitle.trim() || undefined,
+        body: cleanBody,
+        categoryId: editCategoryId,
+        verseReference: editVerse.trim() || undefined,
+      });
+
+      toast.success("Publicação atualizada com sucesso.");
+      setQuestion((prev) =>
+        prev
+          ? {
+              ...prev,
+              title: editTitle.trim() || undefined,
+              body: cleanBody,
+              category_id: editCategoryId,
+              verse_reference: editVerse.trim() || null,
+            }
+          : null
+      );
+      setIsEditModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      setEditError("Não foi possível atualizar a publicação. Tente novamente.");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
   // Delete question
   const handleDeleteQuestion = async () => {
     if (!confirm("Tem certeza que deseja excluir esta publicação?")) return;
     try {
       await deleteQuestion(id);
-      toast.success("Publicação excluída.");
+      toast.success("Publicação excluída com sucesso.");
       navigate({ to: "/comunidade" });
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao excluir publicação.");
+      toast.error("Não foi possível excluir a publicação. Tente novamente.");
     }
   };
 
@@ -279,11 +348,14 @@ function QuestionDetailsPage() {
     if (!confirm("Tem certeza que deseja excluir este comentário?")) return;
     try {
       await deleteAnswer(answerId, id);
-      toast.success("Comentário excluído.");
-      loadData();
+      toast.success("Comentário excluído com sucesso.");
+      setAnswers((prev) => prev.filter((a) => a.id !== answerId));
+      setQuestion((prev) =>
+        prev ? { ...prev, answers_count: Math.max(0, (prev.answers_count || 1) - 1) } : null
+      );
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao excluir comentário.");
+      toast.error("Não foi possível excluir o comentário. Tente novamente.");
     }
   };
 
@@ -433,17 +505,25 @@ function QuestionDetailsPage() {
                   <Share2 className="size-4" /> Copiar link
                 </DropdownMenuItem>
                 {isQuestionAuthor ? (
-                  <DropdownMenuItem
-                    onClick={handleDeleteQuestion}
-                    className="text-destructive gap-2 focus:text-destructive"
-                  >
-                    <Trash2 className="size-4" /> Excluir Publicação
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem
+                      onClick={handleOpenEditModal}
+                      className="gap-2"
+                    >
+                      <Pencil className="size-4" /> Editar Publicação
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleDeleteQuestion}
+                      className="text-destructive gap-2 focus:text-destructive"
+                    >
+                      <Trash2 className="size-4" /> Excluir Publicação
+                    </DropdownMenuItem>
+                  </>
                 ) : (
                   <DropdownMenuItem
                     onClick={() => {
                       if (!isAuthenticated) {
-                        setVisitorModalMessage("Entre para denunciar uma publicação.");
+                        setVisitorModalMessage("Entre na sua conta para participar da comunidade.");
                         setIsVisitorModalOpen(true);
                         return;
                       }
@@ -470,11 +550,11 @@ function QuestionDetailsPage() {
               {question.author?.avatar_url ? (
                 <img
                   src={question.author.avatar_url}
-                  alt={question.author.name}
+                  alt={question.author.name || "Avatar"}
                   className="size-full object-cover"
                 />
               ) : (
-                question.author?.name ? question.author.name.charAt(0).toUpperCase() : "I"
+                (question.author?.name || (isQuestionAuthor && user?.user_metadata?.name) || "U").charAt(0).toUpperCase()
               )}
             </button>
             <div>
@@ -483,7 +563,7 @@ function QuestionDetailsPage() {
                 onClick={() => handleOpenAuthorProfile(question.user_id)}
                 className="font-semibold text-sm text-foreground hover:text-primary transition-colors text-left block"
               >
-                {question.author?.name || "Irmão(ã) em Cristo"}
+                {question.author?.name || (isQuestionAuthor && user?.user_metadata?.name) || "Usuário"}
               </button>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                 <Clock className="size-3" />
@@ -636,11 +716,11 @@ function QuestionDetailsPage() {
                         {ans.author?.avatar_url ? (
                           <img
                             src={ans.author.avatar_url}
-                            alt={ans.author.name}
+                            alt={ans.author.name || "Avatar"}
                             className="size-full object-cover"
                           />
                         ) : (
-                          ans.author?.name ? ans.author.name.charAt(0).toUpperCase() : "I"
+                          (ans.author?.name || (ans.user_id === user?.id && user?.user_metadata?.name) || "U").charAt(0).toUpperCase()
                         )}
                       </button>
 
@@ -651,7 +731,7 @@ function QuestionDetailsPage() {
                             onClick={() => handleOpenAuthorProfile(ans.user_id)}
                             className="text-xs font-semibold text-foreground hover:text-primary transition-colors text-left"
                           >
-                            {ans.author?.name || "Irmão(ã) em Cristo"}
+                            {ans.author?.name || (ans.user_id === user?.id && user?.user_metadata?.name) || "Usuário"}
                           </button>
                           {ans.user_id === question.user_id && (
                             <span className="rounded bg-primary/15 px-1.5 py-0.2 text-[9px] font-bold text-primary">
@@ -932,6 +1012,116 @@ function QuestionDetailsPage() {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* MODAL: Editar Publicação */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-display text-xl flex items-center gap-2">
+                <Pencil className="size-5 text-primary" /> Editar Publicação
+              </DialogTitle>
+              <DialogDescription>
+                Atualize o conteúdo de sua publicação na Comunidade Palavra Viva.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleSaveEditPublication} className="space-y-4 pt-2">
+              {editError && (
+                <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-3 text-xs text-destructive font-medium">
+                  {editError}
+                </div>
+              )}
+
+              {/* Categoria */}
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">
+                  Categoria *
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {COMMUNITY_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setEditCategoryId(cat.id)}
+                      className={`flex items-center gap-2 rounded-lg border p-2 text-xs font-medium transition-all text-left ${
+                        editCategoryId === cat.id
+                          ? "border-primary bg-primary/10 text-foreground font-semibold shadow-xs"
+                          : "border-border bg-card hover:bg-accent text-muted-foreground"
+                      }`}
+                    >
+                      <span className="text-sm">{cat.emoji}</span>
+                      <span className="truncate">{cat.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Título opcional */}
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">
+                  Título (opcional)
+                </label>
+                <Input
+                  placeholder="Ex: Reflexão sobre a graça salvadora"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  maxLength={120}
+                />
+              </div>
+
+              {/* Versículo / Referência */}
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">
+                  Referência Bíblica (opcional)
+                </label>
+                <Input
+                  placeholder="Ex: João 3:16 ou Filipenses 4:13"
+                  value={editVerse}
+                  onChange={(e) => setEditVerse(e.target.value)}
+                  maxLength={80}
+                />
+              </div>
+
+              {/* Texto / Conteúdo */}
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">
+                  Mensagem / Texto *
+                </label>
+                <Textarea
+                  placeholder="Escreva sua reflexão, oração ou testemunho..."
+                  value={editBody}
+                  onChange={(e) => setEditBody(e.target.value)}
+                  rows={5}
+                  required
+                  className="leading-relaxed"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSavingEdit}
+                  className="font-semibold"
+                >
+                  {isSavingEdit ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin mr-2" /> Salvando...
+                    </>
+                  ) : (
+                    "Salvar Alterações"
+                  )}
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </main>

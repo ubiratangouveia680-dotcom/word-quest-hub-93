@@ -12,6 +12,7 @@ import {
   sanitizeText,
   fetchQuestions,
   createQuestion,
+  updateQuestion,
   deleteQuestion,
   toggleQuestionLike,
   togglePrayer,
@@ -49,6 +50,7 @@ import {
   MoreVertical,
   Flag,
   Trash2,
+  Pencil,
   Share2,
   Check,
   User as UserIcon,
@@ -107,6 +109,7 @@ function ComunidadeFeedPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [, startTransition] = useTransition();
 
   // Create Publication Modal State
@@ -118,10 +121,20 @@ function ComunidadeFeedPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
+  // Edit Publication Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editCategoryId, setEditCategoryId] = useState<string>(COMMUNITY_CATEGORIES[0].id);
+  const [editVerse, setEditVerse] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState("");
+
   // Auth / Visitor Prompt Modal State
   const [isVisitorModalOpen, setIsVisitorModalOpen] = useState(false);
   const [visitorModalMessage, setVisitorModalMessage] = useState(
-    "Entre ou crie uma conta para participar da comunidade."
+    "Entre na sua conta para participar da comunidade."
   );
 
   // Public Profile Modal State (strictly LGPD compliant)
@@ -145,7 +158,7 @@ function ComunidadeFeedPage() {
       if (isAuthenticated) {
         setIsCreateModalOpen(true);
       } else {
-        setVisitorModalMessage("Entre ou crie uma conta para compartilhar versículos na comunidade.");
+        setVisitorModalMessage("Entre na sua conta para compartilhar versículos na comunidade.");
         setIsVisitorModalOpen(true);
       }
     }
@@ -155,6 +168,7 @@ function ComunidadeFeedPage() {
   const loadFeed = async (reset = false) => {
     if (reset) {
       setIsLoading(true);
+      setLoadError(false);
     } else {
       setIsLoadingMore(true);
     }
@@ -178,7 +192,8 @@ function ComunidadeFeedPage() {
       }
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao carregar publicações da comunidade.");
+      setLoadError(true);
+      toast.error("Não foi possível carregar as publicações.");
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
@@ -197,7 +212,7 @@ function ComunidadeFeedPage() {
   // Open Create Modal handler
   const handleOpenCreateModal = () => {
     if (!isAuthenticated || !user) {
-      setVisitorModalMessage("Entre ou crie uma conta para participar da comunidade.");
+      setVisitorModalMessage("Entre na sua conta para participar da comunidade.");
       setIsVisitorModalOpen(true);
       return;
     }
@@ -242,7 +257,7 @@ function ComunidadeFeedPage() {
 
       if (created) {
         recordPostTimestamp(user.id);
-        toast.success("Publicação compartilhada com sucesso na comunidade!");
+        toast.success("Publicação criada com sucesso.");
         setTitle("");
         setBody("");
         setVerseReference("");
@@ -254,6 +269,63 @@ function ComunidadeFeedPage() {
       setFormError("Não foi possível publicar. Tente novamente.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Open Edit Modal handler
+  const handleOpenEditModal = (q: Question) => {
+    setEditingQuestion(q);
+    setEditTitle(q.title || "");
+    setEditBody(q.body);
+    setEditCategoryId(q.category_id);
+    setEditVerse(q.verse_reference || "");
+    setEditError("");
+    setIsEditModalOpen(true);
+  };
+
+  // Submit Edit publication
+  const handleSaveEditPublication = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingQuestion) return;
+
+    const cleanBody = sanitizeText(editBody.trim());
+    if (!cleanBody || cleanBody.length < 5) {
+      setEditError("Por favor, escreva uma mensagem com pelo menos 5 caracteres.");
+      return;
+    }
+
+    try {
+      setIsSavingEdit(true);
+      setEditError("");
+
+      await updateQuestion(editingQuestion.id, {
+        title: editTitle.trim() || undefined,
+        body: cleanBody,
+        categoryId: editCategoryId,
+        verseReference: editVerse.trim() || undefined,
+      });
+
+      toast.success("Publicação atualizada com sucesso.");
+      setQuestions((prev) =>
+        prev.map((item) =>
+          item.id === editingQuestion.id
+            ? {
+                ...item,
+                title: editTitle.trim() || undefined,
+                body: cleanBody,
+                category_id: editCategoryId,
+                verse_reference: editVerse.trim() || null,
+              }
+            : item
+        )
+      );
+      setIsEditModalOpen(false);
+      setEditingQuestion(null);
+    } catch (err) {
+      console.error(err);
+      setEditError("Não foi possível atualizar a publicação. Tente novamente.");
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -492,19 +564,39 @@ function ComunidadeFeedPage() {
         {/* FEED DE PUBLICAÇÕES */}
         <section aria-label="Feed de publicações" className="space-y-4">
           {isLoading ? (
-            <div className="py-20 text-center text-muted-foreground">
-              <Loader2 className="mx-auto size-8 animate-spin text-primary mb-3" />
-              <p className="text-sm font-medium">Carregando publicações da comunidade...</p>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-xl border border-border/70 bg-card p-5 animate-pulse space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="size-10 rounded-full bg-muted" />
+                    <div className="space-y-1.5 flex-1">
+                      <div className="h-4 w-32 bg-muted rounded" />
+                      <div className="h-3 w-20 bg-muted/60 rounded" />
+                    </div>
+                  </div>
+                  <div className="h-4 w-3/4 bg-muted rounded" />
+                  <div className="h-12 w-full bg-muted/50 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : loadError && questions.length === 0 ? (
+            <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-8 text-center">
+              <p className="text-sm font-semibold text-foreground mb-1">
+                Não foi possível carregar as publicações.
+              </p>
+              <p className="text-xs text-muted-foreground mb-4">
+                Por favor, verifique sua conexão ou tente novamente.
+              </p>
+              <Button onClick={() => loadFeed(true)} variant="outline" size="sm" className="gap-1.5 font-medium">
+                Tentar novamente
+              </Button>
             </div>
           ) : questions.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-card/60 p-12 text-center">
               <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10 text-2xl">
                 🕊️
               </div>
-              <h3 className="font-display text-lg font-bold text-foreground">
-                Nenhuma publicação encontrada
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto mt-2 mb-6 leading-relaxed">
+              <p className="text-base font-semibold text-foreground max-w-md mx-auto mb-6 leading-relaxed">
                 Seja a primeira pessoa a compartilhar algo com a comunidade.
               </p>
               <Button onClick={handleOpenCreateModal} className="gap-2 font-semibold">
@@ -535,11 +627,11 @@ function ComunidadeFeedPage() {
                         {q.author?.avatar_url ? (
                           <img
                             src={q.author.avatar_url}
-                            alt={q.author.name}
+                            alt={q.author.name || "Avatar"}
                             className="size-full object-cover"
                           />
                         ) : (
-                          q.author?.name ? q.author.name.charAt(0).toUpperCase() : "I"
+                          (q.author?.name || (isAuthor && user?.user_metadata?.name) || "U").charAt(0).toUpperCase()
                         )}
                       </button>
 
@@ -550,7 +642,7 @@ function ComunidadeFeedPage() {
                             onClick={() => handleOpenAuthorProfile(q.user_id)}
                             className="font-semibold text-sm text-foreground hover:text-primary transition-colors truncate text-left"
                           >
-                            {q.author?.name || "Irmão(ã) em Cristo"}
+                            {q.author?.name || (isAuthor && user?.user_metadata?.name) || "Usuário"}
                           </button>
 
                           {/* Selo da Categoria */}
@@ -584,17 +676,25 @@ function ComunidadeFeedPage() {
                           <Share2 className="size-4" /> Copiar link
                         </DropdownMenuItem>
                         {isAuthor ? (
-                          <DropdownMenuItem
-                            onClick={() => handleDeletePost(q.id)}
-                            className="text-destructive gap-2 focus:text-destructive"
-                          >
-                            <Trash2 className="size-4" /> Excluir publicação
-                          </DropdownMenuItem>
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => handleOpenEditModal(q)}
+                              className="gap-2"
+                            >
+                              <Pencil className="size-4" /> Editar publicação
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDeletePost(q.id)}
+                              className="text-destructive gap-2 focus:text-destructive"
+                            >
+                              <Trash2 className="size-4" /> Excluir publicação
+                            </DropdownMenuItem>
+                          </>
                         ) : (
                           <DropdownMenuItem
                             onClick={() => {
                               if (!isAuthenticated) {
-                                setVisitorModalMessage("Entre para denunciar uma publicação.");
+                                setVisitorModalMessage("Entre na sua conta para participar da comunidade.");
                                 setIsVisitorModalOpen(true);
                                 return;
                               }
@@ -1031,6 +1131,116 @@ function ComunidadeFeedPage() {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* MODAL: Editar Publicação */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-display text-xl flex items-center gap-2">
+                <Pencil className="size-5 text-primary" /> Editar Publicação
+              </DialogTitle>
+              <DialogDescription>
+                Atualize o conteúdo de sua publicação na Comunidade Palavra Viva.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleSaveEditPublication} className="space-y-4 pt-2">
+              {editError && (
+                <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-3 text-xs text-destructive font-medium">
+                  {editError}
+                </div>
+              )}
+
+              {/* Categoria */}
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">
+                  Categoria *
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {COMMUNITY_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setEditCategoryId(cat.id)}
+                      className={`flex items-center gap-2 rounded-lg border p-2 text-xs font-medium transition-all text-left ${
+                        editCategoryId === cat.id
+                          ? "border-primary bg-primary/10 text-foreground font-semibold shadow-xs"
+                          : "border-border bg-card hover:bg-accent text-muted-foreground"
+                      }`}
+                    >
+                      <span className="text-sm">{cat.emoji}</span>
+                      <span className="truncate">{cat.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Título opcional */}
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">
+                  Título (opcional)
+                </label>
+                <Input
+                  placeholder="Ex: Reflexão sobre a graça salvadora"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  maxLength={120}
+                />
+              </div>
+
+              {/* Versículo / Referência */}
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">
+                  Referência Bíblica (opcional)
+                </label>
+                <Input
+                  placeholder="Ex: João 3:16 ou Filipenses 4:13"
+                  value={editVerse}
+                  onChange={(e) => setEditVerse(e.target.value)}
+                  maxLength={80}
+                />
+              </div>
+
+              {/* Texto / Conteúdo */}
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">
+                  Mensagem / Texto *
+                </label>
+                <Textarea
+                  placeholder="Escreva sua reflexão, oração ou testemunho..."
+                  value={editBody}
+                  onChange={(e) => setEditBody(e.target.value)}
+                  rows={5}
+                  required
+                  className="leading-relaxed"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSavingEdit}
+                  className="font-semibold"
+                >
+                  {isSavingEdit ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin mr-2" /> Salvando...
+                    </>
+                  ) : (
+                    "Salvar Alterações"
+                  )}
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </main>

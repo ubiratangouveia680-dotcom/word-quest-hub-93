@@ -50,7 +50,6 @@ export function getCategoryMeta(categoryId: string): { name: string; emoji: stri
 
 export const REPORT_REASONS = [
   "Spam",
-  "Conteúdo ofensivo",
   "Conteúdo inadequado",
   "Assédio",
   "Outro",
@@ -344,7 +343,7 @@ export async function fetchQuestions({
       ...q,
       likes_count: realLikes,
       answers_count: realAnswers,
-      author: profileMap.get(q.user_id) || { id: q.user_id, name: "Irmão(ã) em Cristo", avatar_url: null },
+      author: profileMap.get(q.user_id) || { id: q.user_id, name: "Usuário", avatar_url: null },
       category: Array.isArray(q.category) ? q.category[0] : q.category,
       user_has_liked: likedQuestionIds.has(q.id),
       user_has_prayed: userReactions.includes("🙏"),
@@ -378,7 +377,7 @@ export async function fetchQuestionById(id: string, currentUserId?: string | nul
   // Fetch author profile safely
   let authorProfile: QuestionAuthor = {
     id: data.user_id,
-    name: "Irmão(ã) em Cristo",
+    name: "Usuário",
     avatar_url: null,
   };
   try {
@@ -524,7 +523,7 @@ export interface PublicProfileData {
 }
 
 export async function fetchPublicProfile(userId: string): Promise<PublicProfileData | null> {
-  let profileName = "Irmão(ã) em Cristo";
+  let profileName = "Usuário";
   let profileCreatedAt = new Date().toISOString();
 
   try {
@@ -659,7 +658,7 @@ export async function fetchAnswers(questionId: string, currentUserId?: string | 
   const parsedAnswers: Answer[] = rawAnswers.map((a) => ({
     ...a,
     likes_count: likesCountMap.has(a.id) ? likesCountMap.get(a.id)! : (a.likes_count || 0),
-    author: profileMap.get(a.user_id) || { id: a.user_id, name: "Irmão(ã) em Cristo", avatar_url: null },
+    author: profileMap.get(a.user_id) || { id: a.user_id, name: "Usuário", avatar_url: null },
     user_has_liked: likedAnswerIds.has(a.id),
     reactions_summary: reactionsSummaryMap.get(a.id) || {},
     user_reactions: userReactionsMap.get(a.id) || [],
@@ -742,10 +741,17 @@ export async function updateQuestion(
   const payload: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
-  if (updates.title) payload.title = updates.title.trim();
-  if (updates.body) payload.body = updates.body.trim();
+  if (updates.title !== undefined) {
+    const cleanTitle = sanitizeText(updates.title).trim();
+    payload.title = cleanTitle || (updates.body ? sanitizeText(updates.body).trim().slice(0, 50) : "Publicação");
+  }
+  if (updates.body !== undefined) {
+    payload.body = sanitizeText(updates.body).trim();
+  }
   if (updates.categoryId) payload.category_id = updates.categoryId;
-  if (updates.verseReference !== undefined) payload.verse_reference = updates.verseReference.trim() || null;
+  if (updates.verseReference !== undefined) {
+    payload.verse_reference = updates.verseReference.trim() ? sanitizeText(updates.verseReference.trim()) : null;
+  }
 
   const { error } = await supabase.from("questions").update(payload).eq("id", questionId);
   if (error) throw error;
