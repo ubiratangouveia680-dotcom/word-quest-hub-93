@@ -11,7 +11,7 @@ interface AdProps {
  * Bloco de anúncio. Enquanto o AdSense não estiver configurado em /admin,
  * é exibido um espaço reservado neutro — nunca um anúncio falso.
  */
-function AdSlot({ slotName, className = "", minHeight }: AdProps & { minHeight: number }) {
+export function AdSlot({ slotName, className = "", minHeight = 90 }: AdProps & { minHeight?: number }) {
   const settings = useAdSettings();
   const insRef = useRef<HTMLModElement | null>(null);
   const pushed = useRef(false);

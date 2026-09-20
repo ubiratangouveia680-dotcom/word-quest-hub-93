@@ -11,6 +11,7 @@ Disallow: /admin
 Disallow: /busca
 Disallow: /favoritos
 Disallow: /perfil
+Disallow: /configuracoes
 Disallow: /auth
 
 Sitemap: ${SITE_URL}/sitemap.xml

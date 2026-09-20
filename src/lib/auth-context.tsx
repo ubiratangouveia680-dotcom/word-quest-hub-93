@@ -24,6 +24,7 @@ interface AuthContextType {
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
   updateProfile: (patch: { name?: string; avatar_url?: string | null }) => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
+  deleteAccount: () => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -304,6 +305,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, refreshProfile]);
 
+  const deleteAccount = useCallback(async () => {
+    if (!user) {
+      return { error: new Error("Nenhum usuário logado.") };
+    }
+    try {
+      const uid = user.id;
+
+      // 1. Remover curtidas e salvos comunitários
+      try {
+        await supabase.from("community_likes").delete().eq("user_id", uid);
+      } catch {
+        // Ignora caso tabela não exista ou permissão
+      }
+
+      try {
+        await supabase.from("community_bookmarks").delete().eq("user_id", uid);
+      } catch {
+        // Ignora
+      }
+
+      // 2. Remover comentários e posts
+      try {
+        await supabase.from("community_comments").delete().eq("user_id", uid);
+      } catch {
+        // Ignora
+      }
+
+      try {
+        await supabase.from("community_posts").delete().eq("user_id", uid);
+      } catch {
+        // Ignora
+      }
+
+      // 3. Remover perfil
+      try {
+        await supabase.from("profiles").delete().eq("user_id", uid);
+      } catch {
+        // Ignora
+      }
+
+      // 4. Limpar dados locais sensíveis do usuário
+      try {
+        localStorage.removeItem("bible_reading_history");
+        localStorage.removeItem("bible_reading_plan");
+        localStorage.removeItem("verse_notifications");
+        localStorage.removeItem("verse_last_notified");
+      } catch {
+        // Ignora
+      }
+
+      // 5. Encerrar sessão no Supabase
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+
+      return { error: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err : new Error("Erro ao excluir a conta.") };
+    }
+  }, [user]);
+
   const value: AuthContextType = {
     user,
     session,
@@ -317,6 +380,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updatePassword,
     updateProfile,
     refreshProfile,
+    deleteAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

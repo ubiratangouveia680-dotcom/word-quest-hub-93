@@ -37,6 +37,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { OnlineCounter } from "@/components/OnlineCounter";
+import { InstallPwaButton } from "@/components/InstallPwaButton";
 
 const DESKTOP_NAV = [
   { to: "/", label: "Início" },
@@ -137,6 +138,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 <Search className="size-4.5" />
               </Link>
             </Button>
+
+            {/* Instalação do PWA (aparece se disponível) */}
+            <InstallPwaButton className="hidden md:inline-flex" />
 
             {/* Alternador de Tema (visível no desktop) */}
             <div className="hidden sm:inline-flex">
@@ -429,13 +433,16 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                         </button>
 
                         <Link
-                          to="/perfil"
+                          to="/configuracoes"
                           onClick={() => setOpen(false)}
                           className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
                         >
                           <Settings className="size-4 text-muted-foreground" />
                           <span>Configurações</span>
                         </Link>
+                        <div className="pt-1">
+                          <InstallPwaButton className="w-full justify-start text-left" />
+                        </div>
                         <Link
                           to="/sobre"
                           onClick={() => setOpen(false)}
@@ -524,6 +531,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 <li><Link to="/privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</Link></li>
                 <li><Link to="/termos" className="hover:text-foreground transition-colors">Termos de Uso</Link></li>
                 <li><Link to="/cookies" className="hover:text-foreground transition-colors">Política de Cookies</Link></li>
+                <li><Link to="/configuracoes" className="hover:text-foreground transition-colors">Configurações</Link></li>
               </ul>
             </div>
           </div>

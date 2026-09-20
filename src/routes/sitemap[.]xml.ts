@@ -18,6 +18,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           { loc: "/estudos", priority: "0.8", changefreq: "weekly" },
           { loc: "/devocionais", priority: "0.8", changefreq: "daily" },
           { loc: "/oracoes", priority: "0.8", changefreq: "weekly" },
+          { loc: "/comunidade", priority: "0.8", changefreq: "daily" },
           { loc: "/pergunte-a-biblia", priority: "0.7", changefreq: "weekly" },
           { loc: "/pergunte", priority: "0.6", changefreq: "monthly" },
           { loc: "/privacidade", priority: "0.3", changefreq: "yearly" },

@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdsDottxtRouteImport } from './routes/ads[.]txt'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BuscaRouteImport } from './routes/busca'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
@@ -75,6 +76,11 @@ const AuthRoute = AuthRouteImport.update({
 const BuscaRoute = BuscaRouteImport.update({
   id: '/busca',
   path: '/busca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContatoRoute = ContatoRouteImport.update({
@@ -269,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/ads.txt': typeof AdsDottxtRoute
   '/auth': typeof AuthRoute
   '/busca': typeof BuscaRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
@@ -313,6 +320,7 @@ export interface FileRoutesByTo {
   '/ads.txt': typeof AdsDottxtRoute
   '/auth': typeof AuthRoute
   '/busca': typeof BuscaRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
@@ -354,6 +362,7 @@ export interface FileRoutesById {
   '/ads.txt': typeof AdsDottxtRoute
   '/auth': typeof AuthRoute
   '/busca': typeof BuscaRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
@@ -400,6 +409,7 @@ export interface FileRouteTypes {
     | '/ads.txt'
     | '/auth'
     | '/busca'
+    | '/configuracoes'
     | '/contato'
     | '/cookies'
     | '/favoritos'
@@ -444,6 +454,7 @@ export interface FileRouteTypes {
     | '/ads.txt'
     | '/auth'
     | '/busca'
+    | '/configuracoes'
     | '/contato'
     | '/cookies'
     | '/favoritos'
@@ -484,6 +495,7 @@ export interface FileRouteTypes {
     | '/ads.txt'
     | '/auth'
     | '/busca'
+    | '/configuracoes'
     | '/contato'
     | '/cookies'
     | '/favoritos'
@@ -529,6 +541,7 @@ export interface RootRouteChildren {
   AdsDottxtRoute: typeof AdsDottxtRoute
   AuthRoute: typeof AuthRoute
   BuscaRoute: typeof BuscaRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
   ContatoRoute: typeof ContatoRoute
   CookiesRoute: typeof CookiesRoute
   FavoritosRoute: typeof FavoritosRoute
@@ -595,6 +608,13 @@ declare module '@tanstack/react-router' {
       path: '/busca'
       fullPath: '/busca'
       preLoaderRoute: typeof BuscaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contato': {
@@ -917,6 +937,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdsDottxtRoute: AdsDottxtRoute,
   AuthRoute: AuthRoute,
   BuscaRoute: BuscaRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
   ContatoRoute: ContatoRoute,
   CookiesRoute: CookiesRoute,
   FavoritosRoute: FavoritosRoute,

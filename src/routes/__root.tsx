@@ -33,42 +33,45 @@ function NotFoundComponent() {
         <h1 className="mt-4 font-display text-2xl font-semibold sm:text-3xl">
           Página não encontrada
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          O endereço digitado não existe ou foi movido para um novo caminho.
+        <p className="mt-2 text-sm text-muted-foreground max-w-md">
+          O conteúdo que você procura não foi encontrado ou foi movido para outro endereço.
         </p>
 
-        <div className="mt-8 w-full max-w-md rounded-2xl border border-border/70 bg-card p-6 shadow-xs">
-          <p className="text-sm font-medium text-foreground">
-            Talvez você encontre o que procura aqui:
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/biblia">Bíblia Online</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/versiculo-do-dia">Versículo do Dia</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/oracoes">Orações</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/versiculos">Versículos</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/estudos">Estudos</Link>
-            </Button>
-            <Button asChild variant="default" size="sm">
-              <Link to="/busca" search={{ q: "" }}>
-                <Search className="mr-1.5 size-3.5" /> Busca
-              </Link>
-            </Button>
-          </div>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Button asChild size="default">
+            <Link to="/">Voltar para o início</Link>
+          </Button>
+          <Button asChild variant="outline" size="default">
+            <Link to="/busca" search={{ q: "" }}>
+              <Search className="mr-1.5 size-4" /> Pesquisar na Bíblia
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="default">
+            <Link to="/biblia">Bíblia</Link>
+          </Button>
         </div>
 
-        <div className="mt-6">
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/">&larr; Voltar para a Página Inicial</Link>
-          </Button>
+        <div className="mt-8 w-full max-w-md rounded-xl border border-border/70 bg-card/60 p-5 shadow-xs">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Outras seções populares
+          </p>
+          <div className="mt-3 flex flex-wrap justify-center gap-2">
+            <Button asChild variant="ghost" size="sm" className="text-xs">
+              <Link to="/versiculo-do-dia">Versículo do Dia</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="text-xs">
+              <Link to="/oracoes">Orações</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="text-xs">
+              <Link to="/estudos">Estudos Bíblicos</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="text-xs">
+              <Link to="/devocionais">Devocionais</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="text-xs">
+              <Link to="/comunidade">Comunidade</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </SiteLayout>
@@ -182,6 +185,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { property: "og:locale", content: "pt_BR" },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "theme-color", content: "#fbf9f4" },
+        ...(import.meta.env.VITE_GOOGLE_SITE_VERIFICATION
+          ? [{ name: "google-site-verification", content: import.meta.env.VITE_GOOGLE_SITE_VERIFICATION }]
+          : []),
       ],
       links: [
         { rel: "stylesheet", href: appCss },

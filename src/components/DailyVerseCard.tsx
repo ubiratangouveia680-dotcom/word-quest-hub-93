@@ -69,7 +69,7 @@ export function DailyVerseCard() {
     <article className="warm-panel rounded-2xl p-5 sm:p-7 border border-gold/30 shadow-xs">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3.5">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-gold">
-          ✨ Palavra do Dia
+          ✨ Versículo do Dia
         </span>
         <span className="font-display text-sm sm:text-base font-bold text-foreground">
           {title}
@@ -77,13 +77,9 @@ export function DailyVerseCard() {
       </div>
 
       <div className="py-5">
-        {isLoading ? (
-          <Skeleton className="h-20 w-full rounded-xl" />
-        ) : (
-          <blockquote className="reading-text text-base sm:text-lg italic text-foreground leading-relaxed">
-            "{verse?.text ?? "Carregando o versículo do dia..."}"
-          </blockquote>
-        )}
+        <blockquote className="reading-text text-base sm:text-lg italic text-foreground leading-relaxed">
+          "{verse?.text || ref.text || "Carregando o versículo do dia..."}"
+        </blockquote>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3.5 border-t border-border/50">

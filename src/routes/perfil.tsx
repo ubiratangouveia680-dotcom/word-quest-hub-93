@@ -27,6 +27,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useFavorites, useProgress } from "@/lib/storage";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -70,7 +81,7 @@ export const Route = createFileRoute("/perfil")({
 
 function ProfilePage() {
   const navigate = useNavigate();
-  const { user, profile, isAuthenticated, isLoading, signOut, updatePassword, updateProfile } = useAuth();
+  const { user, profile, isAuthenticated, isLoading, signOut, updatePassword, updateProfile, deleteAccount } = useAuth();
   const { items } = useFavorites();
   const { history } = useProgress();
 
@@ -147,6 +158,7 @@ function ProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   async function handleLogout() {
     const { error } = await signOut();
@@ -154,6 +166,23 @@ function ProfilePage() {
       toast.error(error.message);
     } else {
       toast.success("Sessão encerrada com sucesso.");
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setIsDeletingAccount(true);
+    try {
+      const { error } = await deleteAccount();
+      if (error) {
+        toast.error(`Erro ao excluir conta: ${error.message}`);
+      } else {
+        toast.success("Sua conta e dados foram excluídos com sucesso.");
+        navigate({ to: "/" });
+      }
+    } catch {
+      toast.error("Ocorreu uma falha ao tentar excluir a conta.");
+    } finally {
+      setIsDeletingAccount(false);
     }
   }
 
@@ -410,9 +439,43 @@ function ProfilePage() {
                   <KeyRound className="mr-1.5 size-3.5" />
                   {showPasswordForm ? "Fechar redefinição de senha" : "Alterar senha"}
                 </Button>
-                <Button variant="destructive" size="sm" onClick={handleLogout}>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
                   <LogOut className="mr-1.5 size-3.5" /> Sair da conta
                 </Button>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="gap-1.5">
+                      <Trash2 className="size-3.5" /> Excluir minha conta
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-destructive">
+                        Tem certeza que deseja excluir sua conta?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-2 pt-2 text-xs text-muted-foreground leading-relaxed">
+                        <p>
+                          Esta ação poderá ser permanente e irreversível. Todos os seus dados pessoais, dados de perfil,
+                          histórico de leitura sincronizado e preferências serão apagados.
+                        </p>
+                        <p>
+                          Deseja realmente prosseguir com a exclusão da sua conta da Bíblia Online?
+                        </p>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-4">
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteAccount}
+                        disabled={isDeletingAccount}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {isDeletingAccount ? "Excluindo..." : "Sim, excluir minha conta"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
 
               {/* Formulário de Alteração de Senha */}
