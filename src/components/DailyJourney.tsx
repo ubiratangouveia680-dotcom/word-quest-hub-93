@@ -27,9 +27,9 @@ export function DailyJourney() {
 
         <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0">
           <span className="text-xs sm:text-sm font-semibold text-foreground">
-            Seu progresso hoje:{" "}
+            Progresso:{" "}
             <span className="text-gold font-bold">
-              {completedCount}/{totalActivities}
+              {completedCount} de {totalActivities} concluídos
             </span>
           </span>
           <div className="w-32 sm:w-36 h-2 bg-muted rounded-full overflow-hidden mt-1.5 border border-border/50">

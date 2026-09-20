@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { BookOpen, Heart, Share2 } from "lucide-react";
+import { toast } from "sonner";
 import { chapterQuery } from "@/lib/bible-queries";
 import { getDailyRef } from "@/lib/daily-verse";
-import { VerseActions } from "@/components/VerseActions";
+import { useFavorites } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -12,33 +14,125 @@ export function DailyVerseCard() {
   const verse = data?.verses.find((v) => v.verse === ref.verse);
   const title = `${ref.bookName} ${ref.chapter}:${ref.verse}`;
   const href = `/biblia/${ref.bookSlug}/${ref.chapter}/${ref.verse}`;
+  const chapterHref = `/biblia/${ref.bookSlug}/${ref.chapter}`;
+
+  const { toggle, isFavorite, userId } = useFavorites();
+  const favId = `verse:${ref.bookSlug}:${ref.chapter}:${ref.verse}`;
+  const fav = isFavorite(favId);
+
+  const handleFavorite = async () => {
+    const added = await toggle({
+      id: favId,
+      kind: "verse",
+      title,
+      text: verse?.text ?? "",
+      href,
+    });
+    if (added) {
+      toast.success(userId ? "Versículo adicionado aos favoritos!" : "Versículo salvo nos favoritos do navegador!");
+    } else {
+      toast.info("Versículo removido dos favoritos.");
+    }
+  };
+
+  const handleShare = async () => {
+    const text = verse?.text ?? "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const shareUrl = `${origin}${href}`;
+    const payload = {
+      title: `Versículo do Dia — ${title}`,
+      text: `"${text}" — ${title}\n\nLeia na Bíblia Online:\n${shareUrl}`,
+      url: shareUrl,
+    };
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share(payload);
+        return;
+      } catch {
+        // Ignora se o usuário cancelou o compartilhamento nativo
+        return;
+      }
+    }
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(`"${text}" — ${title}\n\n${shareUrl}`);
+        toast.success("Versículo copiado para a área de transferência!");
+      } catch {
+        toast.error("Não foi possível copiar o versículo.");
+      }
+    }
+  };
 
   return (
-    <section className="warm-panel p-5 sm:p-6">
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-xl font-semibold">Versículo do Dia</h2>
-        <span className="text-xs text-muted-foreground">{title}</span>
+    <article className="warm-panel rounded-2xl p-5 sm:p-7 border border-gold/30 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3.5">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-gold">
+          ✨ Palavra do Dia
+        </span>
+        <span className="font-display text-sm sm:text-base font-bold text-foreground">
+          {title}
+        </span>
       </div>
-      <div className="gold-rule my-4" />
-      {isLoading ? (
-        <Skeleton className="h-16 w-full" />
-      ) : (
-        <blockquote className="reading-text italic">{verse?.text ?? "—"}</blockquote>
-      )}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <VerseActions
-          id={`verse:${ref.bookSlug}:${ref.chapter}:${ref.verse}`}
-          kind="verse"
-          title={title}
-          text={verse?.text ?? ""}
-          href={href}
-        />
-        <Button asChild variant="outline" size="sm">
-          <Link to="/biblia/$book/$chapter" params={{ book: ref.bookSlug, chapter: String(ref.chapter) }}>
-            Ler contexto
-          </Link>
-        </Button>
+
+      <div className="py-5">
+        {isLoading ? (
+          <Skeleton className="h-20 w-full rounded-xl" />
+        ) : (
+          <blockquote className="reading-text text-base sm:text-lg italic text-foreground leading-relaxed">
+            "{verse?.text ?? "Carregando o versículo do dia..."}"
+          </blockquote>
+        )}
       </div>
-    </section>
+
+      <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3.5 border-t border-border/50">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Botão Ler capítulo */}
+          <Button asChild size="sm" className="h-9 px-4 text-xs font-semibold">
+            <Link
+              to="/biblia/$book/$chapter"
+              params={{ book: ref.bookSlug, chapter: String(ref.chapter) }}
+            >
+              <BookOpen className="mr-1.5 size-3.5" /> Ler capítulo
+            </Link>
+          </Button>
+
+          {/* Botão Favoritar */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleFavorite}
+            className={`h-9 px-3.5 text-xs font-medium transition-colors ${
+              fav ? "border-destructive/40 text-destructive bg-destructive/5" : ""
+            }`}
+          >
+            <Heart className={`mr-1.5 size-3.5 ${fav ? "fill-destructive text-destructive" : ""}`} />
+            <span>{fav ? "Favoritado" : "Favoritar"}</span>
+          </Button>
+
+          {/* Botão Compartilhar */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleShare}
+            className="h-9 px-3.5 text-xs font-medium"
+          >
+            <Share2 className="mr-1.5 size-3.5 text-muted-foreground" />
+            <span>Compartilhar</span>
+          </Button>
+        </div>
+
+        <Link
+          to="/versiculo-do-dia"
+          className="text-xs font-semibold text-primary hover:underline ml-auto"
+        >
+          Ver reflexão completa →
+        </Link>
+      </div>
+    </article>
   );
 }
+

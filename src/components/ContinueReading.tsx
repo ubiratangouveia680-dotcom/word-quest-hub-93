@@ -45,7 +45,7 @@ export function ContinueReading() {
             Continue sua leitura
           </span>
           <p className="mt-0.5 font-display text-base sm:text-lg font-semibold text-foreground">
-            Inicie sua leitura bíblica pelo Evangelho de João
+            Comece sua leitura da Bíblia
           </p>
         </div>
       </div>
@@ -54,10 +54,11 @@ export function ContinueReading() {
           to="/biblia/$book/$chapter"
           params={{ book: "joao", chapter: "1" }}
         >
-          Começar leitura <ArrowRight className="ml-1.5 size-3.5" />
+          Começar agora <ArrowRight className="ml-1.5 size-3.5" />
         </Link>
       </Button>
     </section>
   );
 }
+
 

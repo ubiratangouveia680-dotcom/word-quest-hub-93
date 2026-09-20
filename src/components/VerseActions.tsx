@@ -40,20 +40,24 @@ export function VerseActions({ id, kind, title, text, href, compact }: Props) {
         className={compact ? "size-7" : ""}
         aria-label={fav ? "Remover dos favoritos" : "Favoritar"}
         onClick={async () => {
+          const added = await toggle({ id, kind, title, text, href });
           if (!userId) {
-            toast.error("Faça login para salvar seus favoritos!", {
-              action: {
-                label: "Entrar",
-                onClick: () => {
-                  window.location.href = `/auth?mode=signin&next=${encodeURIComponent(
-                    window.location.pathname + window.location.hash
-                  )}`;
+            toast.success(
+              added ? "Versículo salvo nos favoritos do navegador!" : "Removido dos favoritos",
+              {
+                description: "Crie uma conta para sincronizar seus favoritos em todos os seus dispositivos.",
+                action: {
+                  label: "Entrar",
+                  onClick: () => {
+                    window.location.href = `/auth?mode=signin&next=${encodeURIComponent(
+                      window.location.pathname + window.location.hash
+                    )}`;
+                  },
                 },
-              },
-            });
+              }
+            );
             return;
           }
-          const added = await toggle({ id, kind, title, text, href });
           toast.success(added ? "Adicionado aos favoritos" : "Removido dos favoritos");
         }}
       >

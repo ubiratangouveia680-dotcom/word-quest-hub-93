@@ -477,46 +477,55 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
       {/* RODAPÉ DESKTOP & GERAL */}
       <footer className="border-t border-border bg-cream pb-24 lg:pb-0">
-        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <p className="font-display text-lg font-bold text-foreground">Bíblia Online</p>
+        <div className="mx-auto w-full max-w-6xl px-4 py-10">
+          <div className="mb-8 max-w-xl">
+            <p className="font-display text-xl font-bold text-foreground">Bíblia Online</p>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              Leia, compreenda e compartilhe a Palavra de Deus. Texto bíblico disponibilizado através de fontes fiéis para edificação, consolo e estudo das Escrituras Sagradas.
+              Leia, compreenda e compartilhe a Palavra de Deus. Texto bíblico completo, versículo do dia, orações, estudos teológicos e comunidade cristã para edificação espiritual.
             </p>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-foreground">Navegação Principal</p>
-            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/biblia" className="hover:text-foreground transition-colors">Bíblia Online</Link></li>
-              <li><Link to="/comunidade" className="hover:text-foreground transition-colors">📖 Comunidade Palavra Viva</Link></li>
-              <li><Link to="/biblia/antigo-testamento" className="hover:text-foreground transition-colors">Antigo Testamento</Link></li>
-              <li><Link to="/biblia/novo-testamento" className="hover:text-foreground transition-colors">Novo Testamento</Link></li>
-              <li><Link to="/versiculo-do-dia" className="hover:text-foreground transition-colors">Versículo do Dia</Link></li>
-              <li><Link to="/versiculos" className="hover:text-foreground transition-colors">Versículos por Tema</Link></li>
-              <li><Link to="/oracoes" className="hover:text-foreground transition-colors">Orações</Link></li>
-              <li><Link to="/estudos" className="hover:text-foreground transition-colors">Estudos Bíblicos</Link></li>
-              <li><Link to="/devocionais" className="hover:text-foreground transition-colors">Devocionais</Link></li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-foreground">Ferramentas & Recursos</p>
-            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/comunidade" className="hover:text-foreground transition-colors">Comunidade Cristã</Link></li>
-              <li><Link to="/busca" search={{ q: "" }} className="hover:text-foreground transition-colors">Busca na Bíblia</Link></li>
-              <li><Link to="/favoritos" className="hover:text-foreground transition-colors">Meus Favoritos</Link></li>
-              <li><Link to="/pergunte-a-biblia" className="hover:text-foreground transition-colors">Pergunte à Bíblia</Link></li>
-              <li><Link to="/perfil" className="hover:text-foreground transition-colors">Meu Histórico</Link></li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-foreground">Institucional & Políticas</p>
-            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/sobre" className="hover:text-foreground transition-colors">Sobre Nós</Link></li>
-              <li><Link to="/contato" className="hover:text-foreground transition-colors">Contato</Link></li>
-              <li><Link to="/privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</Link></li>
-              <li><Link to="/cookies" className="hover:text-foreground transition-colors">Política de Cookies</Link></li>
-              <li><Link to="/termos" className="hover:text-foreground transition-colors">Termos de Uso</Link></li>
-            </ul>
+
+          <div className="grid gap-8 grid-cols-2 sm:grid-cols-4">
+            {/* GRUPO BÍBLIA */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-foreground">Bíblia</p>
+              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/biblia" className="hover:text-foreground transition-colors">Bíblia</Link></li>
+                <li><Link to="/versiculo-do-dia" className="hover:text-foreground transition-colors">Versículo do Dia</Link></li>
+                <li><Link to="/busca" search={{ q: "" }} className="hover:text-foreground transition-colors">Busca</Link></li>
+              </ul>
+            </div>
+
+            {/* GRUPO CONTEÚDO */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-foreground">Conteúdo</p>
+              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/oracoes" className="hover:text-foreground transition-colors">Orações</Link></li>
+                <li><Link to="/estudos" className="hover:text-foreground transition-colors">Estudos Bíblicos</Link></li>
+                <li><Link to="/devocionais" className="hover:text-foreground transition-colors">Devocionais</Link></li>
+              </ul>
+            </div>
+
+            {/* GRUPO COMUNIDADE */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-foreground">Comunidade</p>
+              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/comunidade" className="hover:text-foreground transition-colors">Comunidade</Link></li>
+                <li><Link to="/perfil" className="hover:text-foreground transition-colors">Meu Perfil</Link></li>
+              </ul>
+            </div>
+
+            {/* GRUPO INFORMAÇÕES */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-foreground">Informações</p>
+              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/sobre" className="hover:text-foreground transition-colors">Sobre</Link></li>
+                <li><Link to="/contato" className="hover:text-foreground transition-colors">Contato</Link></li>
+                <li><Link to="/privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</Link></li>
+                <li><Link to="/termos" className="hover:text-foreground transition-colors">Termos de Uso</Link></li>
+                <li><Link to="/cookies" className="hover:text-foreground transition-colors">Política de Cookies</Link></li>
+              </ul>
+            </div>
           </div>
         </div>
 
