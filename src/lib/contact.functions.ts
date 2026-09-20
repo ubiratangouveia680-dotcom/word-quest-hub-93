@@ -214,8 +214,8 @@ export const sendContactMessage = createServerFn({ method: "POST" })
 
     // 5. Cópia de segurança no Supabase (não impede o envio se falhar)
     try {
-      const supabaseUrl = process.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
-      const supabaseKey = process.env["SUPABASE_SERVICE_ROLE_KEY"] || process.env["VITE_SUPABASE_ANON_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
+      const supabaseUrl = process.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"] || "https://rycnqtnyzoeelcmjeyxc.supabase.co";
+      const supabaseKey = process.env["SUPABASE_SERVICE_ROLE_KEY"] || process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"] || process.env["VITE_SUPABASE_ANON_KEY"] || "sb_publishable_jnN3EGTn5ptoJZ5I0_r5sQ_M2n7oIBG";
 
       if (supabaseUrl && supabaseKey) {
         await fetch(`${supabaseUrl}/rest/v1/contact_messages`, {

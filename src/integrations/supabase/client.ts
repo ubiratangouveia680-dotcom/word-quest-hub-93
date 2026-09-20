@@ -28,21 +28,44 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 
-function createSupabaseClient() {
-  // Use import.meta.env for client-side (Vite build-time replacement)
-  // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL =
+function resolveSupabaseConfig(): { url: string; key: string } {
+  const url =
     import.meta.env['VITE_SUPABASE_URL'] ||
     import.meta.env['NEXT_PUBLIC_SUPABASE_URL'] ||
     process.env['SUPABASE_URL'] ||
-    process.env['NEXT_PUBLIC_SUPABASE_URL'];
-  const SUPABASE_PUBLISHABLE_KEY =
-    import.meta.env['VITE_SUPABASE_ANON_KEY'] ||
+    process.env['NEXT_PUBLIC_SUPABASE_URL'] ||
+    'https://rycnqtnyzoeelcmjeyxc.supabase.co';
+
+  const isRycnProject = url.includes('rycnqtnyzoeelcmjeyxc');
+  const RYCN_KEY = 'sb_publishable_jnN3EGTn5ptoJZ5I0_r5sQ_M2n7oIBG';
+  const NUHB_KEY = 'sb_publishable_Zgl_ywSofomOkLX7O1bv9g_OS_nT9Qm';
+
+  // Prioritize publishable key specifically set for the active project
+  let key =
     import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] ||
-    import.meta.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'] ||
-    process.env['SUPABASE_ANON_KEY'] ||
     process.env['SUPABASE_PUBLISHABLE_KEY'] ||
-    process.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'];
+    import.meta.env['VITE_SUPABASE_ANON_KEY'] ||
+    process.env['SUPABASE_ANON_KEY'] ||
+    import.meta.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'] ||
+    process.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'] ||
+    '';
+
+  // Guard against cross-project key mismatch (e.g. stale anon key from another project)
+  if (isRycnProject) {
+    if (!key || key.includes('Zgl_ywSofomOkLX7O1bv9g_OS_nT9Qm')) {
+      key = RYCN_KEY;
+    }
+  } else if (url.includes('nuhbvfbdvzgopoiyyivd')) {
+    if (!key || key.includes('jnN3EGTn5ptoJZ5I0_r5sQ_M2n7oIBG')) {
+      key = NUHB_KEY;
+    }
+  }
+
+  return { url, key };
+}
+
+function createSupabaseClient() {
+  const { url: SUPABASE_URL, key: SUPABASE_PUBLISHABLE_KEY } = resolveSupabaseConfig();
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
