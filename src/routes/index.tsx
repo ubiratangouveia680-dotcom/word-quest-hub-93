@@ -444,12 +444,12 @@ function Index() {
                     chapter: String(pv.chapter),
                     verse: String(pv.verse),
                   }}
-                  className="surface flex items-center justify-between p-3.5 text-sm hover:border-gold/40 transition-colors rounded-xl min-h-[52px]"
+                  className="surface flex min-w-0 w-full items-center justify-between overflow-hidden p-3.5 text-sm hover:border-gold/40 transition-colors rounded-xl min-h-[52px]"
                 >
                   <span className="font-bold text-foreground text-xs sm:text-sm shrink-0 mr-2">
                     {pv.ref}
                   </span>
-                  <span className="text-xs text-muted-foreground italic truncate">
+                  <span className="min-w-0 text-xs text-muted-foreground italic truncate">
                     {pv.text}
                   </span>
                 </Link>
