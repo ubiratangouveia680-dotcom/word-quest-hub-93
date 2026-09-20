@@ -58,6 +58,7 @@ import {
   Layers,
   Loader2,
   Clock,
+  Lock,
 } from "lucide-react";
 import { url } from "@/lib/site";
 
@@ -442,6 +443,7 @@ function QuestionDetailsPage() {
   }
 
   const isQuestionAuthor = user?.id === question.user_id;
+  const isAnon = Boolean(question.title?.startsWith("[ANÔNIMO]"));
   const meta = getCategoryMeta(question.category_id);
   const isPrayerCategory =
     question.category_id === "oracao" || question.category_id === "pedido-de-oracao";
@@ -541,30 +543,45 @@ function QuestionDetailsPage() {
 
           {/* Autor */}
           <div className="flex items-center gap-3 pb-4 mb-4 border-b border-border/60">
-            <button
-              type="button"
-              onClick={() => handleOpenAuthorProfile(question.user_id)}
-              className="size-11 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-base shrink-0 hover:ring-2 hover:ring-primary/40 transition-all overflow-hidden"
-              title="Ver perfil público"
-            >
-              {question.author?.avatar_url ? (
-                <img
-                  src={question.author.avatar_url}
-                  alt={question.author.name || "Avatar"}
-                  className="size-full object-cover"
-                />
-              ) : (
-                (question.author?.name || (isQuestionAuthor && user?.user_metadata?.name) || "U").charAt(0).toUpperCase()
-              )}
-            </button>
-            <div>
+            {isAnon ? (
+              <div
+                className="size-11 rounded-full bg-muted text-muted-foreground flex items-center justify-center font-bold text-base shrink-0"
+                title="Publicação anônima"
+              >
+                <Lock className="size-5 text-muted-foreground" />
+              </div>
+            ) : (
               <button
                 type="button"
                 onClick={() => handleOpenAuthorProfile(question.user_id)}
-                className="font-semibold text-sm text-foreground hover:text-primary transition-colors text-left block"
+                className="size-11 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-base shrink-0 hover:ring-2 hover:ring-primary/40 transition-all overflow-hidden"
+                title="Ver perfil público"
               >
-                {question.author?.name || (isQuestionAuthor && user?.user_metadata?.name) || "Usuário"}
+                {question.author?.avatar_url ? (
+                  <img
+                    src={question.author.avatar_url}
+                    alt={question.author.name || "Avatar"}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  (question.author?.name || (isQuestionAuthor && user?.user_metadata?.name) || "U").charAt(0).toUpperCase()
+                )}
               </button>
+            )}
+            <div>
+              {isAnon ? (
+                <span className="font-semibold text-sm text-muted-foreground block">
+                  {isQuestionAuthor ? "Você (publicado anonimamente)" : "Pedido anônimo"}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleOpenAuthorProfile(question.user_id)}
+                  className="font-semibold text-sm text-foreground hover:text-primary transition-colors text-left block"
+                >
+                  {question.author?.name || (isQuestionAuthor && user?.user_metadata?.name) || "Usuário"}
+                </button>
+              )}
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                 <Clock className="size-3" />
                 <span>Publicado {formatRelativeDate(question.created_at)}</span>
@@ -573,7 +590,9 @@ function QuestionDetailsPage() {
           </div>
 
           {/* Título opcional */}
-          {question.title && question.title.trim() !== question.body.slice(0, 60).trim() && (
+          {question.title &&
+            !question.title.startsWith("[ANÔNIMO]") &&
+            question.title.trim() !== question.body.slice(0, 60).trim() && (
             <h1 className="font-display text-xl md:text-2xl font-bold tracking-tight text-foreground mb-4">
               {question.title}
             </h1>

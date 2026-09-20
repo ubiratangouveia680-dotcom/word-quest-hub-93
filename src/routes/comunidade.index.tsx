@@ -61,6 +61,7 @@ import {
   Calendar,
   Layers,
   ArrowRight,
+  Lock,
 } from "lucide-react";
 import { url } from "@/lib/site";
 
@@ -641,6 +642,7 @@ function ComunidadeFeedPage() {
               const meta = getCategoryMeta(q.category_id);
               const isPrayerCategory = q.category_id === "oracao" || q.category_id === "pedido-de-oracao";
               const isAuthor = user?.id === q.user_id;
+              const isAnon = Boolean(q.title?.startsWith("[ANÔNIMO]"));
 
               return (
                 <article
@@ -651,32 +653,47 @@ function ComunidadeFeedPage() {
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Avatar do Autor */}
-                      <button
-                        type="button"
-                        onClick={() => handleOpenAuthorProfile(q.user_id)}
-                        className="size-10 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-sm shrink-0 hover:ring-2 hover:ring-primary/40 transition-all overflow-hidden"
-                        title="Ver perfil público"
-                      >
-                        {q.author?.avatar_url ? (
-                          <img
-                            src={q.author.avatar_url}
-                            alt={q.author.name || "Avatar"}
-                            className="size-full object-cover"
-                          />
-                        ) : (
-                          (q.author?.name || (isAuthor && user?.user_metadata?.name) || "U").charAt(0).toUpperCase()
-                        )}
-                      </button>
+                      {isAnon ? (
+                        <div
+                          className="size-10 rounded-full bg-muted text-muted-foreground flex items-center justify-center font-bold text-xs shrink-0"
+                          title="Publicação anônima"
+                        >
+                          <Lock className="size-4 text-muted-foreground" />
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAuthorProfile(q.user_id)}
+                          className="size-10 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-sm shrink-0 hover:ring-2 hover:ring-primary/40 transition-all overflow-hidden"
+                          title="Ver perfil público"
+                        >
+                          {q.author?.avatar_url ? (
+                            <img
+                              src={q.author.avatar_url}
+                              alt={q.author.name || "Avatar"}
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            (q.author?.name || (isAuthor && user?.user_metadata?.name) || "U").charAt(0).toUpperCase()
+                          )}
+                        </button>
+                      )}
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenAuthorProfile(q.user_id)}
-                            className="font-semibold text-sm text-foreground hover:text-primary transition-colors truncate text-left"
-                          >
-                            {q.author?.name || (isAuthor && user?.user_metadata?.name) || "Usuário"}
-                          </button>
+                          {isAnon ? (
+                            <span className="font-semibold text-sm text-muted-foreground">
+                              {isAuthor ? "Você (anônimo)" : "Pedido anônimo"}
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAuthorProfile(q.user_id)}
+                              className="font-semibold text-sm text-foreground hover:text-primary transition-colors truncate text-left"
+                            >
+                              {q.author?.name || (isAuthor && user?.user_metadata?.name) || "Usuário"}
+                            </button>
+                          )}
 
                           {/* Selo da Categoria */}
                           <span className="inline-flex items-center gap-1 rounded-full bg-accent/80 px-2.5 py-0.5 text-[11px] font-medium text-foreground">
@@ -744,7 +761,9 @@ function ComunidadeFeedPage() {
                   </div>
 
                   {/* Título opcional */}
-                  {q.title && q.title.trim() !== q.body.slice(0, 60).trim() && (
+                  {q.title &&
+                    !q.title.startsWith("[ANÔNIMO]") &&
+                    q.title.trim() !== q.body.slice(0, 60).trim() && (
                     <h2 className="font-display text-base font-bold text-foreground mb-2 leading-snug">
                       <Link
                         to="/comunidade/$id"

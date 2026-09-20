@@ -335,15 +335,20 @@ export async function fetchQuestions({
   } catch {}
 
   return rawQuestions.map((q) => {
+    const isAnon = Boolean(q.title?.startsWith("[ANÔNIMO]"));
     const summary = reactionsSummaryMap.get(q.id) || {};
     const userReactions = userReactionsMap.get(q.id) || [];
     const realLikes = likesCountMap.has(q.id) ? likesCountMap.get(q.id)! : (q.likes_count || 0);
     const realAnswers = answersCountMap.has(q.id) ? answersCountMap.get(q.id)! : (q.answers_count || 0);
+    const author = isAnon
+      ? { id: q.user_id, name: "Pedido anônimo", avatar_url: null }
+      : profileMap.get(q.user_id) || { id: q.user_id, name: "Usuário", avatar_url: null };
+
     return {
       ...q,
       likes_count: realLikes,
       answers_count: realAnswers,
-      author: profileMap.get(q.user_id) || { id: q.user_id, name: "Usuário", avatar_url: null },
+      author,
       category: Array.isArray(q.category) ? q.category[0] : q.category,
       user_has_liked: likedQuestionIds.has(q.id),
       user_has_prayed: userReactions.includes("🙏"),
@@ -374,21 +379,34 @@ export async function fetchQuestionById(id: string, currentUserId?: string | nul
     .then(() => undefined);
 
   // Fetch author profile safely
-  let authorProfile: QuestionAuthor = {
-    id: data.user_id,
-    name: "Usuário",
-    avatar_url: null,
-  };
-  try {
-    const { data: author } = await supabase
-      .from("profiles")
-      .select("id, user_id, name")
-      .eq("user_id", data.user_id)
-      .maybeSingle();
-    if (author?.name) {
-      authorProfile.name = author.name;
-    }
-  } catch {}
+  const isAnon = Boolean(data.title?.startsWith("[ANÔNIMO]"));
+  let authorProfile: QuestionAuthor = isAnon
+    ? {
+        id: data.user_id,
+        name: "Pedido anônimo",
+        avatar_url: null,
+      }
+    : {
+        id: data.user_id,
+        name: "Usuário",
+        avatar_url: null,
+      };
+
+  if (!isAnon) {
+    try {
+      const { data: author } = await supabase
+        .from("profiles")
+        .select("id, user_id, name, avatar_url")
+        .eq("user_id", data.user_id)
+        .maybeSingle();
+      if (author?.name) {
+        authorProfile.name = author.name;
+      }
+      if (author?.avatar_url) {
+        authorProfile.avatar_url = author.avatar_url;
+      }
+    } catch {}
+  }
 
   // Fetch real likes count
   let realLikes = data.likes_count || 0;
@@ -548,15 +566,17 @@ export async function fetchPublicProfile(userId: string): Promise<PublicProfileD
     name: profileName,
     avatar_url: null,
     created_at: profileCreatedAt,
-    questions: (questions || []).map((q) => ({
-      ...q,
-      author: {
-        id: userId,
-        name: profileName,
-        avatar_url: null,
-      },
-      user_has_liked: false,
-    })),
+    questions: (questions || [])
+      .filter((q) => !q.title?.startsWith("[ANÔNIMO]"))
+      .map((q) => ({
+        ...q,
+        author: {
+          id: userId,
+          name: profileName,
+          avatar_url: null,
+        },
+        user_has_liked: false,
+      })),
   };
 }
 

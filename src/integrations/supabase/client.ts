@@ -34,7 +34,7 @@ function resolveSupabaseConfig(): { url: string; key: string } {
     import.meta.env['NEXT_PUBLIC_SUPABASE_URL'] ||
     process.env['SUPABASE_URL'] ||
     process.env['NEXT_PUBLIC_SUPABASE_URL'] ||
-    'https://rycnqtnyzoeelcmjeyxc.supabase.co';
+    'https://nuhbvfbdvzgopoiyyivd.supabase.co';
 
   const isRycnProject = url.includes('rycnqtnyzoeelcmjeyxc');
   const RYCN_KEY = 'sb_publishable_jnN3EGTn5ptoJZ5I0_r5sQ_M2n7oIBG';
@@ -48,7 +48,7 @@ function resolveSupabaseConfig(): { url: string; key: string } {
     process.env['SUPABASE_ANON_KEY'] ||
     import.meta.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'] ||
     process.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'] ||
-    '';
+    NUHB_KEY;
 
   // Guard against cross-project key mismatch (e.g. stale anon key from another project)
   if (isRycnProject) {

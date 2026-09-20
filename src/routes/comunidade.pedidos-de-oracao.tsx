@@ -287,7 +287,18 @@ function PrayerWallPage() {
     }
 
     try {
-      await togglePrayerSupport(prayer.id, user.id, prayer.prayed_count);
+      const result = await togglePrayerSupport(prayer.id, user.id, prayer.prayed_count, prayer.user_id);
+      setPrayers((prev) =>
+        prev.map((item) =>
+          item.id === prayer.id
+            ? {
+                ...item,
+                user_has_prayed: result.prayed,
+                prayed_count: result.count,
+              }
+            : item
+        )
+      );
 
       // Trigger notification if newly praying
       if (willPray && prayer.user_id && prayer.user_id !== user.id) {
