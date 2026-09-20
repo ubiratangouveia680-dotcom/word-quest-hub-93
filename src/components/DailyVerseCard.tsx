@@ -82,10 +82,10 @@ export function DailyVerseCard() {
         </blockquote>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3.5 border-t border-border/50">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex min-w-0 flex-col gap-3 border-t border-border/50 pt-3.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="grid min-w-0 grid-cols-2 gap-2 xs:flex xs:flex-wrap xs:items-center">
           {/* Botão Ler capítulo */}
-          <Button asChild size="sm" className="h-9 px-3.5 sm:px-4 text-xs font-semibold flex-1 xs:flex-initial">
+          <Button asChild size="sm" className="h-11 px-3 text-xs font-semibold xs:h-9 xs:flex-initial sm:px-4">
             <Link
               to="/biblia/$book/$chapter"
               params={{ book: ref.bookSlug, chapter: String(ref.chapter) }}
@@ -100,7 +100,7 @@ export function DailyVerseCard() {
             variant="outline"
             size="sm"
             onClick={handleFavorite}
-            className={`h-9 px-3 sm:px-3.5 text-xs font-medium transition-colors flex-1 xs:flex-initial ${
+            className={`h-11 px-3 text-xs font-medium transition-colors xs:h-9 xs:flex-initial sm:px-3.5 ${
               fav ? "border-destructive/40 text-destructive bg-destructive/5" : ""
             }`}
           >
@@ -114,7 +114,7 @@ export function DailyVerseCard() {
             variant="outline"
             size="sm"
             onClick={handleShare}
-            className="h-9 px-3 sm:px-3.5 text-xs font-medium flex-1 xs:flex-initial"
+            className="col-span-2 h-11 px-3 text-xs font-medium xs:col-span-1 xs:h-9 xs:flex-initial sm:px-3.5"
           >
             <Share2 className="mr-1.5 size-3.5 text-muted-foreground" />
             <span>Compartilhar</span>
@@ -123,7 +123,7 @@ export function DailyVerseCard() {
 
         <Link
           to="/versiculo-do-dia"
-          className="text-xs font-semibold text-primary hover:underline self-end sm:self-auto sm:ml-auto"
+          className="inline-flex min-h-11 items-center self-end text-xs font-semibold text-primary hover:underline sm:min-h-0 sm:self-auto sm:ml-auto"
         >
           Ver reflexão completa →
         </Link>

@@ -79,7 +79,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 
 function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2.5 shrink-0">
+    <Link to="/" className="flex min-h-11 min-w-0 items-center gap-2.5 shrink">
       <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
         <BookOpen className="size-5" />
       </span>
@@ -101,7 +101,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   const { settings, update } = useSettings();
 
   const userDisplayName =
-    profile?.name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Perfil";
+    profile?.name || user?.user_metadata?.["name"] || user?.email?.split("@")[0] || "Perfil";
 
   const handleSignOut = async () => {
     await signOut();
@@ -112,7 +112,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col bg-background text-foreground antialiased selection:bg-gold/25 selection:text-foreground">
       {/* CABEÇALHO */}
       <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+        <div className="mx-auto grid h-16 w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 sm:px-6 lg:flex lg:justify-between">
           {/* 1. Logo */}
           <Logo />
 
@@ -131,9 +131,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </nav>
 
           {/* 3. Ações no Cabeçalho */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             {/* Botão de Pesquisa (visível no desktop e mobile) */}
-            <Button asChild variant="ghost" size="icon" className="shrink-0" aria-label="Buscar na Bíblia">
+            <Button asChild variant="ghost" size="icon" className="size-11 shrink-0 sm:size-9" aria-label="Buscar na Bíblia">
               <Link to="/busca" search={{ q: "" }}>
                 <Search className="size-4.5" />
               </Link>
@@ -176,7 +176,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="lg:hidden shrink-0 cursor-pointer text-foreground hover:bg-accent"
+                  className="size-11 lg:hidden shrink-0 cursor-pointer text-foreground hover:bg-accent"
                   aria-label="Abrir menu de navegação"
                 >
                   <Menu className="size-6" />
@@ -559,7 +559,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               <Link
                 to={item.to}
                 activeOptions={{ exact: item.to === "/" }}
-                className="flex flex-col items-center justify-center gap-1 min-h-[48px] py-1.5 text-[11px] font-medium text-muted-foreground transition-all active:scale-95 touch-manipulation relative rounded-lg hover:text-foreground"
+                className="flex flex-col items-center justify-center gap-1 min-h-[56px] py-1.5 text-[11px] font-medium text-muted-foreground transition-all active:scale-95 touch-manipulation relative rounded-lg hover:text-foreground"
                 activeProps={{ className: "text-primary font-bold after:absolute after:bottom-1 after:h-0.5 after:w-4 after:rounded-full after:bg-primary" }}
               >
                 <item.icon className="size-5 shrink-0" />
