@@ -188,12 +188,22 @@ export async function saveNotificationSettings(
 // Permissions & Service Worker
 // ----------------------------------------------------
 export function isPushNotificationSupported(): boolean {
-  return typeof window !== "undefined" && "Notification" in window && "serviceWorker" in navigator;
+  return (
+    typeof window !== "undefined" &&
+    typeof navigator !== "undefined" &&
+    typeof Notification !== "undefined" &&
+    "Notification" in window &&
+    "serviceWorker" in navigator
+  );
 }
 
 export function getNotificationPermission(): NotificationPermission | "unsupported" {
   if (!isPushNotificationSupported()) return "unsupported";
-  return Notification.permission;
+  try {
+    return Notification.permission ?? "unsupported";
+  } catch {
+    return "unsupported";
+  }
 }
 
 export function hasDismissedPrompt(): boolean {
@@ -297,37 +307,37 @@ export async function showDailyVerseNotification(
     return false;
   }
 
-  let permission = Notification.permission;
-  if (permission !== "granted") {
-    permission = await requestNotificationPermission();
-    if (permission !== "granted") return false;
-  }
-
-  const todayStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-  const userIdentifier = userId || "guest_device";
-  const settings = getLocalNotificationSettings();
-
-  let targetTime = "default";
-  if (period === "morning_verse") targetTime = settings.morning_time;
-  if (period === "afternoon_verse") targetTime = settings.afternoon_time;
-  if (period === "evening_verse") targetTime = settings.evening_time;
-
-  const idempotencyKey = `${userIdentifier}_${todayStr}_${period}_${targetTime}`;
-
-  // Check local idempotency unless forced test
-  if (!options?.force && getDispatchedKeys().includes(idempotencyKey)) {
-    return false; // Already sent today for this scheduled time
-  }
-
-  const content = formatVerseNotification(period);
-  const reg = await registerServiceWorker();
-
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const iconUrl = `${origin}/icon-192.png`;
-  const badgeUrl = `${origin}/favicon.png`;
-  const targetUrl = `${origin}${content.url}`;
-
   try {
+    let permission = typeof Notification !== "undefined" ? Notification.permission : "denied";
+    if (permission !== "granted") {
+      permission = await requestNotificationPermission();
+      if (permission !== "granted") return false;
+    }
+
+    const todayStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const userIdentifier = userId || "guest_device";
+    const settings = getLocalNotificationSettings();
+
+    let targetTime = "default";
+    if (period === "morning_verse") targetTime = settings.morning_time;
+    if (period === "afternoon_verse") targetTime = settings.afternoon_time;
+    if (period === "evening_verse") targetTime = settings.evening_time;
+
+    const idempotencyKey = `${userIdentifier}_${todayStr}_${period}_${targetTime}`;
+
+    // Check local idempotency unless forced test
+    if (!options?.force && getDispatchedKeys().includes(idempotencyKey)) {
+      return false; // Already sent today for this scheduled time
+    }
+
+    const content = formatVerseNotification(period);
+    const reg = await registerServiceWorker();
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const iconUrl = `${origin}/icon-192.png`;
+    const badgeUrl = `${origin}/favicon.png`;
+    const targetUrl = `${origin}${content.url}`;
+
     if (reg && reg.showNotification) {
       await reg.showNotification(content.title, {
         body: content.body,
@@ -338,7 +348,7 @@ export async function showDailyVerseNotification(
         vibrate: [100, 50, 100],
         renotify: true,
       });
-    } else {
+    } else if (typeof Notification !== "undefined") {
       new Notification(content.title, {
         body: content.body,
         icon: iconUrl,
@@ -374,14 +384,15 @@ export async function showDailyVerseNotification(
  * Checks the current time against user settings and triggers the verse if time has arrived
  */
 export async function checkAndDispatchDailyVerses(userId?: string) {
-  if (!isPushNotificationSupported() || Notification.permission !== "granted") return;
+  try {
+    if (!isPushNotificationSupported() || typeof Notification === "undefined" || Notification.permission !== "granted") return;
 
-  const settings = getLocalNotificationSettings();
-  if (!settings.verse_notifications_enabled) return;
+    const settings = getLocalNotificationSettings();
+    if (!settings.verse_notifications_enabled) return;
 
-  const now = new Date();
-  const currentHours = now.getHours();
-  const currentMinutes = now.getMinutes();
+    const now = new Date();
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
 
   // Helper to check if current time matches scheduled time
   const isTimeFor = (targetTime: string) => {
@@ -410,5 +421,8 @@ export async function checkAndDispatchDailyVerses(userId?: string) {
   if (settings.evening_enabled && isTimeFor(settings.evening_time)) {
     await showDailyVerseNotification("evening_verse", userId);
   }
+} catch (err) {
+  console.warn("checkAndDispatchDailyVerses error:", err);
+}
 }
 

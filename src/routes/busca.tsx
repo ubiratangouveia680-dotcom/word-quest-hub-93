@@ -14,8 +14,8 @@ import { DEVOTIONALS, PRAYERS, STUDIES } from "@/lib/content";
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/busca")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    q: typeof search["q"] === "string" ? search["q"] : "",
+  validateSearch: (search: Record<string, unknown> = {}): { q?: string } => ({
+    q: typeof search?.["q"] === "string" ? search["q"] : "",
   }),
   head: () => ({
     meta: [
@@ -59,7 +59,8 @@ function findBookSlug(rawBookName: string): string {
 }
 
 function SearchPage() {
-  const { q } = Route.useSearch();
+  const search = Route.useSearch();
+  const q = search?.q || "";
   const navigate = useNavigate();
   const [term, setTerm] = useState(q);
   const [activeTab, setActiveTab] = useState<"todos" | "biblia" | "versiculos" | "temas" | "oracoes" | "estudos" | "devocionais">("todos");

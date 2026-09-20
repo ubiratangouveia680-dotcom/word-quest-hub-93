@@ -10,7 +10,7 @@ Regras:
 - Seja objetivo: no máximo 5 parágrafos curtos.`;
 
 export const askBible = createServerFn({ method: "POST" })
-  .inputValidator((data: { messages: { role: "user" | "assistant"; content: string }[] }) => ({
+  .validator((data: { messages: { role: "user" | "assistant"; content: string }[] }) => ({
     messages: (data.messages ?? []).slice(-12).map((m) => ({
       role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
       content: String(m.content).slice(0, 4000),

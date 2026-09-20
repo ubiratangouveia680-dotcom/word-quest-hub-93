@@ -225,27 +225,31 @@ function RootContent() {
   const { user } = useAuth();
 
   useEffect(() => {
-    // Registra o Service Worker
-    registerServiceWorker();
-
-    // Executa verificação inicial de versículos do dia
-    checkAndDispatchDailyVerses(user?.id);
-
-    // Agenda checagem periódica a cada 30 segundos enquanto o site estiver aberto
-    const interval = setInterval(() => {
+    try {
+      registerServiceWorker().catch(() => {});
       checkAndDispatchDailyVerses(user?.id);
+    } catch (e) {
+      console.warn("Notifications init warning:", e);
+    }
+
+    const interval = setInterval(() => {
+      try {
+        checkAndDispatchDailyVerses(user?.id);
+      } catch {}
     }, 30 * 1000);
 
-    // Verifica imediatamente ao reabrir/desbloquear o aparelho ou alternar para a aba
     const handleActive = () => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        checkAndDispatchDailyVerses(user?.id);
+        try {
+          checkAndDispatchDailyVerses(user?.id);
+        } catch {}
       }
     };
 
-    // Dispara checagem imediata quando o usuário altera os horários nas configurações
     const handleSettingsChanged = () => {
-      checkAndDispatchDailyVerses(user?.id);
+      try {
+        checkAndDispatchDailyVerses(user?.id);
+      } catch {}
     };
 
     document.addEventListener("visibilitychange", handleActive);

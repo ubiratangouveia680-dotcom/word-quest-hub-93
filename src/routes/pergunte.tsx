@@ -10,8 +10,8 @@ import { askBible } from "@/lib/ai.functions";
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/pergunte")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    q: typeof search["q"] === "string" ? search["q"] : "",
+  validateSearch: (search: Record<string, unknown> = {}): { q?: string } => ({
+    q: typeof search?.["q"] === "string" ? search["q"] : "",
   }),
   head: () => ({
     meta: [
@@ -45,7 +45,8 @@ interface Message {
 }
 
 function AskPage() {
-  const { q } = Route.useSearch();
+  const search = Route.useSearch();
+  const q = search?.q || "";
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const sentInitial = useRef(false);
