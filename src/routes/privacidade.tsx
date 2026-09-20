@@ -89,7 +89,27 @@ export const Route = createFileRoute("/privacidade")({
         instantaneamente limpando os dados de navegação do seu browser.
       </p>
 
-      <h2>5. Canal de Atendimento e Encarregado (DPO)</h2>
+      <h2>5. Dados de Localização Geográfica (Recurso "Igrejas perto de você")</h2>
+      <p>
+        Para a utilização do recurso de busca de igrejas próximas (<code>/igrejas</code>), o portal pode solicitar acesso
+        à sua localização geográfica através da API de Geolocalização do seu navegador.
+      </p>
+      <ul>
+        <li>
+          <strong>Ação exclusivamente voluntária:</strong> A localização só é solicitada após o clique explícito do usuário no botão <em>"Encontrar igrejas perto de mim"</em>. O site nunca solicita coordenadas de forma automática ao carregar páginas.
+        </li>
+        <li>
+          <strong>Processamento em tempo real:</strong> As coordenadas de latitude e longitude são utilizadas estritamente em tempo real para calcular a distância e consultar estabelecimentos religiosos cadastrados em mapas.
+        </li>
+        <li>
+          <strong>Não armazenamento:</strong> Não armazenamos, não registramos em banco de dados e não vinculamos as coordenadas geográficas exatas do usuário a contas de perfil ou identificadores pessoais.
+        </li>
+        <li>
+          <strong>Alternativa manual:</strong> Usuários que optarem por não compartilhar sua localização podem realizar pesquisas manuais normalmente digitando o nome da cidade, bairro ou endereço desejado.
+        </li>
+      </ul>
+
+      <h2>6. Canal de Atendimento e Encarregado (DPO)</h2>
       <p>
         Para esclarecer dúvidas sobre esta Política de Privacidade, exercer seus direitos ou reportar qualquer
         questão de conformidade com a LGPD, disponibilizamos nosso canal oficial de comunicação institucional:

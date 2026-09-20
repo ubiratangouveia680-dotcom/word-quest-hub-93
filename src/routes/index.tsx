@@ -11,6 +11,8 @@ import {
   Search,
   Sparkles,
   Users,
+  Church,
+  MapPin,
 } from "lucide-react";
 import { SiteLayout } from "@/components/SiteLayout";
 import { AdBanner, AdDesktop, AdMobile } from "@/components/Ads";
@@ -426,7 +428,34 @@ function Index() {
             )}
           </section>
 
-          {/* 10. VERSÍCULOS POPULARES */}
+          {/* 10. ENCONTRE UMA IGREJA PERTO DE VOCÊ */}
+          <section aria-labelledby="igrejas-heading" className="rounded-2xl border border-border/80 bg-gradient-to-br from-amber-500/10 via-card to-card p-6 sm:p-7 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gold/15 text-gold">
+                  <Church className="size-6" />
+                </div>
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gold">
+                    Comunhão Local
+                  </span>
+                  <h2 id="igrejas-heading" className="font-display text-xl sm:text-2xl font-bold text-foreground mt-0.5">
+                    Encontre uma igreja perto de você
+                  </h2>
+                  <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
+                    Descubra comunidades cristãs, locais de oração e cultos próximos à sua localização atual ou por cidade.
+                  </p>
+                </div>
+              </div>
+              <Button asChild className="shrink-0 h-10 px-5 text-xs font-semibold bg-gold text-primary-foreground hover:bg-gold/90 shadow-xs cursor-pointer">
+                <Link to="/igrejas">
+                  <MapPin className="mr-1.5 size-4" /> Encontrar igreja
+                </Link>
+              </Button>
+            </div>
+          </section>
+
+          {/* 11. VERSÍCULOS POPULARES */}
           <section aria-labelledby="versiculos-populares-heading">
             <h2 id="versiculos-populares-heading" className="font-display text-xl sm:text-2xl font-bold text-foreground">
               Versículos populares

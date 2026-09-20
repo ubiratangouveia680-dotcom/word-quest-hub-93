@@ -23,6 +23,7 @@ import {
   X,
   HelpCircle,
   ChevronDown,
+  Church,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useSettings } from "@/lib/storage";
@@ -55,7 +56,7 @@ const DESKTOP_NAV = [
   { to: "/estudos", label: "Estudos Bíblicos" },
   { to: "/devocionais", label: "Devocionais" },
   { to: "/comunidade", label: "Comunidade" },
-  { to: "/pergunte-a-biblia", label: "Pergunte à Bíblia" },
+  { to: "/igrejas", label: "Igrejas" },
 ] as const;
 
 const BOTTOM = [
@@ -468,6 +469,14 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                           <span className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-semibold">
                             Ativa
                           </span>
+                        </Link>
+                        <Link
+                          to="/igrejas"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Church className="size-4 text-gold" />
+                          <span>Igrejas perto de você</span>
                         </Link>
                         <Link
                           to="/perfil"

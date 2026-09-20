@@ -18,6 +18,7 @@ import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
+import { Route as IgrejasRouteImport } from './routes/igrejas'
 import { Route as OracoesRouteImport } from './routes/oracoes'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PergunteRouteImport } from './routes/pergunte'
@@ -96,6 +97,11 @@ const CookiesRoute = CookiesRouteImport.update({
 const FavoritosRoute = FavoritosRouteImport.update({
   id: '/favoritos',
   path: '/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IgrejasRoute = IgrejasRouteImport.update({
+  id: '/igrejas',
+  path: '/igrejas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OracoesRoute = OracoesRouteImport.update({
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
+  '/igrejas': typeof IgrejasRoute
   '/oracoes': typeof OracoesRouteWithChildren
   '/perfil': typeof PerfilRoute
   '/pergunte': typeof PergunteRoute
@@ -324,6 +331,7 @@ export interface FileRoutesByTo {
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
+  '/igrejas': typeof IgrejasRoute
   '/perfil': typeof PerfilRoute
   '/pergunte': typeof PergunteRoute
   '/pergunte-a-biblia': typeof PergunteABibliaRoute
@@ -366,6 +374,7 @@ export interface FileRoutesById {
   '/contato': typeof ContatoRoute
   '/cookies': typeof CookiesRoute
   '/favoritos': typeof FavoritosRoute
+  '/igrejas': typeof IgrejasRoute
   '/oracoes': typeof OracoesRouteWithChildren
   '/perfil': typeof PerfilRoute
   '/pergunte': typeof PergunteRoute
@@ -413,6 +422,7 @@ export interface FileRouteTypes {
     | '/contato'
     | '/cookies'
     | '/favoritos'
+    | '/igrejas'
     | '/oracoes'
     | '/perfil'
     | '/pergunte'
@@ -458,6 +468,7 @@ export interface FileRouteTypes {
     | '/contato'
     | '/cookies'
     | '/favoritos'
+    | '/igrejas'
     | '/perfil'
     | '/pergunte'
     | '/pergunte-a-biblia'
@@ -499,6 +510,7 @@ export interface FileRouteTypes {
     | '/contato'
     | '/cookies'
     | '/favoritos'
+    | '/igrejas'
     | '/oracoes'
     | '/perfil'
     | '/pergunte'
@@ -545,6 +557,7 @@ export interface RootRouteChildren {
   ContatoRoute: typeof ContatoRoute
   CookiesRoute: typeof CookiesRoute
   FavoritosRoute: typeof FavoritosRoute
+  IgrejasRoute: typeof IgrejasRoute
   OracoesRoute: typeof OracoesRouteWithChildren
   PerfilRoute: typeof PerfilRoute
   PergunteRoute: typeof PergunteRoute
@@ -636,6 +649,13 @@ declare module '@tanstack/react-router' {
       path: '/favoritos'
       fullPath: '/favoritos'
       preLoaderRoute: typeof FavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/igrejas': {
+      id: '/igrejas'
+      path: '/igrejas'
+      fullPath: '/igrejas'
+      preLoaderRoute: typeof IgrejasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/oracoes': {
@@ -941,6 +961,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContatoRoute: ContatoRoute,
   CookiesRoute: CookiesRoute,
   FavoritosRoute: FavoritosRoute,
+  IgrejasRoute: IgrejasRoute,
   OracoesRoute: OracoesRouteWithChildren,
   PerfilRoute: PerfilRoute,
   PergunteRoute: PergunteRoute,
