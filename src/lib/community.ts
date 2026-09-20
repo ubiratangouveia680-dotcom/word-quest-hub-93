@@ -249,17 +249,28 @@ export async function fetchQuestions({
   const profileMap = new Map<string, { id: string; user_id: string; name: string | null; avatar_url: string | null }>();
   if (userIds.length > 0) {
     try {
-      const { data: profiles } = await supabase
+      let profilesData: any[] | null = null;
+      const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("id, user_id, name")
+        .select("id, user_id, name, avatar_url")
         .in("user_id", userIds);
 
-      (profiles || []).forEach((p) => {
+      if (!error && profiles) {
+        profilesData = profiles;
+      } else {
+        const { data: fallbackProfiles } = await supabase
+          .from("profiles")
+          .select("id, user_id, name")
+          .in("user_id", userIds);
+        profilesData = fallbackProfiles || [];
+      }
+
+      (profilesData || []).forEach((p: any) => {
         profileMap.set(p.user_id, {
           id: p.user_id,
           user_id: p.user_id,
           name: p.name,
-          avatar_url: null,
+          avatar_url: p.avatar_url || null,
         });
       });
     } catch (err) {
@@ -394,16 +405,29 @@ export async function fetchQuestionById(id: string, currentUserId?: string | nul
 
   if (!isAnon) {
     try {
-      const { data: author } = await supabase
+      let authorData: any = null;
+      const { data: author, error } = await supabase
         .from("profiles")
         .select("id, user_id, name, avatar_url")
         .eq("user_id", data.user_id)
         .maybeSingle();
-      if (author?.name) {
-        authorProfile.name = author.name;
+
+      if (!error && author) {
+        authorData = author;
+      } else {
+        const { data: fallbackAuthor } = await supabase
+          .from("profiles")
+          .select("id, user_id, name")
+          .eq("user_id", data.user_id)
+          .maybeSingle();
+        authorData = fallbackAuthor;
       }
-      if (author?.avatar_url) {
-        authorProfile.avatar_url = author.avatar_url;
+
+      if (authorData?.name) {
+        authorProfile.name = authorData.name;
+      }
+      if (authorData?.avatar_url) {
+        authorProfile.avatar_url = authorData.avatar_url;
       }
     } catch {}
   }
@@ -603,17 +627,28 @@ export async function fetchAnswers(questionId: string, currentUserId?: string | 
   const profileMap = new Map<string, { id: string; user_id: string; name: string | null; avatar_url: string | null }>();
   if (userIds.length > 0) {
     try {
-      const { data: profiles } = await supabase
+      let profilesData: any[] | null = null;
+      const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("id, user_id, name")
+        .select("id, user_id, name, avatar_url")
         .in("user_id", userIds);
 
-      (profiles || []).forEach((p) => {
+      if (!error && profiles) {
+        profilesData = profiles;
+      } else {
+        const { data: fallbackProfiles } = await supabase
+          .from("profiles")
+          .select("id, user_id, name")
+          .in("user_id", userIds);
+        profilesData = fallbackProfiles || [];
+      }
+
+      (profilesData || []).forEach((p: any) => {
         profileMap.set(p.user_id, {
           id: p.user_id,
           user_id: p.user_id,
           name: p.name,
-          avatar_url: null,
+          avatar_url: p.avatar_url || null,
         });
       });
     } catch {}

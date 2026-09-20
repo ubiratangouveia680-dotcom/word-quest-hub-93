@@ -387,8 +387,8 @@ function ProfilePage() {
   const displayUsername =
     profile?.username || user?.user_metadata?.["username"] || null;
   const displayEmail = user?.email || profile?.email || "";
-  const displayBio = profile?.bio || user?.user_metadata?.["bio"] || "";
-  const avatarUrl = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || null;
+  const localAvatar = typeof window !== "undefined" && user?.id ? localStorage.getItem(`bo:user_avatar_${user.id}`) : null;
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || localAvatar || null;
 
   const createdAtFormatted = user?.created_at
     ? new Date(user.created_at).toLocaleDateString("pt-BR", {

@@ -50,8 +50,8 @@ export interface CompressedImageResult {
  */
 export async function compressAvatarImage(
   file: File,
-  maxDimension = 512,
-  quality = 0.85
+  maxDimension = 256,
+  quality = 0.75
 ): Promise<CompressedImageResult> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -163,10 +163,10 @@ export async function uploadUserAvatar(
     throw new Error(validation.error || "Arquivo de imagem inválido.");
   }
 
-  // 1. Comprimir e otimizar localmente
-  const compressed = await compressAvatarImage(file, 512, 0.85);
+  // 1. Comprimir e otimizar localmente em 256x256 (~12KB)
+  const compressed = await compressAvatarImage(file, 256, 0.75);
 
-  // 2. Tentar upload no Supabase Storage
+  // 2. Tentar upload no Supabase Storage se o bucket estiver configurado
   try {
     const fileExt = compressed.blob.type === "image/webp" ? "webp" : "jpg";
     const filePath = `${userId}/avatar_${Date.now()}.${fileExt}`;
@@ -186,13 +186,11 @@ export async function uploadUserAvatar(
       if (publicData?.publicUrl) {
         return { avatarUrl: publicData.publicUrl };
       }
-    } else {
-      console.warn("Upload no Supabase Storage retornou aviso, utilizando fallback resiliente:", uploadError.message);
     }
   } catch (err) {
-    console.warn("Storage upload tentado com fallback:", err);
+    console.warn("Upload no Supabase Storage indisponível, utilizando fallback em DataURL:", err);
   }
 
-  // 3. Fallback ultra-resiliente: a imagem compactada (~25KB) é gravada diretamente como dataUrl
+  // 3. Fallback ultra-resiliente: a imagem compactada (~12KB) é gravada diretamente como dataUrl
   return { avatarUrl: compressed.dataUrl };
 }

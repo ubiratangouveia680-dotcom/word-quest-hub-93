@@ -198,13 +198,24 @@ async function enrichPrayerRequests(
   const profileMap = new Map<string, { name: string | null; avatar_url: string | null }>();
   if (publicUserIds.length > 0) {
     try {
-      const { data: profiles } = await supabase
+      let profilesData: any[] | null = null;
+      const { data: profiles, error } = await supabase
         .from("profiles")
         .select("user_id, name, avatar_url")
         .in("user_id", publicUserIds);
 
-      (profiles || []).forEach((p) => {
-        profileMap.set(p.user_id, { name: p.name, avatar_url: p.avatar_url });
+      if (!error && profiles) {
+        profilesData = profiles;
+      } else {
+        const { data: fallbackProfiles } = await supabase
+          .from("profiles")
+          .select("user_id, name")
+          .in("user_id", publicUserIds);
+        profilesData = fallbackProfiles || [];
+      }
+
+      (profilesData || []).forEach((p: any) => {
+        profileMap.set(p.user_id, { name: p.name, avatar_url: p.avatar_url || null });
       });
     } catch {}
   }
@@ -307,13 +318,24 @@ async function fetchPrayerRequestsFromQuestionsFallback({
     const profileMap = new Map<string, { name: string | null; avatar_url: string | null }>();
     if (nonAnonUserIds.length > 0) {
       try {
-        const { data: profiles } = await supabase
+        let profilesData: any[] | null = null;
+        const { data: profiles, error } = await supabase
           .from("profiles")
           .select("user_id, name, avatar_url")
           .in("user_id", nonAnonUserIds);
 
-        (profiles || []).forEach((p) => {
-          profileMap.set(p.user_id, { name: p.name, avatar_url: p.avatar_url });
+        if (!error && profiles) {
+          profilesData = profiles;
+        } else {
+          const { data: fallbackProfiles } = await supabase
+            .from("profiles")
+            .select("user_id, name")
+            .in("user_id", nonAnonUserIds);
+          profilesData = fallbackProfiles || [];
+        }
+
+        (profilesData || []).forEach((p: any) => {
+          profileMap.set(p.user_id, { name: p.name, avatar_url: p.avatar_url || null });
         });
       } catch {}
     }

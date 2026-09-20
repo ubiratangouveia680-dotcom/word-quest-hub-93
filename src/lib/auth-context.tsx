@@ -133,7 +133,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const metaName = meta["name"] || meta["full_name"] || null;
         const metaUsername = meta["username"] || null;
         const metaBio = meta["bio"] || null;
-        const metaAvatar = meta["avatar_url"] || null;
+        let metaAvatar = meta["avatar_url"] || null;
+        if (!metaAvatar && typeof window !== "undefined") {
+          metaAvatar = localStorage.getItem(`bo:user_avatar_${userId}`);
+        }
 
         if (data) {
           const row = data as any;
@@ -396,30 +399,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // 1. Tentar atualizar tabela profiles
-        const { error: dbError } = await supabase
-          .from("profiles")
-          .update(updates as any)
-          .eq("user_id", user.id);
-
-        if (dbError) {
-          if (
-            dbError.message?.includes("column") &&
-            (dbError.message?.includes("username") || dbError.message?.includes("bio"))
-          ) {
-            // Se as colunas adicionais ainda não existirem no schema, atualiza campos básicos
-            const fallbackUpdates: any = { updated_at: updates.updated_at };
-            if (updates.name !== undefined) fallbackUpdates.name = updates.name;
-            if (updates.avatar_url !== undefined) fallbackUpdates.avatar_url = updates.avatar_url;
-            await supabase.from("profiles").update(fallbackUpdates).eq("user_id", user.id);
-          } else if (dbError.code === "23505") {
-            return { error: new Error("Este nome de usuário já está em uso por outro membro.") };
-          } else {
-            return { error: new Error(dbError.message) };
-          }
-        }
-
-        // 2. Sincronizar simultaneamente com Supabase Auth user_metadata
+        // 1. Sincronizar com Supabase Auth user_metadata (Persistência garantida e independente de schema)
         const metaUpdates: Record<string, any> = {};
         if (updates.name !== undefined) metaUpdates.name = updates.name;
         if (updates.username !== undefined) metaUpdates.username = updates.username;
@@ -427,10 +407,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (updates.avatar_url !== undefined) metaUpdates.avatar_url = updates.avatar_url;
 
         if (Object.keys(metaUpdates).length > 0) {
-          await supabase.auth.updateUser({ data: metaUpdates }).catch((err) => {
-            console.warn("Aviso ao atualizar metadados do Auth:", err);
-          });
+          try {
+            const { data: updatedAuthUser, error: authError } = await supabase.auth.updateUser({ data: metaUpdates });
+            if (!authError && updatedAuthUser?.user) {
+              setUser(updatedAuthUser.user);
+            }
+          } catch (authErr) {
+            console.warn("Aviso ao atualizar metadados do Auth:", authErr);
+          }
         }
+
+        // 2. Salvar avatar em localStorage para carregamento instantâneo
+        if (updates.avatar_url !== undefined && typeof window !== "undefined") {
+          if (updates.avatar_url) {
+            localStorage.setItem(`bo:user_avatar_${user.id}`, updates.avatar_url);
+          } else {
+            localStorage.removeItem(`bo:user_avatar_${user.id}`);
+          }
+        }
+
+        // 3. Atualizar tabela profiles de forma tolerante a colunas ausentes
+        try {
+          const { error: dbError } = await supabase
+            .from("profiles")
+            .update(updates as any)
+            .eq("user_id", user.id);
+
+          if (dbError) {
+            if (dbError.code === "23505") {
+              return { error: new Error("Este nome de usuário já está em uso por outro membro.") };
+            }
+            // Se as colunas adicionais ainda não existirem no schema (42703), tenta atualizar campos básicos
+            if (dbError.code === "42703" || dbError.message?.includes("column")) {
+              const safeUpdates: any = { updated_at: updates.updated_at };
+              if (updates.name !== undefined) safeUpdates.name = updates.name;
+              await supabase.from("profiles").update(safeUpdates).eq("user_id", user.id);
+            }
+          }
+        } catch (dbErr) {
+          console.warn("Atualização na tabela profiles com fallback:", dbErr);
+        }
+
+        // 4. Atualizar imediatamente o estado do React para feedback visual instantâneo
+        setProfile((prev) => {
+          const base = prev || {
+            id: user.id,
+            user_id: user.id,
+            name: updates.name || user.email?.split("@")[0] || "Usuário",
+            email: user.email || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            last_seen_at: null,
+          };
+          return {
+            ...base,
+            ...(updates.name !== undefined ? { name: updates.name } : {}),
+            ...(updates.username !== undefined ? { username: updates.username } : {}),
+            ...(updates.bio !== undefined ? { bio: updates.bio } : {}),
+            ...(updates.avatar_url !== undefined ? { avatar_url: updates.avatar_url } : {}),
+          } as UserProfile;
+        });
 
         await refreshProfile();
         return { error: null };

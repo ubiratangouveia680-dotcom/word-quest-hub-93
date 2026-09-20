@@ -63,8 +63,8 @@ export function EditProfileModal({ open, onOpenChange, profile }: EditProfileMod
     if (open) {
       const initialName = profile?.name || user?.user_metadata?.["name"] || "";
       const initialUsername = profile?.username || user?.user_metadata?.["username"] || "";
-      const initialBio = profile?.bio || user?.user_metadata?.["bio"] || "";
-      const initialAvatar = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || null;
+      const localAvatar = typeof window !== "undefined" && user?.id ? localStorage.getItem(`bo:user_avatar_${user.id}`) : null;
+      const initialAvatar = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || localAvatar || null;
 
       setName(initialName);
       setUsername(initialUsername);
