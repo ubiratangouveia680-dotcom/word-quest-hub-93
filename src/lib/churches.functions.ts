@@ -77,6 +77,85 @@ export function calculateDistanceKm(
   return Math.round(R * c * 10) / 10;
 }
 
+/**
+ * Deduplicates churches by ID, normalized name + coordinates (within 180m), and address.
+ */
+export function deduplicateChurches(list: Church[]): Church[] {
+  const seenIds = new Set<string>();
+  const seenSignatures = new Set<string>();
+  const result: Church[] = [];
+
+  for (const church of list) {
+    if (!church || !church.name) continue;
+
+    // 1. Primary ID check
+    if (church.id && seenIds.has(church.id)) {
+      continue;
+    }
+
+    // 2. Normalized Name (no accents, no symbols)
+    const normName = church.name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+
+    if (!normName) continue;
+
+    // 3. Geo Key (~150m precision: 3 decimals)
+    const geoKey = `${church.latitude.toFixed(3)}_${church.longitude.toFixed(3)}`;
+    const sigNameGeo = `${normName}_${geoKey}`;
+
+    // 4. Address Key
+    const normAddr = (church.address || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "")
+      .slice(0, 30);
+    const sigNameAddr = normAddr.length >= 6 ? `${normName}_${normAddr}` : "";
+
+    if (seenSignatures.has(sigNameGeo) || (sigNameAddr && seenSignatures.has(sigNameAddr))) {
+      continue;
+    }
+
+    // 5. Proximity duplicate check: within 180m and similar name
+    const isNearbyDuplicate = result.some((existing) => {
+      const distM =
+        calculateDistanceKm(existing.latitude, existing.longitude, church.latitude, church.longitude) *
+        1000;
+      if (distM < 180) {
+        const existingNorm = existing.name
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]/g, "");
+        if (
+          existingNorm === normName ||
+          (existingNorm.length > 5 &&
+            normName.length > 5 &&
+            (existingNorm.includes(normName) || normName.includes(existingNorm)))
+        ) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (isNearbyDuplicate) {
+      continue;
+    }
+
+    if (church.id) seenIds.add(church.id);
+    seenSignatures.add(sigNameGeo);
+    if (sigNameAddr) seenSignatures.add(sigNameAddr);
+
+    result.push(church);
+  }
+
+  return result;
+}
+
 // Strict field mask for Google Places API (New)
 const GOOGLE_PLACES_FIELD_MASK = [
   "places.id",
@@ -301,7 +380,7 @@ async function executeChurchSearch(
 
     if (placeMap.size > 0) {
       const maxKm = (radiusMeters / 1000) * 1.35; // allow reasonable boundary tolerance
-      const list = Array.from(placeMap.values())
+      const list = deduplicateChurches(Array.from(placeMap.values()))
         .filter((c) => c.distanceKm <= maxKm)
         .sort((a, b) => a.distanceKm - b.distanceKm);
 
@@ -349,7 +428,7 @@ async function executeChurchSearch(
     });
 
     const maxKm = (radiusMeters / 1000) * 1.25;
-    const list = Array.from(osmMap.values())
+    const list = deduplicateChurches(Array.from(osmMap.values()))
       .filter((c) => c.distanceKm <= maxKm)
       .sort((a, b) => a.distanceKm - b.distanceKm);
 
@@ -424,7 +503,7 @@ export const searchNearbyChurchesFn = createServerFn({ method: "GET" })
 
     // Limit to maximum 20 results initially (or up to 25 if expanded)
     const maxResults = effectiveRadius > 10000 ? 25 : 20;
-    const finalChurches = churches.slice(0, maxResults);
+    const finalChurches = deduplicateChurches(churches).slice(0, maxResults);
 
     const response: SearchChurchesResponse = {
       churches: finalChurches,

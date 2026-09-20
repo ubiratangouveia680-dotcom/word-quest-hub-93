@@ -5,6 +5,7 @@ import { ChurchMap } from "@/components/ChurchMap";
 import {
   searchNearbyChurchesFn,
   geocodeAddressFn,
+  deduplicateChurches,
   type Church,
 } from "@/lib/churches.functions";
 import { url } from "@/lib/site";
@@ -27,7 +28,6 @@ import {
   Star,
   AlertCircle,
   Clock,
-  ExternalLink,
 } from "lucide-react";
 
 export const Route = createFileRoute("/igrejas")({
@@ -75,7 +75,7 @@ function IgrejasPage() {
     null,
   );
   const [locationName, setLocationName] = useState<string>("");
-  const [radiusMeters, setRadiusMeters] = useState<number>(5000); // Começa com 5 km
+  const [radiusMeters, setRadiusMeters] = useState<number>(5000); // Inicia com 5 km
   const [currentQuery, setCurrentQuery] = useState<string>("");
   const [churches, setChurches] = useState<Church[]>([]);
   const [selectedChurchId, setSelectedChurchId] = useState<string | null>(null);
@@ -86,11 +86,11 @@ function IgrejasPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  // 1. Geolocalização ao clicar
+  // 1. Geolocalização ao clicar no botão
   const handleGetLocation = () => {
     if (typeof window === "undefined" || !navigator.geolocation) {
       setStatus("error");
-      setErrorMessage("Seu navegador não suporta geolocalização. Por favor, pesquise manualmente por sua cidade.");
+      setErrorMessage("Seu navegador não suporta geolocalização. Por favor, pesquise manualmente digitando sua cidade.");
       return;
     }
 
@@ -123,7 +123,7 @@ function IgrejasPage() {
     );
   };
 
-  // 2. Busca no servidor (Google Places New + Text Search + Fallback)
+  // 2. Busca no servidor com deduplicação rigorosa
   const fetchChurches = async (
     lat: number,
     lng: number,
@@ -145,14 +145,17 @@ function IgrejasPage() {
           },
         });
 
-        // Se houve expansão automática no backend (ex: de 5 km para 10 km por ter poucos resultados)
+        // Se o servidor ampliou automaticamente de 5 km para 10 km por escassez de dados
         if (res.expandedAutomatically && res.effectiveRadiusMeters) {
           setRadiusMeters(res.effectiveRadiusMeters);
         }
 
-        if (res.churches && res.churches.length > 0) {
-          setChurches(res.churches);
-          setSelectedChurchId(res.churches[0]?.id || null);
+        // Deduplica com garantia total no cliente também
+        const unique = deduplicateChurches(res.churches || []);
+
+        if (unique.length > 0) {
+          setChurches(unique);
+          setSelectedChurchId(unique[0]?.id || null);
           setStatus("success");
         } else {
           setChurches([]);
@@ -176,10 +179,10 @@ function IgrejasPage() {
     setStatus("loading");
     setErrorMessage("");
 
-    // Se o usuário digitou uma expressão como "igrejas evangélicas", "igreja batista" e já temos uma localização
-    const isDenominationQuery = /^(igrejas?|templos?|par[oó]quias?|capelas?|comunidades?)/i.test(q);
+    // Se o usuário digitou apenas uma denominação e já temos a localização do usuário
+    const isDenominationOnly = /^(igrejas?|templos?|par[oó]quias?|capelas?|comunidades?)/i.test(q);
 
-    if (isDenominationQuery && userLocation && !/(em|no|na|de|perto\s+de)\s+[a-zÀ-ÿ]/i.test(q)) {
+    if (isDenominationOnly && userLocation && !/(em|no|na|de|perto\s+de)\s+[a-zÀ-ÿ]/i.test(q)) {
       setCurrentQuery(q);
       fetchChurches(userLocation.latitude, userLocation.longitude, radiusMeters, q, false);
       return;
@@ -218,7 +221,7 @@ function IgrejasPage() {
     }
   };
 
-  // 6. Botão "Ampliar busca" (5 km → 10 km → 25 km)
+  // 6. Botão "Ampliar busca" (5 km → 10 km → 25 km → 50 km)
   const handleExpandRadius = () => {
     let nextRadius = 10000;
     if (radiusMeters < 10000) nextRadius = 10000;
@@ -234,7 +237,7 @@ function IgrejasPage() {
   return (
     <SiteLayout>
       <main className="mx-auto w-full max-w-6xl px-3 sm:px-6 py-4 sm:py-8 space-y-6">
-        {/* Breadcrumb */}
+        {/* 1. Breadcrumb */}
         <nav aria-label="Navegação" className="text-xs text-muted-foreground flex items-center gap-1.5">
           <Link to="/" className="hover:text-foreground transition-colors">
             Início
@@ -243,7 +246,7 @@ function IgrejasPage() {
           <span className="text-foreground font-medium">Igrejas perto de você</span>
         </nav>
 
-        {/* Hero do Cabeçalho */}
+        {/* 2. Cabeçalho / Hero */}
         <section className="warm-panel rounded-2xl p-5 sm:p-8 relative overflow-hidden">
           <div className="max-w-2xl space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/15 text-gold text-xs font-semibold">
@@ -254,7 +257,7 @@ function IgrejasPage() {
               Igrejas perto de você
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Encontre igrejas próximas à sua localização. Descubra locais de oração, comunhão bíblica e louvor em sua região.
+              Encontre igrejas próximas à sua localização.
             </p>
           </div>
 
@@ -314,7 +317,7 @@ function IgrejasPage() {
                 type="button"
                 onClick={() => handleSelectSuggestedTerm(term)}
                 className={`rounded-full px-2.5 py-0.5 transition-colors cursor-pointer text-xs ${
-                  (currentQuery === term) || (!currentQuery && term === "Todas as igrejas")
+                  currentQuery === term || (!currentQuery && term === "Todas as igrejas")
                     ? "bg-gold text-primary-foreground font-semibold"
                     : "bg-accent/70 hover:bg-accent hover:text-foreground"
                 }`}
@@ -346,7 +349,21 @@ function IgrejasPage() {
           </div>
         </section>
 
-        {/* Notificações e Estados da Interface */}
+        {/* 3. Bloco: NOTA SOBRE COBERTURA (Container independente, fluxo normal do documento) */}
+        <section
+          aria-label="Nota sobre cobertura"
+          className="w-full rounded-2xl border border-border/80 bg-accent/20 p-4 sm:p-5 shadow-xs"
+        >
+          <div className="flex items-center gap-2 font-bold text-foreground text-xs sm:text-sm mb-1.5">
+            <Info className="size-4 text-gold shrink-0" />
+            <span>NOTA SOBRE COBERTURA</span>
+          </div>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            O objetivo é encontrar o maior número possível de igrejas próximas. A lista depende da disponibilidade de dados de mapas da região e pode não representar todas as igrejas existentes fisicamente.
+          </p>
+        </section>
+
+        {/* Notificações e Estados de Erro */}
         {status === "permission_denied" && (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 sm:p-5 flex items-start gap-3 text-amber-900 dark:text-amber-200">
             <AlertCircle className="size-5 shrink-0 text-amber-600 mt-0.5" />
@@ -401,7 +418,7 @@ function IgrejasPage() {
           </div>
         )}
 
-        {/* Estado Inicial (Apresentação antes de pesquisar) */}
+        {/* 4. Estado Inicial (Apresentação antes da pesquisa) */}
         {status === "idle" && (
           <section className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-border/80 bg-card p-5 space-y-2">
@@ -434,25 +451,27 @@ function IgrejasPage() {
           </section>
         )}
 
-        {/* ÁREA PRINCIPAL: MAPA + LISTA DE IGREJAS */}
+        {/* 5. ÁREA DE RESULTADOS: MAPA + LISTA DE CARDS (100% RESPONSIVO, SEM SOBREPOSIÇÕES) */}
         {(status === "success" || status === "loading" || churches.length > 0) && (
-          <div className="space-y-4">
-            {/* 1. Barra de Status dos Resultados: 'Encontramos X igrejas próximas' */}
-            <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-              <div className="flex items-center gap-2">
-                <span className="size-2 rounded-full bg-gold animate-pulse" />
-                <h2 className="text-sm sm:text-base font-bold text-foreground">
-                  Encontramos {churches.length} {churches.length === 1 ? "igreja próxima" : "igrejas próximas"}
-                  {locationName && <span className="text-muted-foreground font-normal"> perto de {locationName}</span>}
+          <section aria-label="Igrejas encontradas" className="w-full space-y-5">
+            {/* Cabeçalho da Seção de Resultados */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/60 pb-3">
+              <div>
+                <h2 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">
+                  Igrejas encontradas
                 </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  Encontramos {churches.length} {churches.length === 1 ? "igreja próxima" : "igrejas próximas"}
+                  {locationName ? ` em torno de ${locationName}` : ""} • Raio de {radiusMeters / 1000} km.
+                </p>
               </div>
-              <span className="text-xs text-muted-foreground">
-                Ordenado por distância • Raio atual: {radiusMeters / 1000} km
+              <span className="text-xs font-medium text-gold self-start sm:self-auto bg-gold/10 px-2.5 py-1 rounded-md">
+                Mais próximas primeiro
               </span>
             </div>
 
-            {/* 2. Banner 'Não encontrou a igreja que procura? [Ampliar busca]' */}
-            <div className="rounded-xl border border-border/80 bg-accent/25 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            {/* Banner: 'Não encontrou a igreja que procura? [Ampliar busca]' */}
+            <div className="w-full rounded-xl border border-border/80 bg-accent/25 px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
               <div className="flex items-center gap-2 text-xs sm:text-sm text-foreground">
                 <HelpCircle className="size-4 text-gold shrink-0" />
                 <span>Não encontrou a igreja que procura?</span>
@@ -464,7 +483,7 @@ function IgrejasPage() {
                   variant="outline"
                   onClick={handleExpandRadius}
                   disabled={status === "loading" || isPending}
-                  className="h-8 px-3 text-xs font-semibold shrink-0 cursor-pointer bg-background hover:bg-accent"
+                  className="w-full sm:w-auto h-8 px-3.5 text-xs font-semibold shrink-0 cursor-pointer bg-background hover:bg-accent"
                 >
                   <Sparkles className="mr-1.5 size-3.5 text-gold" />
                   Ampliar busca ({radiusMeters < 10000 ? "5 km → 10 km" : radiusMeters < 25000 ? "10 km → 25 km" : "25 km → 50 km"})
@@ -474,28 +493,33 @@ function IgrejasPage() {
               )}
             </div>
 
-            {/* 3. Layout Grid: Mapa e Lista */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-              {/* Mapa Interativo (Mobile: Topo | Desktop: 7 colunas) */}
-              <div className="lg:col-span-7 lg:sticky lg:top-20">
+            {/* Layout Desktop: 2 Colunas (Mapa à esquerda e Cards à direita)
+                Layout Mobile: Mapa no topo, Cards abaixo em fluxo normal (SEM max-height cortando) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
+              {/* Mapa Interativo */}
+              <div id="mapa-igrejas" className="w-full lg:col-span-7 lg:sticky lg:top-20">
                 <ChurchMap
                   userLocation={userLocation}
                   churches={churches}
                   selectedChurchId={selectedChurchId}
                   onSelectChurch={(church) => setSelectedChurchId(church.id)}
-                  className="h-[340px] sm:h-[420px] lg:h-[580px] w-full"
+                  className="h-[320px] sm:h-[400px] lg:h-[620px] w-full"
                 />
               </div>
 
-              {/* Lista de Igrejas (Mobile: Abaixo | Desktop: 5 colunas com scroll) */}
-              <div className="lg:col-span-5 space-y-3 max-h-[580px] lg:overflow-y-auto lg:pr-1">
+              {/* Lista dos Cards de Igrejas */}
+              <div className="w-full lg:col-span-5 space-y-4 lg:max-h-[620px] lg:overflow-y-auto lg:pr-2">
                 {status === "loading" && (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="rounded-xl border border-border/60 bg-card p-4 space-y-2 animate-pulse">
-                        <div className="h-4 bg-muted rounded-md w-3/4" />
-                        <div className="h-3 bg-muted rounded-md w-full" />
-                        <div className="h-3 bg-muted rounded-md w-1/3" />
+                      <div
+                        key={i}
+                        className="w-full rounded-2xl border border-border/60 bg-card p-4 sm:p-5 space-y-3 animate-pulse"
+                      >
+                        <div className="h-5 bg-muted rounded-md w-3/4" />
+                        <div className="h-4 bg-muted rounded-md w-full" />
+                        <div className="h-4 bg-muted rounded-md w-1/2" />
+                        <div className="h-8 bg-muted rounded-md w-full mt-2" />
                       </div>
                     ))}
                   </div>
@@ -511,46 +535,55 @@ function IgrejasPage() {
                     <article
                       key={church.id}
                       onClick={() => setSelectedChurchId(church.id)}
-                      className={`rounded-2xl border p-4 sm:p-5 transition-all cursor-pointer ${
+                      className={`w-full rounded-2xl border p-4 sm:p-5 transition-all cursor-pointer bg-card text-card-foreground shadow-xs ${
                         isSelected
-                          ? "border-gold bg-accent/30 shadow-xs ring-1 ring-gold/40"
-                          : "border-border/80 bg-card hover:border-gold/40 hover:bg-accent/10"
+                          ? "border-gold ring-2 ring-gold/40 bg-accent/20"
+                          : "border-border/80 hover:border-gold/50 hover:bg-accent/10"
                       }`}
+                      style={{ height: "auto" }}
                     >
-                      <div className="flex items-start gap-3">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold font-bold">
+                      {/* Cabeçalho do Card: Ícone + Nome da Igreja + Avaliação */}
+                      <div className="flex items-start gap-3 w-full">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold">
                           <ChurchIcon className="size-5" />
                         </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-sm sm:text-base font-bold text-foreground line-clamp-1">
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-2">
+                            <h3 className="text-base sm:text-lg font-bold text-foreground leading-snug break-words">
                               {church.name}
                             </h3>
                             {typeof church.rating === "number" && (
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-gold shrink-0">
-                                <Star className="size-3 fill-amber-500 text-amber-500" />
-                                {church.rating.toFixed(1)}
+                              <div className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-gold shrink-0 self-start mt-0.5">
+                                <Star className="size-3.5 fill-amber-500 text-amber-500" />
+                                <span>{church.rating.toFixed(1)}</span>
                                 {church.userRatingCount && (
-                                  <span className="text-[10px] text-muted-foreground font-normal">
+                                  <span className="text-[11px] text-muted-foreground font-normal">
                                     ({church.userRatingCount})
                                   </span>
                                 )}
-                              </span>
+                              </div>
                             )}
                           </div>
 
-                          <p className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                            📍 {church.address}
-                          </p>
-
-                          {/* Distância e Status */}
-                          <div className="mt-2.5 flex flex-wrap items-center gap-3 text-xs font-medium text-muted-foreground">
-                            <span className="text-gold font-semibold">
-                              📏 {church.distanceKm} km de distância
+                          {/* Endereço Completo (sem line-clamp, quebra automática limpa) */}
+                          <div className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">
+                            <span className="inline-flex items-start gap-1.5">
+                              <span className="shrink-0">📍</span>
+                              <span className="flex-1">{church.address}</span>
                             </span>
+                          </div>
+
+                          {/* Distância e Detalhes */}
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium">
+                            <span className="inline-flex items-center gap-1 font-bold text-gold bg-gold/10 px-2.5 py-1 rounded-md">
+                              <span>📏</span>
+                              <span>{church.distanceKm} km de distância</span>
+                            </span>
+
                             {church.openNow !== undefined && (
                               <span
-                                className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                                className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
                                   church.openNow
                                     ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                                     : "bg-muted text-muted-foreground"
@@ -560,29 +593,39 @@ function IgrejasPage() {
                                 {church.openNow ? "Aberto agora" : "Fechado"}
                               </span>
                             )}
+
                             {church.phoneNumber && (
                               <a
                                 href={`tel:${church.phoneNumber}`}
                                 onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                className="inline-flex items-center gap-1 text-primary hover:underline bg-primary/10 px-2.5 py-0.5 rounded-md"
                               >
                                 <Phone className="size-3" />
-                                {church.phoneNumber}
+                                <span>{church.phoneNumber}</span>
                               </a>
                             )}
                           </div>
 
-                          {/* Botões de Ação */}
-                          <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between gap-2">
+                          {/* Divisor */}
+                          <hr className="my-3.5 border-border/60" />
+
+                          {/* Botões de Ação (100% responsivos: no mobile ficam um abaixo do outro com largura total) */}
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedChurchId(church.id);
+                                if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                                  const mapEl = document.getElementById("mapa-igrejas");
+                                  if (mapEl) {
+                                    mapEl.scrollIntoView({ behavior: "smooth", block: "center" });
+                                  }
+                                }
                               }}
-                              className="h-8 px-3 text-xs font-medium cursor-pointer"
+                              className="w-full sm:w-auto h-9 px-4 text-xs font-semibold justify-center cursor-pointer"
                             >
                               <MapPin className="mr-1.5 size-3.5 text-gold" />
                               Ver no mapa
@@ -591,7 +634,7 @@ function IgrejasPage() {
                             <Button
                               asChild
                               size="sm"
-                              className="h-8 px-3 text-xs font-semibold bg-gold text-primary-foreground hover:bg-gold/90 shadow-xs cursor-pointer"
+                              className="w-full sm:w-auto h-9 px-4 text-xs font-semibold justify-center bg-gold text-primary-foreground hover:bg-gold/90 shadow-xs cursor-pointer"
                             >
                               <a
                                 href={directionsUrl}
@@ -611,30 +654,26 @@ function IgrejasPage() {
                 })}
               </div>
             </div>
-
-            {/* Aviso sobre Cobertura */}
-            <div className="rounded-xl border border-border/60 bg-muted/20 p-3 text-[11px] text-muted-foreground leading-relaxed">
-              <p>
-                <strong>Nota sobre cobertura:</strong> O objetivo é encontrar o maior número possível de igrejas disponíveis no Google Places. Nem todo templo, capela ou congregação necessariamente estará cadastrado ou atualizado na base de dados de mapas da sua região.
-              </p>
-            </div>
-          </div>
+          </section>
         )}
 
-        {/* Rodapé de Privacidade e Conformidade LGPD */}
-        <section className="rounded-2xl border border-border/80 bg-accent/15 p-4 sm:p-5 text-xs text-muted-foreground space-y-1.5">
-          <div className="flex items-center gap-2 font-semibold text-foreground">
-            <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Compromisso de Privacidade e LGPD</span>
+        {/* 6. Bloco: COMPROMISSO DE PRIVACIDADE E LGPD (Container independente no rodapé) */}
+        <section
+          aria-label="Compromisso de Privacidade e LGPD"
+          className="w-full rounded-2xl border border-border/80 bg-accent/15 p-5 sm:p-6 text-xs sm:text-sm text-muted-foreground space-y-2 mt-8"
+        >
+          <div className="flex items-center gap-2 font-bold text-foreground text-sm sm:text-base">
+            <ShieldCheck className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>🛡️ Compromisso de Privacidade e LGPD</span>
           </div>
           <p className="leading-relaxed">
-            Sua localização geográfica é solicitada exclusivamente mediante o seu clique voluntário e é processada
-            apenas em tempo real para o cálculo de distâncias. <strong>Não armazenamos suas coordenadas no banco de dados</strong> nem vinculamos sua localização à sua conta pessoal. Para saber mais, consulte nossa{" "}
-            <Link to="/privacidade" className="underline text-primary hover:text-primary/80">
-              Política de Privacidade
-            </Link>
-            .
+            Sua localização geográfica é solicitada exclusivamente mediante o seu clique voluntário e é processada apenas em tempo real para calcular distâncias e exibir comunidades cristãs próximas. <strong>Não armazenamos suas coordenadas no banco de dados</strong> nem vinculamos sua localização à sua conta pessoal.
           </p>
+          <div className="pt-1">
+            <Link to="/privacidade" className="inline-flex items-center gap-1 font-semibold text-primary hover:underline text-xs">
+              Leia nossa Política de Privacidade →
+            </Link>
+          </div>
         </section>
       </main>
     </SiteLayout>
