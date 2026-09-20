@@ -66,16 +66,16 @@ import {
 import { url } from "@/lib/site";
 
 interface SearchParams {
-  shareVerse?: string;
-  ref?: string;
-  text?: string;
+  shareVerse?: string | undefined;
+  ref?: string | undefined;
+  text?: string | undefined;
 }
 
 export const Route = createFileRoute("/comunidade/")({
   validateSearch: (search: Record<string, unknown> = {}): SearchParams => ({
-    shareVerse: search.shareVerse ? String(search.shareVerse) : undefined,
-    ref: search.ref ? String(search.ref) : undefined,
-    text: search.text ? String(search.text) : undefined,
+    shareVerse: search["shareVerse"] ? String(search["shareVerse"]) : undefined,
+    ref: search["ref"] ? String(search["ref"]) : undefined,
+    text: search["text"] ? String(search["text"]) : undefined,
   }),
   head: () => ({
     meta: [
@@ -116,7 +116,7 @@ function ComunidadeFeedPage() {
 
   // Create Publication Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [categoryId, setCategoryId] = useState<string>(COMMUNITY_CATEGORIES[0].id);
+  const [categoryId, setCategoryId] = useState<string>(COMMUNITY_CATEGORIES[0]?.id || "geral");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [verseReference, setVerseReference] = useState("");
@@ -128,7 +128,7 @@ function ComunidadeFeedPage() {
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editBody, setEditBody] = useState("");
-  const [editCategoryId, setEditCategoryId] = useState<string>(COMMUNITY_CATEGORIES[0].id);
+  const [editCategoryId, setEditCategoryId] = useState<string>(COMMUNITY_CATEGORIES[0]?.id || "geral");
   const [editVerse, setEditVerse] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
@@ -313,7 +313,7 @@ function ComunidadeFeedPage() {
           item.id === editingQuestion.id
             ? {
                 ...item,
-                title: editTitle.trim() || undefined,
+                title: editTitle.trim() || item.title,
                 body: cleanBody,
                 category_id: editCategoryId,
                 verse_reference: editVerse.trim() || null,
@@ -674,7 +674,7 @@ function ComunidadeFeedPage() {
                               className="size-full object-cover"
                             />
                           ) : (
-                            (q.author?.name || (isAuthor && user?.user_metadata?.name) || "U").charAt(0).toUpperCase()
+                            (q.author?.name || (isAuthor && user?.user_metadata?.["name"]) || "U").charAt(0).toUpperCase()
                           )}
                         </button>
                       )}
@@ -691,7 +691,7 @@ function ComunidadeFeedPage() {
                               onClick={() => handleOpenAuthorProfile(q.user_id)}
                               className="font-semibold text-sm text-foreground hover:text-primary transition-colors truncate text-left"
                             >
-                              {q.author?.name || (isAuthor && user?.user_metadata?.name) || "Usuário"}
+                              {q.author?.name || (isAuthor && user?.user_metadata?.["name"]) || "Usuário"}
                             </button>
                           )}
 

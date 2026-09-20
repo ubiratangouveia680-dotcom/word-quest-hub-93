@@ -104,11 +104,12 @@ export const Route = createFileRoute("/perfil")({
       "pedidos_oracao",
       "configuracoes",
     ];
+    const rawTab = search["tab"];
     const tab =
-      typeof search.tab === "string" && validTabs.includes(search.tab as TabType)
-        ? (search.tab as TabType)
+      typeof rawTab === "string" && (validTabs as string[]).includes(rawTab)
+        ? (rawTab as TabType)
         : undefined;
-    return { tab };
+    return tab ? { tab } : {};
   },
   head: () => ({
     meta: [
@@ -155,7 +156,7 @@ function ProfilePage() {
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
-    navigate({ search: { tab }, replace: true });
+    navigate({ to: "/perfil", search: { tab }, replace: true });
   };
 
   // Modal de edição do perfil
@@ -422,6 +423,8 @@ function ProfilePage() {
     profile?.name || user?.user_metadata?.["name"] || user?.email?.split("@")[0] || "Membro";
   const displayUsername =
     profile?.username || user?.user_metadata?.["username"] || null;
+  const displayBio =
+    profile?.bio || user?.user_metadata?.["bio"] || null;
   const displayEmail = user?.email || profile?.email || "";
   const localAvatar = typeof window !== "undefined" && user?.id ? localStorage.getItem(`bo:user_avatar_${user.id}`) : null;
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || localAvatar || null;

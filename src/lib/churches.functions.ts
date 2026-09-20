@@ -22,9 +22,9 @@ export interface Church {
 export interface SearchChurchesInput {
   latitude: number;
   longitude: number;
-  radiusMeters?: number;
-  query?: string;
-  autoExpand?: boolean;
+  radiusMeters?: number | undefined;
+  query?: string | undefined;
+  autoExpand?: boolean | undefined;
 }
 
 export interface SearchChurchesResponse {

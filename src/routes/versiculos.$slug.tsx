@@ -132,11 +132,11 @@ function VersiculosDetailPage() {
                           {verse.ref} &rarr;
                         </Link>
                         <VerseActions
-                          text={shareText}
-                          reference={verse.ref}
-                          bookSlug={verse.book}
-                          chapter={verse.chapter}
-                          verseNumber={verse.verse}
+                          id={`verse:${verse.book}:${verse.chapter}:${verse.verse}`}
+                          kind="verse"
+                          title={verse.ref}
+                          text={verse.text}
+                          href={`/biblia/${verse.book}/${verse.chapter}/${verse.verse}`}
                         />
                       </div>
                     </blockquote>

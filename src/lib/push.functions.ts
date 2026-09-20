@@ -175,8 +175,8 @@ export const notifyPrayerSupportInteraction = createServerFn({ method: "POST" })
       const subscriptions = subs || [];
 
       // Check VAPID credentials if available in environment
-      const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || process.env.VITE_VAPID_PUBLIC_KEY;
-      const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+      const vapidPublicKey = process.env["VAPID_PUBLIC_KEY"] || process.env["VITE_VAPID_PUBLIC_KEY"];
+      const vapidPrivateKey = process.env["VAPID_PRIVATE_KEY"];
 
       if (!vapidPublicKey || !vapidPrivateKey || subscriptions.length === 0) {
         // Safe degrade: in-app notification was already saved
@@ -201,8 +201,8 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ success: boolean; queued: number }> => {
     try {
       // Check VAPID credentials
-      const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || process.env.VITE_VAPID_PUBLIC_KEY;
-      const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+      const vapidPublicKey = process.env["VAPID_PUBLIC_KEY"] || process.env["VITE_VAPID_PUBLIC_KEY"];
+      const vapidPrivateKey = process.env["VAPID_PRIVATE_KEY"];
 
       if (!vapidPublicKey || !vapidPrivateKey) {
         return { success: true, queued: 0 };

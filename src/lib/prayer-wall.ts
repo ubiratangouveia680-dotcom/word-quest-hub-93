@@ -125,11 +125,11 @@ export async function checkPrayerDailyQuota(userId: string): Promise<{
 // Fetch Prayer Requests (Dual Adapter: prayer_requests or questions fallback)
 // ---------------------------------------------------------------------------
 export interface FetchPrayerParams {
-  filter?: "recent" | "most_prayed";
-  search?: string;
-  currentUserId?: string | null;
-  limit?: number;
-  offset?: number;
+  filter?: ("recent" | "most_prayed") | undefined;
+  search?: string | undefined;
+  currentUserId?: string | null | undefined;
+  limit?: number | undefined;
+  offset?: number | undefined;
 }
 
 export async function fetchPrayerRequests({
@@ -384,8 +384,8 @@ async function fetchPrayerRequestsFromQuestionsFallback({
 export interface CreatePrayerInput {
   userId: string;
   content: string;
-  verseReference?: string;
-  isAnonymous?: boolean;
+  verseReference?: string | undefined;
+  isAnonymous?: boolean | undefined;
 }
 
 export async function createPrayerRequest(input: CreatePrayerInput): Promise<PrayerRequest | null> {
@@ -761,7 +761,7 @@ export async function fetchMyPrayerRequests(userId: string): Promise<PrayerReque
 
       return qData.map((q) => {
         const isAnon = Boolean(q.title?.startsWith("[ANÔNIMO]"));
-        let displayTitle = q.title;
+        let displayTitle: string | null = q.title;
         if (isAnon || displayTitle?.startsWith("[ANÔNIMO]")) {
           displayTitle = null;
         }

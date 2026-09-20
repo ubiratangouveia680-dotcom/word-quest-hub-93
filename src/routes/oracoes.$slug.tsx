@@ -102,7 +102,13 @@ function PrayerDetailPage() {
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold">
                   <Sparkles className="size-3.5" /> Texto da Oração
                 </span>
-                <VerseActions text={prayer.text} reference={prayer.title} />
+                <VerseActions
+                  id={`prayer:${prayer.slug}`}
+                  kind="prayer"
+                  title={prayer.title}
+                  text={prayer.text}
+                  href={`/oracoes/${prayer.slug}`}
+                />
               </div>
               <p className="font-serif text-lg leading-relaxed text-foreground whitespace-pre-line pt-6 italic sm:text-xl">
                 "{prayer.text}"
@@ -133,7 +139,13 @@ function PrayerDetailPage() {
                         >
                           <BookOpen className="size-3" /> {v.ref}
                         </a>
-                        <VerseActions text={`"${v.text}" — ${v.ref}`} reference={v.ref} />
+                        <VerseActions
+                          id={`prayer-verse:${prayer.slug}:${v.ref}`}
+                          kind="verse"
+                          title={v.ref}
+                          text={v.text}
+                          href={v.link || `/oracoes/${prayer.slug}`}
+                        />
                       </div>
                     </blockquote>
                   ))}

@@ -196,9 +196,6 @@ function VerseIndividualPage() {
                   title={ref}
                   text={text}
                   href={href}
-                  bookSlug={book.slug}
-                  chapter={chapter}
-                  verseNumber={verse}
                 />
               </div>
             </div>

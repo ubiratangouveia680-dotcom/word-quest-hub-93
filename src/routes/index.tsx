@@ -102,7 +102,7 @@ function Index() {
   const todayIndex = Math.abs(
     new Date().getFullYear() * 365 + (new Date().getMonth() + 1) * 31 + new Date().getDate()
   ) % DEVOTIONALS.length;
-  const todayDevotional = DEVOTIONALS[todayIndex] || DEVOTIONALS[0];
+  const todayDevotional = DEVOTIONALS[todayIndex] ?? DEVOTIONALS[0]!;
 
   return (
     <SiteLayout>

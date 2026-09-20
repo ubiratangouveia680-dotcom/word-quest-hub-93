@@ -81,6 +81,14 @@ export const BIBLE_BOOKS: BibleBook[] = [
 export const getBookBySlug = (slug: string) =>
   BIBLE_BOOKS.find((b) => b.slug === slug.toLowerCase());
 
+export const getBookByName = (name: string) =>
+  BIBLE_BOOKS.find(
+    (b) =>
+      b.name.toLowerCase() === name.toLowerCase() ||
+      b.slug === name.toLowerCase() ||
+      b.id.toLowerCase() === name.toLowerCase()
+  );
+
 export const getBookIndex = (slug: string) =>
   BIBLE_BOOKS.findIndex((b) => b.slug === slug.toLowerCase());
 

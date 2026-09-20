@@ -315,7 +315,7 @@ function QuestionDetailsPage() {
         prev
           ? {
               ...prev,
-              title: editTitle.trim() || undefined,
+              title: editTitle.trim() || prev.title,
               body: cleanBody,
               category_id: editCategoryId,
               verse_reference: editVerse.trim() || null,
@@ -564,7 +564,7 @@ function QuestionDetailsPage() {
                     className="size-full object-cover"
                   />
                 ) : (
-                  (question.author?.name || (isQuestionAuthor && user?.user_metadata?.name) || "U").charAt(0).toUpperCase()
+                  (question.author?.name || (isQuestionAuthor && user?.user_metadata?.["name"]) || "U").charAt(0).toUpperCase()
                 )}
               </button>
             )}
@@ -579,7 +579,7 @@ function QuestionDetailsPage() {
                   onClick={() => handleOpenAuthorProfile(question.user_id)}
                   className="font-semibold text-sm text-foreground hover:text-primary transition-colors text-left block"
                 >
-                  {question.author?.name || (isQuestionAuthor && user?.user_metadata?.name) || "Usuário"}
+                  {question.author?.name || (isQuestionAuthor && user?.user_metadata?.["name"]) || "Usuário"}
                 </button>
               )}
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
@@ -739,7 +739,7 @@ function QuestionDetailsPage() {
                             className="size-full object-cover"
                           />
                         ) : (
-                          (ans.author?.name || (ans.user_id === user?.id && user?.user_metadata?.name) || "U").charAt(0).toUpperCase()
+                          (ans.author?.name || (ans.user_id === user?.id && user?.user_metadata?.["name"]) || "U").charAt(0).toUpperCase()
                         )}
                       </button>
 
@@ -750,7 +750,7 @@ function QuestionDetailsPage() {
                             onClick={() => handleOpenAuthorProfile(ans.user_id)}
                             className="text-xs font-semibold text-foreground hover:text-primary transition-colors text-left"
                           >
-                            {ans.author?.name || (ans.user_id === user?.id && user?.user_metadata?.name) || "Usuário"}
+                            {ans.author?.name || (ans.user_id === user?.id && user?.user_metadata?.["name"]) || "Usuário"}
                           </button>
                           {ans.user_id === question.user_id && (
                             <span className="rounded bg-primary/15 px-1.5 py-0.2 text-[9px] font-bold text-primary">

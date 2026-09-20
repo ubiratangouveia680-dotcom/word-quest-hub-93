@@ -52,8 +52,9 @@ function ContactPage() {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState(SUBJECTS[0]!);
   const [message, setMessage] = useState("");
+  type FormErrors = { name?: string; email?: string; message?: string };
   const [honeypot, setHoneypot] = useState(""); // Bot-trap anti-spam
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [sent, setSent] = useState(false);
   const [activationPending, setActivationPending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -62,7 +63,7 @@ function ContactPage() {
   useEffect(() => {
     if (isAuthenticated) {
       if (!name) {
-        const autoName = profile?.name || user?.user_metadata?.name || "";
+        const autoName = profile?.name || user?.user_metadata?.["name"] || "";
         if (autoName) setName(autoName);
       }
       if (!email && user?.email) {
@@ -72,7 +73,7 @@ function ContactPage() {
   }, [isAuthenticated, user, profile]);
 
   const validate = () => {
-    const errs: Record<string, string> = {};
+    const errs: FormErrors = {};
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
     const trimmedMessage = message.trim();

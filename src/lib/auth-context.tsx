@@ -411,10 +411,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // 1. Sincronizar com Supabase Auth user_metadata (Persistência garantida e independente de schema)
         const metaUpdates: Record<string, any> = {};
-        if (updates.name !== undefined) metaUpdates.name = updates.name;
-        if (updates.username !== undefined) metaUpdates.username = updates.username;
-        if (updates.bio !== undefined) metaUpdates.bio = updates.bio;
-        if (updates.avatar_url !== undefined) metaUpdates.avatar_url = updates.avatar_url;
+        if (updates.name !== undefined) metaUpdates["name"] = updates.name;
+        if (updates.username !== undefined) metaUpdates["username"] = updates.username;
+        if (updates.bio !== undefined) metaUpdates["bio"] = updates.bio;
+        if (updates.avatar_url !== undefined) metaUpdates["avatar_url"] = updates.avatar_url;
 
         if (Object.keys(metaUpdates).length > 0) {
           try {

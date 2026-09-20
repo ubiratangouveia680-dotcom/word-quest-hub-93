@@ -185,12 +185,12 @@ export async function fetchCategories(): Promise<Category[]> {
 // Questions Queries
 // ----------------------------------------------------
 export interface FetchQuestionsParams {
-  category_id?: string | null;
-  filter?: "recent" | "popular" | "most_answered" | "most_liked" | "answered" | "unanswered";
-  search?: string;
-  currentUserId?: string | null;
-  limit?: number;
-  offset?: number;
+  category_id?: string | null | undefined;
+  filter?: ("recent" | "popular" | "most_answered" | "most_liked" | "answered" | "unanswered") | undefined;
+  search?: string | undefined;
+  currentUserId?: string | null | undefined;
+  limit?: number | undefined;
+  offset?: number | undefined;
 }
 
 export async function fetchQuestions({
@@ -753,9 +753,9 @@ export async function fetchAnswers(questionId: string, currentUserId?: string | 
 export async function createQuestion(params: {
   userId: string;
   categoryId: string;
-  title?: string;
+  title?: string | undefined;
   body: string;
-  verseReference?: string;
+  verseReference?: string | undefined;
 }): Promise<Question | null> {
   const sanitizedBody = sanitizeText(params.body);
   const rawTitle = params.title?.trim() || "";
@@ -790,7 +790,7 @@ export async function createQuestion(params: {
 
 export async function updateQuestion(
   questionId: string,
-  updates: { title?: string; body?: string; categoryId?: string; verseReference?: string }
+  updates: { title?: string | undefined; body?: string | undefined; categoryId?: string | undefined; verseReference?: string | undefined }
 ) {
   const payload: {
     updated_at: string;
@@ -826,10 +826,10 @@ export async function createAnswer(params: {
   questionId: string;
   userId: string;
   body: string;
-  verseReference?: string;
-  parentId?: string | null;
-  questionAuthorId?: string;
-  parentAnswerAuthorId?: string;
+  verseReference?: string | undefined;
+  parentId?: string | null | undefined;
+  questionAuthorId?: string | undefined;
+  parentAnswerAuthorId?: string | undefined;
 }): Promise<Answer | null> {
   const sanitizedBody = sanitizeText(params.body);
   const { data, error } = await supabase
@@ -1252,12 +1252,14 @@ export async function adminDeleteQuestion(questionId: string) {
   if (error) throw error;
 }
 
-export async function adminDeleteAnswer(answerId: string, questionId: string) {
+export async function adminDeleteAnswer(answerId: string, questionId?: string) {
   const { error } = await supabase.from("answers").delete().eq("id", answerId);
   if (error) throw error;
-  const { data: q } = await supabase.from("questions").select("answers_count").eq("id", questionId).single();
-  if (q && q.answers_count > 0) {
-    await supabase.from("questions").update({ answers_count: q.answers_count - 1 }).eq("id", questionId);
+  if (questionId) {
+    const { data: q } = await supabase.from("questions").select("answers_count").eq("id", questionId).single();
+    if (q && q.answers_count > 0) {
+      await supabase.from("questions").update({ answers_count: q.answers_count - 1 }).eq("id", questionId);
+    }
   }
 }
 

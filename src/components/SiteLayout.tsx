@@ -23,6 +23,7 @@ import {
   X,
   HelpCircle,
   ChevronDown,
+  ChevronRight,
   Church,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";

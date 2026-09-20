@@ -53,7 +53,7 @@ export function EditProfileModal({ open, onOpenChange, profile }: EditProfileMod
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameFeedback, setUsernameFeedback] = useState<{
     valid: boolean;
-    message?: string;
+    message?: string | undefined;
   } | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);

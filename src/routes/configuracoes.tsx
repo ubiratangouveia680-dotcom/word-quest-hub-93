@@ -469,7 +469,7 @@ function SettingsPage() {
                     Conectado como
                   </span>
                   <p className="text-sm font-bold text-foreground mt-0.5">
-                    {profile?.name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Usuário"}
+                    {profile?.name || user?.user_metadata?.["name"] || user?.email?.split("@")[0] || "Usuário"}
                   </p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
