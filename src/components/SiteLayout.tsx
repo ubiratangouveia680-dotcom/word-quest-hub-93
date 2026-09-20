@@ -62,9 +62,9 @@ const DESKTOP_NAV = [
 const BOTTOM = [
   { to: "/", label: "Início", icon: Home },
   { to: "/biblia", label: "Bíblia", icon: BookOpen },
+  { to: "/comunidade/pedidos-de-oracao", label: "Orações", icon: HeartHandshake },
   { to: "/comunidade", label: "Comunidade", icon: Users },
-  { to: "/favoritos", label: "Favoritos", icon: Heart },
-  { to: "/perfil", label: "Perfil", icon: User },
+  { to: "/menu", label: "Menu", icon: Menu },
 ] as const;
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
@@ -360,6 +360,20 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
                   {/* NAVEGAÇÃO ESTRUTURADA EM CATEGORIAS */}
                   <nav className="space-y-4 text-sm" aria-label="Menu Mobile">
+                    {/* ACESSO DIRETO À PÁGINA DO MENU */}
+                    <div className="rounded-xl border border-gold/40 bg-gold/10 p-2.5">
+                      <Link
+                        to="/menu"
+                        onClick={() => setOpen(false)}
+                        className="flex items-center justify-between text-xs font-bold text-gold hover:text-gold/90 transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <BookOpen className="size-4 text-gold" />
+                          <span>Página de Menu Completa</span>
+                        </span>
+                        <ChevronRight className="size-4" />
+                      </Link>
+                    </div>
                     {/* INÍCIO */}
                     <div>
                       <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
