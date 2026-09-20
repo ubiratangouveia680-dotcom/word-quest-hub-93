@@ -13,6 +13,7 @@ export interface ContactResponse {
   success: boolean;
   message: string;
   provider?: string;
+  activationPending?: boolean;
 }
 
 const TARGET_EMAIL = "ubiratan.silva.gouveia@gmail.com";
@@ -57,7 +58,7 @@ export const sendContactMessage = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }): Promise<ContactResponse> => {
-    // 1. Armadilha anti-bot (Honeypot): se preenchido, responde sucesso silencioso para enganar bots
+    // 1. Armadilha anti-bot (Honeypot)
     if (data.honeypot && data.honeypot.length > 0) {
       return {
         success: true,
@@ -68,8 +69,9 @@ export const sendContactMessage = createServerFn({ method: "POST" })
 
     let sent = false;
     let usedProvider = "";
+    let activationPending = false;
 
-    // 2. Provedor 1: Resend (se chave RESEND_API_KEY estiver configurada no servidor)
+    // 2. Provedor 1: Resend (se chave RESEND_API_KEY estiver configurada)
     const resendApiKey = process.env["RESEND_API_KEY"];
     if (resendApiKey) {
       try {
@@ -116,14 +118,45 @@ export const sendContactMessage = createServerFn({ method: "POST" })
           usedProvider = "resend";
         } else {
           const errText = await resendRes.text();
-          console.warn("Resend retornou status não-ok:", resendRes.status, errText);
+          console.warn("Resend retornou erro:", resendRes.status, errText);
         }
       } catch (err) {
         console.warn("Falha ao disparar pelo Resend:", err);
       }
     }
 
-    // 3. Provedor 2: FormSubmit (entrega direta garantida para ubiratan.silva.gouveia@gmail.com)
+    // 3. Provedor 2: Web3Forms (se WEB3FORMS_ACCESS_KEY estiver configurada)
+    const web3formsKey = process.env["WEB3FORMS_ACCESS_KEY"];
+    if (!sent && web3formsKey) {
+      try {
+        const w3Res = await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            access_key: web3formsKey,
+            name: data.name,
+            email: data.email,
+            subject: `[Contato Word Quest Hub] ${data.subject} - ${data.name}`,
+            message: data.message,
+            from_name: "Word Quest Hub",
+            reply_to: data.email,
+          }),
+        });
+
+        const w3Json = (await w3Res.json().catch(() => null)) as { success?: boolean } | null;
+        if (w3Res.ok && w3Json?.success) {
+          sent = true;
+          usedProvider = "web3forms";
+        }
+      } catch (err) {
+        console.warn("Falha ao disparar pelo Web3Forms:", err);
+      }
+    }
+
+    // 4. Provedor 3: FormSubmit (com verificação rigorosa de ativação)
     if (!sent) {
       try {
         const fsRes = await fetch(`https://formsubmit.co/ajax/${TARGET_EMAIL}`, {
@@ -133,6 +166,7 @@ export const sendContactMessage = createServerFn({ method: "POST" })
             Accept: "application/json",
             Origin: "https://word-quest-hub-93.lovable.app",
             Referer: "https://word-quest-hub-93.lovable.app/contato",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
           },
           body: JSON.stringify({
             name: data.name,
@@ -146,18 +180,25 @@ export const sendContactMessage = createServerFn({ method: "POST" })
           }),
         });
 
-        if (fsRes.ok) {
+        const fsJson = (await fsRes.json().catch(() => null)) as { success?: string | boolean; message?: string } | null;
+
+        if (fsJson && (fsJson.success === "true" || fsJson.success === true)) {
           sent = true;
           usedProvider = "formsubmit";
-        } else {
-          console.warn("FormSubmit retornou erro:", fsRes.status);
+        } else if (fsJson && fsJson.message && fsJson.message.toLowerCase().includes("activation")) {
+          activationPending = true;
+          console.warn("FormSubmit precisa de ativação em:", TARGET_EMAIL);
+        } else if (fsRes.ok) {
+          // Se retornou 200 e não avisou de erro, considerar enviado
+          sent = true;
+          usedProvider = "formsubmit";
         }
       } catch (err) {
         console.warn("Falha ao disparar pelo FormSubmit:", err);
       }
     }
 
-    // 4. Registro no banco de dados Supabase como cópia de segurança
+    // 5. Cópia de segurança no Supabase (não impede o envio se falhar)
     try {
       const supabaseUrl = process.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
       const supabaseKey = process.env["SUPABASE_SERVICE_ROLE_KEY"] || process.env["VITE_SUPABASE_ANON_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
@@ -190,8 +231,18 @@ export const sendContactMessage = createServerFn({ method: "POST" })
       };
     }
 
+    if (activationPending) {
+      return {
+        success: false,
+        activationPending: true,
+        message:
+          "O serviço de envio precisa de ativação inicial: foi enviado um e-mail para ubiratan.silva.gouveia@gmail.com com o link 'Activate Form'. Por favor, clique nele para liberar o recebimento.",
+      };
+    }
+
     return {
       success: false,
-      message: "Não foi possível enviar sua mensagem no momento. Por favor, tente novamente ou entre em contato diretamente pelo e-mail ubiratan.silva.gouveia@gmail.com.",
+      message:
+        "Não foi possível enviar sua mensagem automaticamente no momento. Você pode enviar diretamente para o e-mail: ubiratan.silva.gouveia@gmail.com.",
     };
   });

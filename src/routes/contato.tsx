@@ -55,6 +55,7 @@ function ContactPage() {
   const [honeypot, setHoneypot] = useState(""); // Bot-trap anti-spam
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sent, setSent] = useState(false);
+  const [activationPending, setActivationPending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Preenchimento automático para usuários autenticados
@@ -118,6 +119,7 @@ function ContactPage() {
     }
 
     setSubmitting(true);
+    setActivationPending(false);
 
     try {
       const cleanName = sanitizeText(name.trim());
@@ -140,6 +142,9 @@ function ContactPage() {
         localStorage.setItem("bo:last_contact_sent", Date.now().toString());
         setSent(true);
         toast.success(res.message || "Mensagem enviada com sucesso! Obrigado pelo contato.");
+      } else if (res.activationPending) {
+        setActivationPending(true);
+        toast.warning("Ativação necessária no e-mail do destinatário para liberar as mensagens.");
       } else {
         toast.error(res.message || "Não foi possível enviar sua mensagem. Tente novamente.");
       }
@@ -152,6 +157,12 @@ function ContactPage() {
     }
   };
 
+  const directMailtoUrl = `mailto:ubiratan.silva.gouveia@gmail.com?subject=${encodeURIComponent(
+    subject ? `[Word Quest Hub] ${subject}` : "Contato - Word Quest Hub"
+  )}&body=${encodeURIComponent(
+    message ? `${message}\n\nAtenciosamente,\n${name || "Visitante"} (${email || "sem e-mail informado"})` : ""
+  )}`;
+
   return (
     <SiteLayout>
       <div className="mx-auto w-full max-w-2xl px-4 py-10">
@@ -163,6 +174,29 @@ function ContactPage() {
           Valorizamos sua opinião, correções e sugestões construtivas. Preencha o formulário abaixo
           para entrar em contato com nossa equipe editorial.
         </p>
+
+        {activationPending && (
+          <div className="mt-6 rounded-xl border border-amber-500/50 bg-amber-500/10 p-5 text-sm space-y-2">
+            <h3 className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-2">
+              <Mail className="size-4" /> Ativação Necessária no Gmail
+            </h3>
+            <p className="text-muted-foreground leading-relaxed">
+              O serviço de envio gerou um link de autorização inicial para o endereço{" "}
+              <strong className="text-foreground font-mono text-xs">ubiratan.silva.gouveia@gmail.com</strong>.
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              Por favor, abra sua caixa de entrada no Gmail (verifique também a pasta de <strong>Spam</strong> ou <strong>Promoções</strong>), localize a mensagem da <strong>FormSubmit</strong> e clique em <strong>“Activate Form”</strong>. Após esse clique único, todos os envios serão entregues imediatamente.
+            </p>
+            <div className="pt-2">
+              <a
+                href={directMailtoUrl}
+                className="inline-flex items-center gap-2 text-xs font-medium text-amber-600 dark:text-amber-400 underline underline-offset-4 hover:opacity-80"
+              >
+                Prefere enviar esta mensagem agora pelo seu cliente de e-mail? Clique aqui.
+              </a>
+            </div>
+          </div>
+        )}
 
         {sent ? (
           <div className="surface mt-8 rounded-xl border border-gold/40 p-8 text-center space-y-4">
@@ -271,10 +305,18 @@ function ContactPage() {
               {errors.message && <p className="mt-1 text-xs text-destructive">{errors.message}</p>}
             </div>
 
-            <div className="pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
               <Button type="submit" size="lg" className="h-11 px-6 font-medium" disabled={submitting}>
                 <Send className="mr-2 size-4" /> {submitting ? "Enviando…" : "Enviar mensagem"}
               </Button>
+
+              <a
+                href={directMailtoUrl}
+                className="text-xs text-muted-foreground hover:text-gold transition-colors inline-flex items-center gap-1.5"
+                title="Abrir no seu aplicativo de e-mail padrão"
+              >
+                <Mail className="size-3.5" /> Enviar diretamente pelo seu aplicativo de e-mail
+              </a>
             </div>
           </form>
         )}
