@@ -22,6 +22,7 @@ import {
   showDailyVerseNotification,
   DEFAULT_NOTIFICATION_SETTINGS,
   type VerseNotificationSettings,
+  type NotificationPeriod,
 } from "@/lib/notifications";
 import { url } from "@/lib/site";
 
@@ -83,12 +84,16 @@ function ProfilePage() {
     }
   };
 
-  const handleTestNotification = async () => {
+  const handleTestNotification = async (period: NotificationPeriod = "evening_verse") => {
     setIsTestingNotif(true);
     try {
-      const ok = await showDailyVerseNotification("morning_verse", user?.id, { force: true });
+      const ok = await showDailyVerseNotification(period, user?.id, { force: true });
       if (ok) {
-        toast.success("Notificação de teste enviada! Verifique o topo ou painel de notificações do seu aparelho.");
+        toast.success(
+          period === "evening_verse"
+            ? "Notificação do Versículo da Noite enviada com sucesso! Veja no seu celular."
+            : "Notificação de teste enviada com sucesso! Veja no seu celular."
+        );
       } else {
         toast.error("Não foi possível exibir a notificação. Verifique se as permissões estão ativadas no seu navegador.");
       }
@@ -520,12 +525,12 @@ function ProfilePage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleTestNotification}
+                onClick={() => handleTestNotification("evening_verse")}
                 disabled={isTestingNotif}
-                className="gap-1.5 text-xs h-9"
+                className="gap-1.5 text-xs h-9 border-border/80"
               >
-                <Bell className="size-3.5 text-gold" />
-                {isTestingNotif ? "Enviando…" : "Testar notificação agora"}
+                <span>🌙</span>
+                {isTestingNotif ? "Enviando…" : "Testar Versículo da Noite"}
               </Button>
               <Button
                 onClick={handleSaveNotifications}

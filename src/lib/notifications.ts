@@ -210,6 +210,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
   if (!isPushNotificationSupported()) return null;
   try {
     const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    await navigator.serviceWorker.ready;
     return reg;
   } catch (err) {
     console.warn("Falha ao registrar Service Worker:", err);
@@ -240,21 +241,24 @@ export function formatVerseNotification(period: NotificationPeriod) {
   const daily = getDailyRef();
 
   let title = "🌅 Versículo da Manhã";
+  let tag = "versiculo-da-manha";
   if (period === "afternoon_verse") {
     title = "☀️ Versículo da Tarde";
+    tag = "versiculo-da-tarde";
   } else if (period === "evening_verse") {
     title = "🌙 Versículo da Noite";
+    tag = "versiculo-da-noite";
   }
 
-  // Beautiful, compact message with book reference
-  const body = `"${daily.text}"\n📖 ${daily.bookName} ${daily.chapter}:${daily.verse}\nToque para ler o versículo completo no Word Quest Hub.`;
+  // Formatação limpa, profissional e com quebras duplas para visual nativo do Android e Chrome
+  const body = `"${daily.text}"\n\n📖 ${daily.bookName} ${daily.chapter}:${daily.verse}\n\nToque para ler o versículo completo no Word Quest Hub.`;
 
   return {
     title,
     body,
     reference: `${daily.bookName} ${daily.chapter}:${daily.verse}`,
     url: "/versiculo-do-dia",
-    tag: `verse-${period}`,
+    tag,
   };
 }
 
@@ -318,21 +322,28 @@ export async function showDailyVerseNotification(
   const content = formatVerseNotification(period);
   const reg = await registerServiceWorker();
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const iconUrl = `${origin}/icon-192.png`;
+  const badgeUrl = `${origin}/favicon.png`;
+  const targetUrl = `${origin}${content.url}`;
+
   try {
     if (reg && reg.showNotification) {
       await reg.showNotification(content.title, {
         body: content.body,
-        icon: "/icon-192.png",
-        badge: "/favicon.png",
-        tag: `verse-${period}-${todayStr}`,
-        data: { url: content.url },
+        icon: iconUrl,
+        badge: badgeUrl,
+        tag: content.tag,
+        data: { url: targetUrl },
         vibrate: [100, 50, 100],
+        renotify: true,
       });
     } else {
       new Notification(content.title, {
         body: content.body,
-        icon: "/icon-192.png",
-        tag: `verse-${period}-${todayStr}`,
+        icon: iconUrl,
+        tag: content.tag,
+        data: { url: targetUrl },
       });
     }
 

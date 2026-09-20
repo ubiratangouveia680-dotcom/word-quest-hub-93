@@ -1,5 +1,5 @@
 // Service Worker para Word Quest Hub - Notificações do Versículo do Dia
-const CACHE_NAME = 'word-quest-sw-v1';
+const CACHE_NAME = 'word-quest-sw-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -12,10 +12,10 @@ self.addEventListener('activate', (event) => {
 // Tratamento de notificações push recebidas
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'Versículo do Dia — Word Quest Hub',
-    body: 'Toque para ler o versículo completo.',
+    title: '🌙 Versículo da Noite',
+    body: 'Toque para ler o versículo completo no Word Quest Hub.',
     url: '/versiculo-do-dia',
-    tag: 'daily-verse',
+    tag: 'versiculo-da-noite',
   };
 
   try {
@@ -28,15 +28,20 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  // URLs absolutas garantem renderização correta do ícone no NotificationManager do Android
+  const iconUrl = new URL('/icon-192.png', self.location.origin).href;
+  const badgeUrl = new URL('/favicon.png', self.location.origin).href;
+
   const options = {
     body: data.body,
-    icon: '/icon-192.png',
-    badge: '/favicon.png',
-    tag: data.tag || 'daily-verse',
+    icon: data.icon || iconUrl,
+    badge: data.badge || badgeUrl,
+    tag: data.tag || 'versiculo-da-noite',
     data: {
       url: data.url || '/versiculo-do-dia',
     },
     vibrate: [100, 50, 100],
+    renotify: true,
     requireInteraction: false,
   };
 
@@ -46,21 +51,25 @@ self.addEventListener('push', (event) => {
 // Ação ao tocar/clicar na notificação: abre diretamente a página do Versículo do Dia
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || '/versiculo-do-dia';
+  const rawUrl = (event.notification.data && event.notification.data.url) || '/versiculo-do-dia';
+  const targetUrl = new URL(rawUrl, self.location.origin).href;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Se já houver uma aba aberta com o site, foca nela e navega
+      // Se já houver uma aba aberta com o site Word Quest Hub, foca nela e navega diretamente
       for (const client of clientList) {
-        if (client.url && 'focus' in client) {
-          client.navigate(targetUrl);
+        if (client.url && client.url.startsWith(self.location.origin) && 'focus' in client) {
+          if ('navigate' in client) {
+            client.navigate(targetUrl);
+          }
           return client.focus();
         }
       }
-      // Se não houver, abre uma nova janela
+      // Se nenhuma aba estiver aberta, abre uma nova janela
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }
     })
   );
 });
+
