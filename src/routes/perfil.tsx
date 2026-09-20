@@ -84,7 +84,32 @@ import {
 } from "@/lib/push.functions";
 import { url } from "@/lib/site";
 
+export type TabType =
+  | "favoritos"
+  | "historico"
+  | "oracoes"
+  | "salvos"
+  | "publicacoes"
+  | "pedidos_oracao"
+  | "configuracoes";
+
 export const Route = createFileRoute("/perfil")({
+  validateSearch: (search: Record<string, unknown>): { tab?: TabType } => {
+    const validTabs: TabType[] = [
+      "favoritos",
+      "historico",
+      "oracoes",
+      "salvos",
+      "publicacoes",
+      "pedidos_oracao",
+      "configuracoes",
+    ];
+    const tab =
+      typeof search.tab === "string" && validTabs.includes(search.tab as TabType)
+        ? (search.tab as TabType)
+        : undefined;
+    return { tab };
+  },
   head: () => ({
     meta: [
       { title: "Meu Perfil — Histórico, favoritos e configurações | Bíblia Online" },
@@ -102,10 +127,9 @@ export const Route = createFileRoute("/perfil")({
   component: ProfilePage,
 });
 
-type TabType = "favoritos" | "historico" | "oracoes" | "salvos" | "publicacoes" | "pedidos_oracao" | "configuracoes";
-
 function ProfilePage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const {
     user,
     profile,
@@ -119,8 +143,20 @@ function ProfilePage() {
   const { items, remove: removeFavorite } = useFavorites();
   const { history } = useProgress();
 
-  // Aba ativa
-  const [activeTab, setActiveTab] = useState<TabType>("favoritos");
+  // Aba ativa inicializada com base na URL
+  const [activeTab, setActiveTab] = useState<TabType>(() => search.tab || "favoritos");
+
+  // Sincronizar quando o parâmetro da URL mudar
+  useEffect(() => {
+    if (search.tab && search.tab !== activeTab) {
+      setActiveTab(search.tab);
+    }
+  }, [search.tab, activeTab]);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    navigate({ search: { tab }, replace: true });
+  };
 
   // Modal de edição do perfil
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -613,7 +649,7 @@ function ProfilePage() {
           <div className="flex items-center gap-1.5 overflow-x-auto pb-2 no-scrollbar border-b border-border/80">
             <button
               type="button"
-              onClick={() => setActiveTab("favoritos")}
+              onClick={() => handleTabChange("favoritos")}
               className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all touch-manipulation ${
                 activeTab === "favoritos"
                   ? "bg-primary text-primary-foreground shadow-xs"
@@ -629,7 +665,7 @@ function ProfilePage() {
 
             <button
               type="button"
-              onClick={() => setActiveTab("historico")}
+              onClick={() => handleTabChange("historico")}
               className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all touch-manipulation ${
                 activeTab === "historico"
                   ? "bg-primary text-primary-foreground shadow-xs"
@@ -645,7 +681,7 @@ function ProfilePage() {
 
             <button
               type="button"
-              onClick={() => setActiveTab("oracoes")}
+              onClick={() => handleTabChange("oracoes")}
               className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all touch-manipulation ${
                 activeTab === "oracoes"
                   ? "bg-primary text-primary-foreground shadow-xs"
@@ -661,7 +697,7 @@ function ProfilePage() {
 
             <button
               type="button"
-              onClick={() => setActiveTab("salvos")}
+              onClick={() => handleTabChange("salvos")}
               className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all touch-manipulation ${
                 activeTab === "salvos"
                   ? "bg-primary text-primary-foreground shadow-xs"
@@ -677,7 +713,7 @@ function ProfilePage() {
 
             <button
               type="button"
-              onClick={() => setActiveTab("publicacoes")}
+              onClick={() => handleTabChange("publicacoes")}
               className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all touch-manipulation ${
                 activeTab === "publicacoes"
                   ? "bg-primary text-primary-foreground shadow-xs"
@@ -693,7 +729,7 @@ function ProfilePage() {
 
             <button
               type="button"
-              onClick={() => setActiveTab("pedidos_oracao")}
+              onClick={() => handleTabChange("pedidos_oracao")}
               className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all touch-manipulation ${
                 activeTab === "pedidos_oracao"
                   ? "bg-primary text-primary-foreground shadow-xs"
@@ -709,7 +745,7 @@ function ProfilePage() {
 
             <button
               type="button"
-              onClick={() => setActiveTab("configuracoes")}
+              onClick={() => handleTabChange("configuracoes")}
               className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all touch-manipulation ${
                 activeTab === "configuracoes"
                   ? "bg-primary text-primary-foreground shadow-xs"

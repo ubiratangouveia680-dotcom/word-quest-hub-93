@@ -61,8 +61,9 @@ export function EditProfileModal({ open, onOpenChange, profile }: EditProfileMod
   // Sincronizar dados quando o modal abre
   useEffect(() => {
     if (open) {
-      const initialName = profile?.name || user?.user_metadata?.["name"] || "";
+      const initialName = profile?.name || user?.user_metadata?.["name"] || user?.email?.split("@")[0] || "";
       const initialUsername = profile?.username || user?.user_metadata?.["username"] || "";
+      const initialBio = profile?.bio || user?.user_metadata?.["bio"] || "";
       const localAvatar = typeof window !== "undefined" && user?.id ? localStorage.getItem(`bo:user_avatar_${user.id}`) : null;
       const initialAvatar = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || localAvatar || null;
 
@@ -164,27 +165,30 @@ export function EditProfileModal({ open, onOpenChange, profile }: EditProfileMod
     setSelectedFile(null);
     setPreviewUrl(null);
     setRemoveAvatar(true);
+    setCurrentAvatarUrl(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
   // Detecção de alterações
-  const initialName = (profile?.name || user?.user_metadata?.["name"] || "").trim();
+  const initialName = (profile?.name || user?.user_metadata?.["name"] || user?.email?.split("@")[0] || "").trim();
   const initialUsername = (profile?.username || user?.user_metadata?.["username"] || "").trim().toLowerCase();
   const initialBio = (profile?.bio || user?.user_metadata?.["bio"] || "").trim();
-  const initialAvatar = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || null;
+  const localAvatar = typeof window !== "undefined" && user?.id ? localStorage.getItem(`bo:user_avatar_${user.id}`) : null;
+  const initialAvatar = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || localAvatar || null;
 
   const currentCleanUser = username.trim().toLowerCase().replace(/^@/, "");
 
   const hasNameChanged = name.trim() !== initialName;
   const hasUsernameChanged = currentCleanUser !== initialUsername;
   const hasBioChanged = bio.trim() !== initialBio;
-  const hasAvatarChanged = selectedFile !== null || (removeAvatar && initialAvatar !== null);
+  const hasAvatarChanged = selectedFile !== null || (removeAvatar && (initialAvatar !== null || currentAvatarUrl !== null));
 
   const hasAnyChange = hasNameChanged || hasUsernameChanged || hasBioChanged || hasAvatarChanged;
   const isUsernameValid = !currentCleanUser || (usernameFeedback ? usernameFeedback.valid : true);
-  const isFormValid = name.trim().length >= 2 && isUsernameValid && !isCheckingUsername;
+  const effectiveName = name.trim() || initialName || "Usuário";
+  const isFormValid = effectiveName.length >= 2 && isUsernameValid && !isCheckingUsername;
 
   const canSave = hasAnyChange && isFormValid && !isSaving;
 
@@ -209,12 +213,9 @@ export function EditProfileModal({ open, onOpenChange, profile }: EditProfileMod
           const uploadRes = await uploadUserAvatar(user.id, selectedFile);
           finalAvatarUrl = uploadRes.avatarUrl;
         } catch (uploadErr) {
+          console.error("Erro técnico no upload da foto de perfil:", uploadErr);
           toast.dismiss(saveToastId);
-          toast.error(
-            uploadErr instanceof Error
-              ? uploadErr.message
-              : "Erro ao realizar upload da foto de perfil. Tente uma imagem diferente."
-          );
+          toast.error("Não foi possível salvar sua foto. Tente novamente.");
           setIsSaving(false);
           return;
         }
@@ -230,7 +231,7 @@ export function EditProfileModal({ open, onOpenChange, profile }: EditProfileMod
         avatar_url?: string | null;
       } = {};
 
-      if (hasNameChanged) payload.name = name.trim();
+      if (hasNameChanged || !profile?.name) payload.name = effectiveName;
       if (hasUsernameChanged) payload.username = currentCleanUser || null;
       if (hasBioChanged) payload.bio = bio.trim() || null;
       if (finalAvatarUrl !== undefined) payload.avatar_url = finalAvatarUrl;

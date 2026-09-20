@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { User, Session, AuthError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { deleteUserAvatar } from "@/lib/avatar";
 
 export interface UserProfile {
   id: string;
@@ -140,9 +141,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (data) {
           const row = data as any;
+          const dbAvatar = row.avatar_url && String(row.avatar_url).trim().length > 0 ? row.avatar_url : null;
+          const resolvedAvatar = dbAvatar ?? metaAvatar ?? null;
           setProfile({
             ...row,
-            avatar_url: row.avatar_url ?? metaAvatar ?? null,
+            avatar_url: resolvedAvatar,
             username: row.username ?? metaUsername ?? null,
             bio: row.bio ?? metaBio ?? null,
           } as UserProfile);
@@ -167,9 +170,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (!insertError && newProfile) {
             const p = newProfile as any;
+            const dbAvatar = p.avatar_url && String(p.avatar_url).trim().length > 0 ? p.avatar_url : null;
+            const resolvedAvatar = dbAvatar ?? metaAvatar ?? null;
             setProfile({
               ...p,
-              avatar_url: p.avatar_url ?? metaAvatar ?? null,
+              avatar_url: resolvedAvatar,
               username: p.username ?? metaUsername ?? null,
               bio: p.bio ?? metaBio ?? null,
             } as UserProfile);
@@ -397,6 +402,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             updates.username = null;
           }
+        }
+
+        // 0. Se a foto foi removida, exclui arquivo correspondente do Supabase Storage
+        if (updates.avatar_url === null) {
+          await deleteUserAvatar(user.id, profile?.avatar_url);
         }
 
         // 1. Sincronizar com Supabase Auth user_metadata (Persistência garantida e independente de schema)

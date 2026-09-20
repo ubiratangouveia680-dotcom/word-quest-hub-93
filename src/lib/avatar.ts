@@ -150,6 +150,35 @@ export async function compressAvatarImage(
 }
 
 /**
+ * Remove o arquivo de avatar antigo do usuário no Supabase Storage, se existente.
+ */
+export async function deleteUserAvatar(
+  userId: string,
+  currentAvatarUrl?: string | null
+): Promise<void> {
+  if (!userId) return;
+
+  try {
+    const { data: listData, error: listError } = await supabase.storage
+      .from("avatars")
+      .list(userId);
+
+    if (!listError && listData && listData.length > 0) {
+      const filesToDelete = listData.map((file) => `${userId}/${file.name}`);
+      const { error: removeError } = await supabase.storage
+        .from("avatars")
+        .remove(filesToDelete);
+
+      if (removeError) {
+        console.warn("Aviso ao remover arquivos do storage:", removeError.message);
+      }
+    }
+  } catch (err) {
+    console.warn("Aviso ao tentar excluir avatar do Storage:", err);
+  }
+}
+
+/**
  * Realiza o upload do avatar do usuário para o Supabase Storage
  * com fallback inteligente para DataURL otimizado caso o bucket ainda
  * não esteja provisionado na infraestrutura.
@@ -157,16 +186,19 @@ export async function compressAvatarImage(
 export async function uploadUserAvatar(
   userId: string,
   file: File
-): Promise<{ avatarUrl: string }> {
+): Promise<{ avatarUrl: string; isStorage: boolean }> {
   const validation = validateAvatarFile(file);
   if (!validation.valid) {
     throw new Error(validation.error || "Arquivo de imagem inválido.");
   }
 
-  // 1. Comprimir e otimizar localmente em 256x256 (~12KB)
-  const compressed = await compressAvatarImage(file, 256, 0.75);
+  // 1. Comprimir e otimizar localmente em 256x256 (~12KB a 18KB)
+  const compressed = await compressAvatarImage(file, 256, 0.8);
 
-  // 2. Tentar upload no Supabase Storage se o bucket estiver configurado
+  // 2. Limpar foto anterior do usuário no storage para evitar acúmulo de lixo
+  await deleteUserAvatar(userId);
+
+  // 3. Tentar upload no Supabase Storage
   try {
     const fileExt = compressed.blob.type === "image/webp" ? "webp" : "jpg";
     const filePath = `${userId}/avatar_${Date.now()}.${fileExt}`;
@@ -184,13 +216,17 @@ export async function uploadUserAvatar(
         .getPublicUrl(filePath);
 
       if (publicData?.publicUrl) {
-        return { avatarUrl: publicData.publicUrl };
+        const publicUrlWithTimestamp = `${publicData.publicUrl}?t=${Date.now()}`;
+        return { avatarUrl: publicUrlWithTimestamp, isStorage: true };
       }
+    } else {
+      console.warn("Supabase Storage retornou aviso no upload:", uploadError.message);
     }
   } catch (err) {
     console.warn("Upload no Supabase Storage indisponível, utilizando fallback em DataURL:", err);
   }
 
-  // 3. Fallback ultra-resiliente: a imagem compactada (~12KB) é gravada diretamente como dataUrl
-  return { avatarUrl: compressed.dataUrl };
+  // 4. Fallback ultra-resiliente: a imagem compactada é gravada diretamente como dataUrl
+  return { avatarUrl: compressed.dataUrl, isStorage: false };
 }
+

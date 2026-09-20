@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BookOpen,
   Calendar,
@@ -106,10 +106,12 @@ function Logo() {
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const { user, profile, isAuthenticated, signOut } = useAuth();
   const { settings, update } = useSettings();
 
-  const avatarUrl = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || null;
+  const localAvatar = typeof window !== "undefined" && user?.id ? localStorage.getItem(`bo:user_avatar_${user.id}`) : null;
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || localAvatar || null;
   const userDisplayName =
     profile?.name || user?.user_metadata?.["name"] || user?.email?.split("@")[0] || "Perfil";
   const userHandle = profile?.username || user?.user_metadata?.["username"] || null;
@@ -201,38 +203,42 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                       </div>
                     </div>
 
-                    <DropdownMenuItem asChild className="text-xs cursor-pointer rounded-lg py-2">
-                      <Link to="/perfil" className="flex items-center gap-2">
-                        <User className="size-3.5 text-gold" />
-                        <span>Meu Perfil</span>
-                      </Link>
+                    <DropdownMenuItem
+                      onSelect={() => navigate({ to: "/perfil" })}
+                      className="text-xs cursor-pointer rounded-lg py-2 flex items-center gap-2"
+                    >
+                      <User className="size-3.5 text-gold" />
+                      <span>Meu Perfil</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem asChild className="text-xs cursor-pointer rounded-lg py-2">
-                      <Link to="/favoritos" className="flex items-center gap-2">
-                        <Heart className="size-3.5 text-rose-500" />
-                        <span>Favoritos</span>
-                      </Link>
+                    <DropdownMenuItem
+                      onSelect={() => navigate({ to: "/favoritos" })}
+                      className="text-xs cursor-pointer rounded-lg py-2 flex items-center gap-2"
+                    >
+                      <Heart className="size-3.5 text-rose-500" />
+                      <span>Favoritos</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem asChild className="text-xs cursor-pointer rounded-lg py-2">
-                      <Link to="/perfil" className="flex items-center gap-2">
-                        <History className="size-3.5 text-amber-500" />
-                        <span>Histórico de Leitura</span>
-                      </Link>
+                    <DropdownMenuItem
+                      onSelect={() => navigate({ to: "/perfil", search: { tab: "historico" } })}
+                      className="text-xs cursor-pointer rounded-lg py-2 flex items-center gap-2"
+                    >
+                      <History className="size-3.5 text-amber-500" />
+                      <span>Histórico de Leitura</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem asChild className="text-xs cursor-pointer rounded-lg py-2">
-                      <Link to="/perfil" className="flex items-center gap-2">
-                        <Settings className="size-3.5 text-muted-foreground" />
-                        <span>Configurações</span>
-                      </Link>
+                    <DropdownMenuItem
+                      onSelect={() => navigate({ to: "/configuracoes" })}
+                      className="text-xs cursor-pointer rounded-lg py-2 flex items-center gap-2"
+                    >
+                      <Settings className="size-3.5 text-muted-foreground" />
+                      <span>Configurações</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator className="my-1" />
 
                     <DropdownMenuItem
-                      onClick={handleSignOut}
+                      onSelect={handleSignOut}
                       className="text-xs cursor-pointer rounded-lg py-2 text-destructive focus:text-destructive focus:bg-destructive/10 flex items-center gap-2"
                     >
                       <LogOut className="size-3.5" />
@@ -323,17 +329,22 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                             </Link>
                           </Button>
                           <Button asChild size="sm" variant="ghost" className="h-8 text-xs font-medium justify-start">
-                            <Link to="/perfil" onClick={() => setOpen(false)}>
+                            <Link to="/perfil" search={{ tab: "historico" }} onClick={() => setOpen(false)}>
                               <History className="mr-1.5 size-3.5 text-amber-500" /> Histórico
+                            </Link>
+                          </Button>
+                          <Button asChild size="sm" variant="ghost" className="h-8 text-xs font-medium justify-start">
+                            <Link to="/configuracoes" onClick={() => setOpen(false)}>
+                              <Settings className="mr-1.5 size-3.5 text-muted-foreground" /> Configurações
                             </Link>
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={handleSignOut}
-                            className="h-8 text-xs font-medium justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+                            className="col-span-2 h-8 text-xs font-medium justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
-                            <LogOut className="mr-1.5 size-3.5" /> Sair
+                            <LogOut className="mr-1.5 size-3.5" /> Sair da conta
                           </Button>
                         </div>
                       </div>
@@ -423,6 +434,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                         </Link>
                         <Link
                           to="/perfil"
+                          search={{ tab: "historico" }}
                           onClick={() => setOpen(false)}
                           className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
                         >

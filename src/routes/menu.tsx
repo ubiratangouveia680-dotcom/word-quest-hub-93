@@ -76,7 +76,8 @@ export function MenuPage() {
     setMounted(true);
   }, []);
 
-  const avatarUrl = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || null;
+  const localAvatar = typeof window !== "undefined" && user?.id ? localStorage.getItem(`bo:user_avatar_${user.id}`) : null;
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || localAvatar || null;
   const userDisplayName =
     profile?.name || user?.user_metadata?.["name"] || user?.email?.split("@")[0] || "Perfil";
   const userHandle = profile?.username || user?.user_metadata?.["username"] || null;
@@ -207,7 +208,7 @@ export function MenuPage() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="sm" className="h-9 text-xs justify-start">
-                  <Link to="/perfil">
+                  <Link to="/perfil" search={{ tab: "historico" }}>
                     <History className="size-3.5 mr-1.5 text-amber-500" /> Histórico
                   </Link>
                 </Button>
