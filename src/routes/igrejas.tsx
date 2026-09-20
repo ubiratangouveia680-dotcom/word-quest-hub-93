@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import {
   Church as ChurchIcon,
   Compass,
-  ExternalLink,
+  HelpCircle,
   Info,
   Loader2,
   LocateFixed,
@@ -26,6 +26,8 @@ import {
   Sparkles,
   Star,
   AlertCircle,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
 
 export const Route = createFileRoute("/igrejas")({
@@ -52,10 +54,20 @@ export const Route = createFileRoute("/igrejas")({
 });
 
 const RADIUS_OPTIONS = [
-  { label: "5 km", value: 5000 },
-  { label: "10 km (recomendado)", value: 10000 },
+  { label: "5 km (padrão)", value: 5000 },
+  { label: "10 km", value: 10000 },
   { label: "25 km", value: 25000 },
   { label: "50 km", value: 50000 },
+];
+
+const SUGGESTED_TERMS = [
+  "Todas as igrejas",
+  "Igreja evangélica",
+  "Igreja católica",
+  "Igreja batista",
+  "Assembleia de Deus",
+  "Paróquia",
+  "Comunidade cristã",
 ];
 
 function IgrejasPage() {
@@ -63,7 +75,8 @@ function IgrejasPage() {
     null,
   );
   const [locationName, setLocationName] = useState<string>("");
-  const [radiusMeters, setRadiusMeters] = useState<number>(10000);
+  const [radiusMeters, setRadiusMeters] = useState<number>(5000); // Começa com 5 km
+  const [currentQuery, setCurrentQuery] = useState<string>("");
   const [churches, setChurches] = useState<Church[]>([]);
   const [selectedChurchId, setSelectedChurchId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -73,7 +86,7 @@ function IgrejasPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  // 1. Trigger Geolocation upon explicit user action
+  // 1. Geolocalização ao clicar
   const handleGetLocation = () => {
     if (typeof window === "undefined" || !navigator.geolocation) {
       setStatus("error");
@@ -89,7 +102,7 @@ function IgrejasPage() {
         const { latitude, longitude } = position.coords;
         setUserLocation({ latitude, longitude });
         setLocationName("Sua localização atual");
-        fetchChurches(latitude, longitude, radiusMeters);
+        fetchChurches(latitude, longitude, radiusMeters, currentQuery || undefined, true);
       },
       (error) => {
         if (error.code === error.PERMISSION_DENIED) {
@@ -110,8 +123,14 @@ function IgrejasPage() {
     );
   };
 
-  // 2. Fetch churches from server function
-  const fetchChurches = async (lat: number, lng: number, radius: number) => {
+  // 2. Busca no servidor (Google Places New + Text Search + Fallback)
+  const fetchChurches = async (
+    lat: number,
+    lng: number,
+    radius: number,
+    query?: string,
+    autoExpand = true,
+  ) => {
     setStatus("loading");
     setErrorMessage("");
     startTransition(async () => {
@@ -121,8 +140,15 @@ function IgrejasPage() {
             latitude: lat,
             longitude: lng,
             radiusMeters: radius,
+            query: query && query !== "Todas as igrejas" ? query : undefined,
+            autoExpand,
           },
         });
+
+        // Se houve expansão automática no backend (ex: de 5 km para 10 km por ter poucos resultados)
+        if (res.expandedAutomatically && res.effectiveRadiusMeters) {
+          setRadiusMeters(res.effectiveRadiusMeters);
+        }
 
         if (res.churches && res.churches.length > 0) {
           setChurches(res.churches);
@@ -141,31 +167,67 @@ function IgrejasPage() {
     });
   };
 
-  // 3. Search manual address
-  const handleSearchAddress = async (e?: React.FormEvent) => {
+  // 3. Busca manual (por cidade, bairro, endereço ou denominação)
+  const handleSearchManual = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const query = searchQuery.trim();
-    if (!query) return;
+    const q = searchQuery.trim();
+    if (!q) return;
 
     setStatus("loading");
     setErrorMessage("");
 
+    // Se o usuário digitou uma expressão como "igrejas evangélicas", "igreja batista" e já temos uma localização
+    const isDenominationQuery = /^(igrejas?|templos?|par[oó]quias?|capelas?|comunidades?)/i.test(q);
+
+    if (isDenominationQuery && userLocation && !/(em|no|na|de|perto\s+de)\s+[a-zÀ-ÿ]/i.test(q)) {
+      setCurrentQuery(q);
+      fetchChurches(userLocation.latitude, userLocation.longitude, radiusMeters, q, false);
+      return;
+    }
+
     try {
-      const geo = await geocodeAddressFn({ data: { query } });
+      const geo = await geocodeAddressFn({ data: { query: q } });
       setUserLocation({ latitude: geo.latitude, longitude: geo.longitude });
       setLocationName(geo.displayName.split(",")[0] || geo.displayName);
-      fetchChurches(geo.latitude, geo.longitude, radiusMeters);
+      setCurrentQuery(q);
+      fetchChurches(geo.latitude, geo.longitude, radiusMeters, q, true);
     } catch (err: any) {
       setStatus("error");
-      setErrorMessage(err.message || `Não encontramos "${query}". Verifique a digitação ou informe a cidade e o estado.`);
+      setErrorMessage(err.message || `Não encontramos "${q}". Tente digitar cidade e estado (ex: "Campinas, SP").`);
     }
   };
 
-  // 4. Change search radius
+  // 4. Clique em sugestão de denominação
+  const handleSelectSuggestedTerm = (term: string) => {
+    const q = term === "Todas as igrejas" ? "" : term;
+    setCurrentQuery(q);
+    setSearchQuery(q);
+
+    if (userLocation) {
+      fetchChurches(userLocation.latitude, userLocation.longitude, radiusMeters, q || undefined, false);
+    } else {
+      handleGetLocation();
+    }
+  };
+
+  // 5. Alterar raio manualmente
   const handleRadiusChange = (newRadius: number) => {
     setRadiusMeters(newRadius);
     if (userLocation) {
-      fetchChurches(userLocation.latitude, userLocation.longitude, newRadius);
+      fetchChurches(userLocation.latitude, userLocation.longitude, newRadius, currentQuery || undefined, false);
+    }
+  };
+
+  // 6. Botão "Ampliar busca" (5 km → 10 km → 25 km)
+  const handleExpandRadius = () => {
+    let nextRadius = 10000;
+    if (radiusMeters < 10000) nextRadius = 10000;
+    else if (radiusMeters < 25000) nextRadius = 25000;
+    else nextRadius = 50000;
+
+    setRadiusMeters(nextRadius);
+    if (userLocation) {
+      fetchChurches(userLocation.latitude, userLocation.longitude, nextRadius, currentQuery || undefined, false);
     }
   };
 
@@ -220,15 +282,15 @@ function IgrejasPage() {
             </Button>
 
             {/* Formulário de Busca por Endereço */}
-            <form onSubmit={handleSearchAddress} className="flex flex-1 gap-2">
+            <form onSubmit={handleSearchManual} className="flex flex-1 gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Digite uma cidade, bairro ou endereço..."
+                  placeholder="Ex: Campinas, Itaguaí, Copacabana ou Igreja Batista..."
                   className="h-11 sm:h-12 pl-10 pr-3 text-sm bg-background/90"
-                  aria-label="Buscar cidade, bairro ou endereço"
+                  aria-label="Buscar cidade, bairro ou denominação"
                 />
               </div>
               <Button
@@ -243,8 +305,27 @@ function IgrejasPage() {
             </form>
           </div>
 
+          {/* Sugestões de Denominações */}
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="font-medium mr-1 text-[11px]">Termos comuns:</span>
+            {SUGGESTED_TERMS.map((term) => (
+              <button
+                key={term}
+                type="button"
+                onClick={() => handleSelectSuggestedTerm(term)}
+                className={`rounded-full px-2.5 py-0.5 transition-colors cursor-pointer text-xs ${
+                  (currentQuery === term) || (!currentQuery && term === "Todas as igrejas")
+                    ? "bg-gold text-primary-foreground font-semibold"
+                    : "bg-accent/70 hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                {term}
+              </button>
+            ))}
+          </div>
+
           {/* Seletor de Raio de Distância */}
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs pt-3 border-t border-border/50">
             <span className="text-muted-foreground font-medium flex items-center gap-1 mr-1">
               <Compass className="size-3.5" /> Raio de busca:
             </span>
@@ -272,7 +353,7 @@ function IgrejasPage() {
             <div className="space-y-1 text-sm">
               <p className="font-semibold">Não foi possível acessar sua localização.</p>
               <p className="text-xs sm:text-sm opacity-90 leading-relaxed">
-                A permissão de localização foi negada no navegador. Não se preocupe: você pode pesquisar digitando uma cidade, bairro ou endereço no campo de busca acima.
+                Você pode pesquisar uma cidade, bairro ou endereço manualmente digitando no campo de busca acima.
               </p>
             </div>
           </div>
@@ -288,7 +369,11 @@ function IgrejasPage() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => (userLocation ? fetchChurches(userLocation.latitude, userLocation.longitude, radiusMeters) : handleGetLocation())}
+              onClick={() =>
+                userLocation
+                  ? fetchChurches(userLocation.latitude, userLocation.longitude, radiusMeters, currentQuery || undefined)
+                  : handleGetLocation()
+              }
               className="h-8 text-xs shrink-0 cursor-pointer"
             >
               <RefreshCw className="mr-1.5 size-3" /> Tentar novamente
@@ -303,14 +388,14 @@ function IgrejasPage() {
             </div>
             <h3 className="text-base font-bold text-foreground">Nenhuma igreja encontrada neste raio</h3>
             <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-              Não encontramos igrejas cadastradas em um raio de {radiusMeters / 1000} km em torno de {locationName || "sua localização"}. Tente aumentar o raio para 25 km ou 50 km, ou buscar outra região.
+              Não encontramos estabelecimentos em um raio de {radiusMeters / 1000} km em torno de {locationName || "sua localização"}. Tente aumentar o raio para 25 km ou 50 km, ou buscar outra região.
             </p>
             <div className="pt-2 flex justify-center gap-2">
               <Button size="sm" onClick={() => handleRadiusChange(25000)} className="text-xs cursor-pointer">
-                Expandir para 25 km
+                Ampliar para 25 km
               </Button>
               <Button size="sm" variant="outline" onClick={() => handleRadiusChange(50000)} className="text-xs cursor-pointer">
-                Expandir para 50 km
+                Ampliar para 50 km
               </Button>
             </div>
           </div>
@@ -325,16 +410,16 @@ function IgrejasPage() {
               </div>
               <h3 className="text-sm font-bold text-foreground">Localização Automática</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Clique em "Encontrar perto de mim" para ver as igrejas mais próximas de onde você está agora.
+                Clique em "Encontrar perto de mim" para ver as igrejas mais próximas com raio inicial de 5 km.
               </p>
             </div>
             <div className="rounded-2xl border border-border/80 bg-card p-5 space-y-2">
               <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Search className="size-5" />
               </div>
-              <h3 className="text-sm font-bold text-foreground">Busca por Qualquer Região</h3>
+              <h3 className="text-sm font-bold text-foreground">Busca por Denominação</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Pesquise por cidades como São Paulo, Rio de Janeiro, Curitiba ou seu próprio bairro.
+                Pesquise por igrejas evangélicas, católicas, batistas, assembleias de Deus, paróquias ou comunidades.
               </p>
             </div>
             <div className="rounded-2xl border border-border/80 bg-card p-5 space-y-2">
@@ -343,7 +428,7 @@ function IgrejasPage() {
               </div>
               <h3 className="text-sm font-bold text-foreground">Privacidade Garantida</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Sua localização é processada exclusivamente no seu navegador para a consulta. Nunca é salva em banco de dados.
+                Sua localização é processada exclusivamente no navegador para a consulta. Nunca é salva em banco de dados.
               </p>
             </div>
           </section>
@@ -352,21 +437,44 @@ function IgrejasPage() {
         {/* ÁREA PRINCIPAL: MAPA + LISTA DE IGREJAS */}
         {(status === "success" || status === "loading" || churches.length > 0) && (
           <div className="space-y-4">
-            {/* Barra de Status dos Resultados */}
+            {/* 1. Barra de Status dos Resultados: 'Encontramos X igrejas próximas' */}
             <div className="flex flex-wrap items-center justify-between gap-2 px-1">
               <div className="flex items-center gap-2">
-                <span className="size-2 rounded-full bg-gold" />
+                <span className="size-2 rounded-full bg-gold animate-pulse" />
                 <h2 className="text-sm sm:text-base font-bold text-foreground">
-                  {churches.length} {churches.length === 1 ? "igreja encontrada" : "igrejas encontradas"}
+                  Encontramos {churches.length} {churches.length === 1 ? "igreja próxima" : "igrejas próximas"}
                   {locationName && <span className="text-muted-foreground font-normal"> perto de {locationName}</span>}
                 </h2>
               </div>
               <span className="text-xs text-muted-foreground">
-                Ordenado por proximidade • Raio de {radiusMeters / 1000} km
+                Ordenado por distância • Raio atual: {radiusMeters / 1000} km
               </span>
             </div>
 
-            {/* Layout Grid: Mapa e Lista */}
+            {/* 2. Banner 'Não encontrou a igreja que procura? [Ampliar busca]' */}
+            <div className="rounded-xl border border-border/80 bg-accent/25 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-foreground">
+                <HelpCircle className="size-4 text-gold shrink-0" />
+                <span>Não encontrou a igreja que procura?</span>
+              </div>
+              {radiusMeters < 50000 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleExpandRadius}
+                  disabled={status === "loading" || isPending}
+                  className="h-8 px-3 text-xs font-semibold shrink-0 cursor-pointer bg-background hover:bg-accent"
+                >
+                  <Sparkles className="mr-1.5 size-3.5 text-gold" />
+                  Ampliar busca ({radiusMeters < 10000 ? "5 km → 10 km" : radiusMeters < 25000 ? "10 km → 25 km" : "25 km → 50 km"})
+                </Button>
+              ) : (
+                <span className="text-xs text-muted-foreground">Raio máximo alcançado (50 km)</span>
+              )}
+            </div>
+
+            {/* 3. Layout Grid: Mapa e Lista */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
               {/* Mapa Interativo (Mobile: Topo | Desktop: 7 colunas) */}
               <div className="lg:col-span-7 lg:sticky lg:top-20">
@@ -502,6 +610,13 @@ function IgrejasPage() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Aviso sobre Cobertura */}
+            <div className="rounded-xl border border-border/60 bg-muted/20 p-3 text-[11px] text-muted-foreground leading-relaxed">
+              <p>
+                <strong>Nota sobre cobertura:</strong> O objetivo é encontrar o maior número possível de igrejas disponíveis no Google Places. Nem todo templo, capela ou congregação necessariamente estará cadastrado ou atualizado na base de dados de mapas da sua região.
+              </p>
             </div>
           </div>
         )}

@@ -81,6 +81,15 @@ export function ChurchMap({
 
   // Update Markers and View when userLocation or churches change
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).__selectChurch = (id: string) => {
+        const found = churches.find((c) => c.id === id);
+        if (found && onSelectChurch) {
+          onSelectChurch(found);
+        }
+      };
+    }
+
     if (!isLoaded || !mapInstanceRef.current) return;
 
     import("leaflet").then((L) => {
@@ -153,18 +162,30 @@ export function ChurchMap({
         )}`;
 
         const popupContent = `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-width: 200px; max-width: 260px; padding: 4px 2px;">
-            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-              <span style="font-size: 16px;">⛪</span>
-              <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.2;">${church.name}</h4>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-width: 220px; max-width: 280px; padding: 4px 2px;">
+            <div style="display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px;">
+              <span style="font-size: 16px; margin-top: 1px;">⛪</span>
+              <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.25;">${church.name}</h4>
             </div>
-            <p style="margin: 4px 0; font-size: 12px; color: #475569; line-height: 1.3;">${church.address}</p>
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; font-size: 11px; font-weight: 600; color: #b45309;">
+            <p style="margin: 4px 0 6px 0; font-size: 12px; color: #475569; line-height: 1.3;">📍 ${church.address}</p>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 11px; font-weight: 600; color: #b45309;">
               <span>📏 ${church.distanceKm} km de distância</span>
-              ${church.rating ? `<span>⭐ ${church.rating}</span>` : ""}
+              ${church.rating ? `<span style="display: inline-flex; align-items: center; gap: 2px;">⭐ ${church.rating.toFixed(1)}</span>` : ""}
             </div>
-            <div style="margin-top: 10px; pt: 6px; border-top: 1px solid #e2e8f0; display: flex; gap: 6px;">
-              <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; background-color: #d97706; color: #ffffff; text-decoration: none; font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 6px; text-align: center;">
+            <div style="padding-top: 8px; border-top: 1px solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+              <button
+                type="button"
+                onclick="window.__selectChurch && window.__selectChurch('${church.id}')"
+                style="display: flex; align-items: center; justify-content: center; background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 11px; font-weight: 600; padding: 6px 8px; border-radius: 6px; cursor: pointer; text-align: center;"
+              >
+                Ver detalhes
+              </button>
+              <a
+                href="${directionsUrl}"
+                target="_blank"
+                rel="noopener noreferrer"
+                style="display: flex; align-items: center; justify-content: center; gap: 3px; background-color: #d97706; color: #ffffff; text-decoration: none; font-size: 11px; font-weight: 600; padding: 6px 8px; border-radius: 6px; text-align: center;"
+              >
                 🧭 Como chegar
               </a>
             </div>
