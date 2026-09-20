@@ -70,21 +70,35 @@ export function sanitizeText(text: string): string {
 }
 
 const SPAM_COOLDOWN_MS = 15000;
-export function checkSpamCooldown(): { allowed: boolean; remainingSec: number } {
-  if (typeof window === "undefined") return { allowed: true, remainingSec: 0 };
-  const lastPost = localStorage.getItem("bo:last_post_time");
-  if (!lastPost) return { allowed: true, remainingSec: 0 };
+export function checkSpamCooldown(userId?: string): {
+  allowed: boolean;
+  isLimited: boolean;
+  remainingSeconds: number;
+  remainingSec: number;
+} {
+  if (typeof window === "undefined") {
+    return { allowed: true, isLimited: false, remainingSeconds: 0, remainingSec: 0 };
+  }
+  const key = userId ? `bo:last_post_time_${userId}` : "bo:last_post_time";
+  const lastPost = localStorage.getItem(key) || localStorage.getItem("bo:last_post_time");
+  if (!lastPost) {
+    return { allowed: true, isLimited: false, remainingSeconds: 0, remainingSec: 0 };
+  }
   const diff = Date.now() - parseInt(lastPost, 10);
   if (diff < SPAM_COOLDOWN_MS) {
     const remainingSec = Math.ceil((SPAM_COOLDOWN_MS - diff) / 1000);
-    return { allowed: false, remainingSec };
+    return { allowed: false, isLimited: true, remainingSeconds: remainingSec, remainingSec };
   }
-  return { allowed: true, remainingSec: 0 };
+  return { allowed: true, isLimited: false, remainingSeconds: 0, remainingSec: 0 };
 }
 
-export function recordPostTimestamp() {
+export function recordPostTimestamp(userId?: string) {
   if (typeof window === "undefined") return;
-  localStorage.setItem("bo:last_post_time", String(Date.now()));
+  const now = String(Date.now());
+  localStorage.setItem("bo:last_post_time", now);
+  if (userId) {
+    localStorage.setItem(`bo:last_post_time_${userId}`, now);
+  }
 }
 
 export interface Category {
@@ -185,6 +199,8 @@ export async function fetchQuestions({
   filter = "recent",
   search,
   currentUserId,
+  limit,
+  offset,
 }: FetchQuestionsParams): Promise<Question[]> {
   let query = supabase.from("questions").select(`
     *,
@@ -229,59 +245,105 @@ export async function fetchQuestions({
   const rawQuestions = data || [];
   if (rawQuestions.length === 0) return [];
 
-  // Fetch author profiles
+  // Fetch author profiles safely
   const userIds = Array.from(new Set(rawQuestions.map((q) => q.user_id)));
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, name, avatar_url")
-    .in("id", userIds);
+  const profileMap = new Map<string, { id: string; user_id: string; name: string | null; avatar_url: string | null }>();
+  if (userIds.length > 0) {
+    try {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, user_id, name")
+        .in("user_id", userIds);
 
-  const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+      (profiles || []).forEach((p) => {
+        profileMap.set(p.user_id, {
+          id: p.user_id,
+          user_id: p.user_id,
+          name: p.name,
+          avatar_url: null,
+        });
+      });
+    } catch (err) {
+      console.warn("Profiles query warning:", err);
+    }
+  }
+
+  const questionIds = rawQuestions.map((q) => q.id);
+
+  // Count likes from question_likes
+  const likesCountMap = new Map<string, number>();
+  try {
+    const { data: allLikes } = await supabase
+      .from("question_likes")
+      .select("question_id")
+      .in("question_id", questionIds);
+    (allLikes || []).forEach((l) => {
+      likesCountMap.set(l.question_id, (likesCountMap.get(l.question_id) || 0) + 1);
+    });
+  } catch {}
+
+  // Count answers from answers
+  const answersCountMap = new Map<string, number>();
+  try {
+    const { data: allAnswers } = await supabase
+      .from("answers")
+      .select("question_id")
+      .in("question_id", questionIds);
+    (allAnswers || []).forEach((a) => {
+      answersCountMap.set(a.question_id, (answersCountMap.get(a.question_id) || 0) + 1);
+    });
+  } catch {}
 
   // If user is logged in, fetch which questions they liked
   let likedQuestionIds = new Set<string>();
   if (currentUserId) {
-    const questionIds = rawQuestions.map((q) => q.id);
-    const { data: likes } = await supabase
-      .from("question_likes")
-      .select("question_id")
-      .eq("user_id", currentUserId)
-      .in("question_id", questionIds);
-    if (likes) {
-      likedQuestionIds = new Set(likes.map((l) => l.question_id));
-    }
+    try {
+      const { data: likes } = await supabase
+        .from("question_likes")
+        .select("question_id")
+        .eq("user_id", currentUserId)
+        .in("question_id", questionIds);
+      if (likes) {
+        likedQuestionIds = new Set(likes.map((l) => l.question_id));
+      }
+    } catch {}
   }
 
   // Fetch reactions summaries for these questions
-  const questionIds = rawQuestions.map((q) => q.id);
-  const { data: reactions } = await supabase
-    .from("reactions")
-    .select("target_id, emoji, user_id")
-    .eq("target_type", "question")
-    .in("target_id", questionIds);
-
   const reactionsSummaryMap = new Map<string, { [emoji: string]: number }>();
   const userReactionsMap = new Map<string, string[]>();
 
-  (reactions || []).forEach((r) => {
-    if (!reactionsSummaryMap.has(r.target_id)) {
-      reactionsSummaryMap.set(r.target_id, {});
-    }
-    const currentCounts = reactionsSummaryMap.get(r.target_id)!;
-    currentCounts[r.emoji] = (currentCounts[r.emoji] || 0) + 1;
+  try {
+    const { data: reactions } = await supabase
+      .from("reactions")
+      .select("target_id, emoji, user_id")
+      .eq("target_type", "question")
+      .in("target_id", questionIds);
 
-    if (currentUserId && r.user_id === currentUserId) {
-      const userReactions = userReactionsMap.get(r.target_id) || [];
-      userReactions.push(r.emoji);
-      userReactionsMap.set(r.target_id, userReactions);
-    }
-  });
+    (reactions || []).forEach((r) => {
+      if (!reactionsSummaryMap.has(r.target_id)) {
+        reactionsSummaryMap.set(r.target_id, {});
+      }
+      const currentCounts = reactionsSummaryMap.get(r.target_id)!;
+      currentCounts[r.emoji] = (currentCounts[r.emoji] || 0) + 1;
+
+      if (currentUserId && r.user_id === currentUserId) {
+        const userReactions = userReactionsMap.get(r.target_id) || [];
+        userReactions.push(r.emoji);
+        userReactionsMap.set(r.target_id, userReactions);
+      }
+    });
+  } catch {}
 
   return rawQuestions.map((q) => {
     const summary = reactionsSummaryMap.get(q.id) || {};
     const userReactions = userReactionsMap.get(q.id) || [];
+    const realLikes = likesCountMap.has(q.id) ? likesCountMap.get(q.id)! : (q.likes_count || 0);
+    const realAnswers = answersCountMap.has(q.id) ? answersCountMap.get(q.id)! : (q.answers_count || 0);
     return {
       ...q,
+      likes_count: realLikes,
+      answers_count: realAnswers,
       author: profileMap.get(q.user_id) || { id: q.user_id, name: "Irmão(ã) em Cristo", avatar_url: null },
       category: Array.isArray(q.category) ? q.category[0] : q.category,
       user_has_liked: likedQuestionIds.has(q.id),
@@ -305,53 +367,90 @@ export async function fetchQuestionById(id: string, currentUserId?: string | nul
     return null;
   }
 
-  // Increment views count asynchronously
+  // Increment views count asynchronously (ignore failure if restricted)
   supabase
     .from("questions")
     .update({ views_count: (data.views_count || 0) + 1 })
     .eq("id", id)
-    .then(() => {});
+    .then(() => {})
+    .catch(() => {});
 
-  // Fetch author profile
-  const { data: author } = await supabase
-    .from("profiles")
-    .select("id, name, avatar_url")
-    .eq("id", data.user_id)
-    .single();
+  // Fetch author profile safely
+  let authorProfile: QuestionAuthor = {
+    id: data.user_id,
+    name: "Irmão(ã) em Cristo",
+    avatar_url: null,
+  };
+  try {
+    const { data: author } = await supabase
+      .from("profiles")
+      .select("id, user_id, name")
+      .eq("user_id", data.user_id)
+      .maybeSingle();
+    if (author?.name) {
+      authorProfile.name = author.name;
+    }
+  } catch {}
+
+  // Fetch real likes count
+  let realLikes = data.likes_count || 0;
+  try {
+    const { count } = await supabase
+      .from("question_likes")
+      .select("*", { count: "exact", head: true })
+      .eq("question_id", id);
+    if (count !== null && count !== undefined) realLikes = count;
+  } catch {}
+
+  // Fetch real answers count
+  let realAnswers = data.answers_count || 0;
+  try {
+    const { count } = await supabase
+      .from("answers")
+      .select("*", { count: "exact", head: true })
+      .eq("question_id", id);
+    if (count !== null && count !== undefined) realAnswers = count;
+  } catch {}
 
   // User liked?
   let user_has_liked = false;
   if (currentUserId) {
-    const { data: like } = await supabase
-      .from("question_likes")
-      .select("id")
-      .eq("question_id", id)
-      .eq("user_id", currentUserId)
-      .maybeSingle();
-    user_has_liked = !!like;
+    try {
+      const { data: like } = await supabase
+        .from("question_likes")
+        .select("id")
+        .eq("question_id", id)
+        .eq("user_id", currentUserId)
+        .maybeSingle();
+      user_has_liked = !!like;
+    } catch {}
   }
 
   // Reactions
-  const { data: reactions } = await supabase
-    .from("reactions")
-    .select("emoji, user_id")
-    .eq("target_type", "question")
-    .eq("target_id", id);
-
   const reactions_summary: { [emoji: string]: number } = {};
   const user_reactions: string[] = [];
 
-  (reactions || []).forEach((r) => {
-    reactions_summary[r.emoji] = (reactions_summary[r.emoji] || 0) + 1;
-    if (currentUserId && r.user_id === currentUserId) {
-      user_reactions.push(r.emoji);
-    }
-  });
+  try {
+    const { data: reactions } = await supabase
+      .from("reactions")
+      .select("emoji, user_id")
+      .eq("target_type", "question")
+      .eq("target_id", id);
+
+    (reactions || []).forEach((r) => {
+      reactions_summary[r.emoji] = (reactions_summary[r.emoji] || 0) + 1;
+      if (currentUserId && r.user_id === currentUserId) {
+        user_reactions.push(r.emoji);
+      }
+    });
+  } catch {}
 
   return {
     ...data,
     views_count: data.views_count + 1,
-    author: author || { id: data.user_id, name: "Irmão(ã) em Cristo", avatar_url: null },
+    likes_count: realLikes,
+    answers_count: realAnswers,
+    author: authorProfile,
     category: Array.isArray(data.category) ? data.category[0] : data.category,
     user_has_liked,
     user_has_prayed: user_reactions.includes("🙏"),
@@ -425,13 +524,19 @@ export interface PublicProfileData {
 }
 
 export async function fetchPublicProfile(userId: string): Promise<PublicProfileData | null> {
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("id, name, avatar_url, created_at")
-    .eq("id", userId)
-    .single();
+  let profileName = "Irmão(ã) em Cristo";
+  let profileCreatedAt = new Date().toISOString();
 
-  if (error || !profile) return null;
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, user_id, name, created_at")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profile?.name) profileName = profile.name;
+    if (profile?.created_at) profileCreatedAt = profile.created_at;
+  } catch {}
 
   const { data: questions } = await supabase
     .from("questions")
@@ -441,16 +546,16 @@ export async function fetchPublicProfile(userId: string): Promise<PublicProfileD
     .limit(20);
 
   return {
-    id: profile.id,
-    name: profile.name || "Irmão(ã) em Cristo",
-    avatar_url: profile.avatar_url,
-    created_at: profile.created_at,
+    id: userId,
+    name: profileName,
+    avatar_url: null,
+    created_at: profileCreatedAt,
     questions: (questions || []).map((q) => ({
       ...q,
       author: {
-        id: profile.id,
-        name: profile.name || "Irmão(ã) em Cristo",
-        avatar_url: profile.avatar_url,
+        id: userId,
+        name: profileName,
+        avatar_url: null,
       },
       user_has_liked: false,
     })),
@@ -475,56 +580,85 @@ export async function fetchAnswers(questionId: string, currentUserId?: string | 
   const rawAnswers = data;
   if (rawAnswers.length === 0) return [];
 
-  // Fetch author profiles
+  // Fetch author profiles safely
   const userIds = Array.from(new Set(rawAnswers.map((a) => a.user_id)));
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, name, avatar_url")
-    .in("id", userIds);
+  const profileMap = new Map<string, { id: string; user_id: string; name: string | null; avatar_url: string | null }>();
+  if (userIds.length > 0) {
+    try {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, user_id, name")
+        .in("user_id", userIds);
 
-  const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+      (profiles || []).forEach((p) => {
+        profileMap.set(p.user_id, {
+          id: p.user_id,
+          user_id: p.user_id,
+          name: p.name,
+          avatar_url: null,
+        });
+      });
+    } catch {}
+  }
+
+  const answerIds = rawAnswers.map((a) => a.id);
 
   // User likes on answers
   let likedAnswerIds = new Set<string>();
   if (currentUserId) {
-    const answerIds = rawAnswers.map((a) => a.id);
-    const { data: likes } = await supabase
-      .from("answer_likes")
-      .select("answer_id")
-      .eq("user_id", currentUserId)
-      .in("answer_id", answerIds);
-    if (likes) {
-      likedAnswerIds = new Set(likes.map((l) => l.answer_id));
-    }
+    try {
+      const { data: likes } = await supabase
+        .from("answer_likes")
+        .select("answer_id")
+        .eq("user_id", currentUserId)
+        .in("answer_id", answerIds);
+      if (likes) {
+        likedAnswerIds = new Set(likes.map((l) => l.answer_id));
+      }
+    } catch {}
   }
 
-  // Reactions for answers
-  const answerIds = rawAnswers.map((a) => a.id);
-  const { data: reactions } = await supabase
-    .from("reactions")
-    .select("target_id, emoji, user_id")
-    .eq("target_type", "answer")
-    .in("target_id", answerIds);
+  // Count likes from answer_likes
+  const likesCountMap = new Map<string, number>();
+  try {
+    const { data: allAnsLikes } = await supabase
+      .from("answer_likes")
+      .select("answer_id")
+      .in("answer_id", answerIds);
+    (allAnsLikes || []).forEach((al) => {
+      likesCountMap.set(al.answer_id, (likesCountMap.get(al.answer_id) || 0) + 1);
+    });
+  } catch {}
 
+  // Reactions for answers
   const reactionsSummaryMap = new Map<string, { [emoji: string]: number }>();
   const userReactionsMap = new Map<string, string[]>();
 
-  (reactions || []).forEach((r) => {
-    if (!reactionsSummaryMap.has(r.target_id)) {
-      reactionsSummaryMap.set(r.target_id, {});
-    }
-    const currentCounts = reactionsSummaryMap.get(r.target_id)!;
-    currentCounts[r.emoji] = (currentCounts[r.emoji] || 0) + 1;
+  try {
+    const { data: reactions } = await supabase
+      .from("reactions")
+      .select("target_id, emoji, user_id")
+      .eq("target_type", "answer")
+      .in("target_id", answerIds);
 
-    if (currentUserId && r.user_id === currentUserId) {
-      const uReactions = userReactionsMap.get(r.target_id) || [];
-      uReactions.push(r.emoji);
-      userReactionsMap.set(r.target_id, uReactions);
-    }
-  });
+    (reactions || []).forEach((r) => {
+      if (!reactionsSummaryMap.has(r.target_id)) {
+        reactionsSummaryMap.set(r.target_id, {});
+      }
+      const currentCounts = reactionsSummaryMap.get(r.target_id)!;
+      currentCounts[r.emoji] = (currentCounts[r.emoji] || 0) + 1;
+
+      if (currentUserId && r.user_id === currentUserId) {
+        const uReactions = userReactionsMap.get(r.target_id) || [];
+        uReactions.push(r.emoji);
+        userReactionsMap.set(r.target_id, uReactions);
+      }
+    });
+  } catch {}
 
   const parsedAnswers: Answer[] = rawAnswers.map((a) => ({
     ...a,
+    likes_count: likesCountMap.has(a.id) ? likesCountMap.get(a.id)! : (a.likes_count || 0),
     author: profileMap.get(a.user_id) || { id: a.user_id, name: "Irmão(ã) em Cristo", avatar_url: null },
     user_has_liked: likedAnswerIds.has(a.id),
     reactions_summary: reactionsSummaryMap.get(a.id) || {},
@@ -574,14 +708,22 @@ export async function createQuestion(params: {
   const rawTitle = params.title?.trim() || "";
   const sanitizedTitle = rawTitle ? sanitizeText(rawTitle) : (sanitizedBody.slice(0, 60) + (sanitizedBody.length > 60 ? "..." : ""));
 
+  const validCat = COMMUNITY_CATEGORIES.some((c) => c.id === params.categoryId)
+    ? params.categoryId
+    : "geral";
+
   const { data, error } = await supabase
     .from("questions")
     .insert({
       user_id: params.userId,
-      category_id: params.categoryId,
+      category_id: validCat,
       title: sanitizedTitle || "Publicação na Comunidade",
       body: sanitizedBody,
       verse_reference: params.verseReference?.trim() ? sanitizeText(params.verseReference.trim()) : null,
+      likes_count: 0,
+      answers_count: 0,
+      views_count: 0,
+      is_answered: false,
     })
     .select()
     .single();
@@ -632,6 +774,8 @@ export async function createAnswer(params: {
       parent_id: params.parentId || null,
       body: sanitizedBody,
       verse_reference: params.verseReference?.trim() ? sanitizeText(params.verseReference.trim()) : null,
+      likes_count: 0,
+      is_accepted: false,
     })
     .select()
     .single();
@@ -641,32 +785,36 @@ export async function createAnswer(params: {
     throw error;
   }
 
-  // Increment answers_count in question
-  const { data: q } = await supabase.from("questions").select("answers_count").eq("id", params.questionId).single();
-  if (q) {
-    await supabase.from("questions").update({ answers_count: (q.answers_count || 0) + 1 }).eq("id", params.questionId);
-  }
+  // Increment answers_count in question (silently ignore if restricted)
+  try {
+    const { data: q } = await supabase.from("questions").select("answers_count").eq("id", params.questionId).single();
+    if (q) {
+      await supabase.from("questions").update({ answers_count: (q.answers_count || 0) + 1 }).eq("id", params.questionId);
+    }
+  } catch {}
 
   // Create notification for question author or parent answer author
-  if (params.parentId && params.parentAnswerAuthorId && params.parentAnswerAuthorId !== params.userId) {
-    await createNotification({
-      userId: params.parentAnswerAuthorId,
-      actorId: params.userId,
-      type: "reply",
-      questionId: params.questionId,
-      answerId: data.id,
-      message: "respondeu ao seu comentário na comunidade.",
-    });
-  } else if (params.questionAuthorId && params.questionAuthorId !== params.userId) {
-    await createNotification({
-      userId: params.questionAuthorId,
-      actorId: params.userId,
-      type: "answer",
-      questionId: params.questionId,
-      answerId: data.id,
-      message: "respondeu à sua pergunta na comunidade.",
-    });
-  }
+  try {
+    if (params.parentId && params.parentAnswerAuthorId && params.parentAnswerAuthorId !== params.userId) {
+      await createNotification({
+        userId: params.parentAnswerAuthorId,
+        actorId: params.userId,
+        type: "reply",
+        questionId: params.questionId,
+        answerId: data.id,
+        message: "respondeu ao seu comentário na comunidade.",
+      });
+    } else if (params.questionAuthorId && params.questionAuthorId !== params.userId) {
+      await createNotification({
+        userId: params.questionAuthorId,
+        actorId: params.userId,
+        type: "answer",
+        questionId: params.questionId,
+        answerId: data.id,
+        message: "comentou na sua publicação da comunidade.",
+      });
+    }
+  } catch {}
 
   return data;
 }
@@ -684,10 +832,12 @@ export async function deleteAnswer(answerId: string, questionId: string) {
   if (error) throw error;
 
   // Decrement answers_count
-  const { data: q } = await supabase.from("questions").select("answers_count").eq("id", questionId).single();
-  if (q && q.answers_count > 0) {
-    await supabase.from("questions").update({ answers_count: q.answers_count - 1 }).eq("id", questionId);
-  }
+  try {
+    const { data: q } = await supabase.from("questions").select("answers_count").eq("id", questionId).single();
+    if (q && q.answers_count > 0) {
+      await supabase.from("questions").update({ answers_count: q.answers_count - 1 }).eq("id", questionId);
+    }
+  } catch {}
 }
 
 // ----------------------------------------------------
@@ -701,16 +851,11 @@ export async function toggleQuestionLike(questionId: string, userId: string, que
     .eq("user_id", userId)
     .maybeSingle();
 
-  const { data: q } = await supabase.from("questions").select("likes_count").eq("id", questionId).single();
-  const currentLikes = q?.likes_count || 0;
-
   if (existing) {
     await supabase.from("question_likes").delete().eq("id", existing.id);
-    await supabase.from("questions").update({ likes_count: Math.max(0, currentLikes - 1) }).eq("id", questionId);
     return false;
   } else {
     await supabase.from("question_likes").insert({ question_id: questionId, user_id: userId });
-    await supabase.from("questions").update({ likes_count: currentLikes + 1 }).eq("id", questionId);
 
     if (questionAuthorId && questionAuthorId !== userId) {
       await createNotification({
@@ -718,7 +863,7 @@ export async function toggleQuestionLike(questionId: string, userId: string, que
         actorId: userId,
         type: "question_like",
         questionId,
-        message: "curtiu a sua pergunta.",
+        message: "curtiu a sua publicação na comunidade.",
       });
     }
     return true;
@@ -733,16 +878,11 @@ export async function toggleAnswerLike(answerId: string, questionId: string, use
     .eq("user_id", userId)
     .maybeSingle();
 
-  const { data: a } = await supabase.from("answers").select("likes_count").eq("id", answerId).single();
-  const currentLikes = a?.likes_count || 0;
-
   if (existing) {
     await supabase.from("answer_likes").delete().eq("id", existing.id);
-    await supabase.from("answers").update({ likes_count: Math.max(0, currentLikes - 1) }).eq("id", answerId);
     return false;
   } else {
     await supabase.from("answer_likes").insert({ answer_id: answerId, user_id: userId });
-    await supabase.from("answers").update({ likes_count: currentLikes + 1 }).eq("id", answerId);
 
     if (answerAuthorId && answerAuthorId !== userId) {
       await createNotification({
@@ -751,7 +891,7 @@ export async function toggleAnswerLike(answerId: string, questionId: string, use
         type: "answer_like",
         questionId,
         answerId,
-        message: "curtiu a sua resposta.",
+        message: "curtiu o seu comentário na comunidade.",
       });
     }
     return true;
@@ -899,12 +1039,23 @@ export async function fetchNotifications(userId: string): Promise<NotificationIt
   if (error || !data) return [];
 
   const actorIds = Array.from(new Set(data.map((n) => n.actor_id)));
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, name, avatar_url")
-    .in("id", actorIds);
+  const profileMap = new Map<string, { id: string; name: string | null; avatar_url: string | null }>();
+  if (actorIds.length > 0) {
+    try {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, user_id, name")
+        .in("user_id", actorIds);
 
-  const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+      (profiles || []).forEach((p) => {
+        profileMap.set(p.user_id, {
+          id: p.user_id,
+          name: p.name,
+          avatar_url: null,
+        });
+      });
+    } catch {}
+  }
 
   return data.map((n) => ({
     ...n,
