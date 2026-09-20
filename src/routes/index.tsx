@@ -48,6 +48,7 @@ const QUICK_LINKS = [
   { label: "Orações", to: "/oracoes", icon: Heart, desc: "Para todos os momentos" },
   { label: "Estudos", to: "/estudos", icon: Compass, desc: "Aprofunde a leitura" },
   { label: "Devocionais", to: "/devocionais", icon: Sparkles, desc: "Edificação contínua" },
+  { label: "Pergunte à Bíblia", to: "/pergunte-a-biblia", icon: HelpCircle, desc: "Tire suas dúvidas" },
 ] as const;
 
 const POPULAR_VERSES = [
@@ -74,23 +75,10 @@ function Index() {
           <h1 className="mt-4 font-display text-4xl font-semibold sm:text-5xl lg:text-6xl tracking-tight">
             Leia a Bíblia Online
           </h1>
-          <p className="mt-3 text-base text-muted-foreground sm:text-lg">
-            Acesso livre, rápido e confortável às Sagradas Escrituras em português.
+          <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+            Acesso rápido a todos os livros, capítulos e versículos da Palavra de Deus em português,
+            com estudos explicativos, devocionais diários e respostas para suas dúvidas de fé.
           </p>
-
-          {/* Botão principal de ação */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Button asChild size="lg" className="h-12 px-6 font-medium shadow-sm">
-              <Link to="/biblia">
-                <BookOpen className="mr-2 size-5" /> Começar a leitura
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="h-12 px-5">
-              <Link to="/versiculo-do-dia">
-                <Calendar className="mr-2 size-4 text-gold" /> Versículo do Dia
-              </Link>
-            </Button>
-          </div>
 
           {/* Barra de Pesquisa */}
           <form
@@ -112,8 +100,8 @@ function Index() {
             </Button>
           </form>
 
-          {/* Acesso rápido aos 5 pilares principais */}
-          <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {/* Acesso rápido aos pilares principais (mobile: 2 colunas com Devocionais ao lado de Pergunte à Bíblia) */}
+          <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             {QUICK_LINKS.map((item) => (
               <Link
                 key={item.to}

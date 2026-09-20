@@ -14,8 +14,8 @@ const NAV = [
   { to: "/versiculos", label: "Versículos" },
   { to: "/estudos", label: "Estudos" },
   { to: "/devocionais", label: "Devocionais" },
-  { to: "/oracoes", label: "Orações" },
   { to: "/pergunte-a-biblia", label: "Pergunte à Bíblia" },
+  { to: "/oracoes", label: "Orações" },
 ] as const;
 
 const BOTTOM = [
