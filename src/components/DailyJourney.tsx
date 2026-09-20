@@ -11,13 +11,13 @@ export function DailyJourney() {
   const percentage = Math.round((completedCount / totalActivities) * 100);
 
   return (
-    <section className="warm-panel rounded-2xl p-5 sm:p-7 border border-border/80 shadow-xs">
+    <section className="warm-panel min-w-0 rounded-2xl p-4 sm:p-7 border border-border/80 shadow-xs">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-gold">
             <Sparkles className="size-3.5" /> Devocional & Prática Diária
           </span>
-          <h2 className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground">
+          <h2 className="mt-2 font-display text-xl sm:text-2xl font-bold tracking-tight text-foreground">
             Minha Jornada de Hoje
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed">
@@ -25,7 +25,7 @@ export function DailyJourney() {
           </p>
         </div>
 
-        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-col sm:items-end sm:justify-center shrink-0">
           <span className="text-xs sm:text-sm font-semibold text-foreground">
             Progresso:{" "}
             <span className="text-gold font-bold">
@@ -74,11 +74,12 @@ export function DailyJourney() {
                   <span className="text-2xl select-none" aria-hidden="true">
                     {act.iconText}
                   </span>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => toggleActivity(act.id)}
                     aria-label={done ? `Desmarcar ${act.title}` : `Marcar ${act.title} como concluído`}
-                    className="flex items-center gap-1.5 text-xs font-medium cursor-pointer rounded-md p-1 hover:bg-accent transition-colors"
+                    className="h-11 px-2 text-xs font-medium sm:h-8"
                   >
                     {done ? (
                       <>
@@ -95,7 +96,7 @@ export function DailyJourney() {
                         </span>
                       </>
                     )}
-                  </button>
+                  </Button>
                 </div>
 
                 <h3
@@ -115,7 +116,7 @@ export function DailyJourney() {
                   asChild
                   variant={done ? "outline" : "default"}
                   size="sm"
-                  className="w-full text-xs h-8 justify-between font-medium"
+                  className="w-full text-xs h-11 sm:h-8 justify-between font-medium"
                 >
                   <Link to={act.link as any}>
                     <span>{done ? "Acessar novamente" : "Iniciar agora"}</span>

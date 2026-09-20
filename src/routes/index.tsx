@@ -199,8 +199,8 @@ function Index() {
         <AdBanner />
       </div>
 
-      <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-6 lg:grid-cols-[1fr_300px]">
-        <div className="space-y-10">
+      <div className="mx-auto grid w-full min-w-0 max-w-6xl gap-8 px-3 py-6 sm:px-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0 space-y-8 sm:space-y-10">
           {/* 3. VERSÍCULO DO DIA */}
           <section aria-labelledby="versiculo-do-dia-heading">
             <h2 id="versiculo-do-dia-heading" className="font-display text-xl sm:text-2xl font-bold text-foreground mb-3">
@@ -226,8 +226,8 @@ function Index() {
 
           {/* 6. ORAÇÕES ("Encontre uma oração") */}
           <section aria-labelledby="oracoes-heading">
-            <div className="flex items-center justify-between mb-3">
-              <div>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 mb-3">
+              <div className="min-w-0">
                 <h2 id="oracoes-heading" className="font-display text-xl sm:text-2xl font-bold text-foreground">
                   Encontre uma oração
                 </h2>
@@ -235,9 +235,10 @@ function Index() {
                   Orações bíblicas para conforto, gratidão, família e momentos de decisão.
                 </p>
               </div>
-              <Button asChild size="sm" variant="ghost" className="text-xs font-semibold text-primary hover:underline shrink-0">
+              <Button asChild size="sm" variant="ghost" className="h-11 px-2 text-xs font-semibold text-primary hover:underline shrink-0">
                 <Link to="/oracoes">
-                  Ver todas as orações →
+                  <span className="hidden xs:inline">Ver todas as orações →</span>
+                  <span className="xs:hidden">Ver todas →</span>
                 </Link>
               </Button>
             </div>
@@ -269,8 +270,8 @@ function Index() {
 
           {/* 7. ESTUDOS BÍBLICOS */}
           <section aria-labelledby="estudos-heading">
-            <div className="flex items-center justify-between mb-3">
-              <div>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 mb-3">
+              <div className="min-w-0">
                 <h2 id="estudos-heading" className="font-display text-xl sm:text-2xl font-bold text-foreground">
                   Estudos Bíblicos
                 </h2>
@@ -278,9 +279,10 @@ function Index() {
                   Textos fundamentados nas Escrituras para crescer no conhecimento da Palavra.
                 </p>
               </div>
-              <Button asChild size="sm" variant="ghost" className="text-xs font-semibold text-primary hover:underline shrink-0">
+              <Button asChild size="sm" variant="ghost" className="h-11 px-2 text-xs font-semibold text-primary hover:underline shrink-0">
                 <Link to="/estudos">
-                  Ver todos os estudos →
+                  <span className="hidden xs:inline">Ver todos os estudos →</span>
+                  <span className="xs:hidden">Ver todos →</span>
                 </Link>
               </Button>
             </div>
@@ -324,8 +326,8 @@ function Index() {
 
           {/* 8. DEVOCIONAIS ("Devocional de Hoje") */}
           <section aria-labelledby="devocionais-heading">
-            <div className="flex items-center justify-between mb-3">
-              <div>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 mb-3">
+              <div className="min-w-0">
                 <h2 id="devocionais-heading" className="font-display text-xl sm:text-2xl font-bold text-foreground">
                   Devocional de Hoje
                 </h2>
@@ -333,9 +335,10 @@ function Index() {
                   Uma reflexão diária para orientar seu coração na presença de Deus.
                 </p>
               </div>
-              <Button asChild size="sm" variant="ghost" className="text-xs font-semibold text-primary hover:underline shrink-0">
+              <Button asChild size="sm" variant="ghost" className="h-11 px-2 text-xs font-semibold text-primary hover:underline shrink-0">
                 <Link to="/devocionais">
-                  Ver todos os devocionais →
+                  <span className="hidden xs:inline">Ver todos os devocionais →</span>
+                  <span className="xs:hidden">Ver todos →</span>
                 </Link>
               </Button>
             </div>
@@ -501,7 +504,7 @@ function Index() {
         </div>
 
         {/* Barra lateral desktop */}
-        <aside className="space-y-6">
+        <aside className="min-w-0 space-y-6">
           <AdDesktop />
 
           <div className="surface p-5 rounded-2xl border border-border/80">
