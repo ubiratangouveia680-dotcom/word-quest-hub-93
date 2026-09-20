@@ -138,18 +138,85 @@ function ContactPage() {
         },
       });
 
-      if (res.success) {
+      let success = res.success;
+      let msg = res.message;
+
+      // Fallback direto pelo cliente caso o servidor não consiga entregar
+      if (!success && !res.activationPending) {
+        try {
+          const clientFs = await fetch("https://formsubmit.co/ajax/ubiratan.silva.gouveia@gmail.com", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              name: cleanName,
+              email: cleanEmail,
+              subject: cleanSubject,
+              _subject: `[Word Quest Hub] ${cleanSubject} - ${cleanName}`,
+              message: cleanMessage,
+              _replyto: cleanEmail,
+              _template: "table",
+              _captcha: "false",
+            }),
+          });
+          const cJson = (await clientFs.json().catch(() => null)) as { success?: string | boolean } | null;
+          if (cJson?.success === "true" || cJson?.success === true) {
+            success = true;
+            msg = "Mensagem enviada com sucesso! Obrigado pelo contato.";
+          }
+        } catch (clientErr) {
+          console.warn("Falha no envio direto:", clientErr);
+        }
+      }
+
+      if (success) {
         localStorage.setItem("bo:last_contact_sent", Date.now().toString());
         setSent(true);
-        toast.success(res.message || "Mensagem enviada com sucesso! Obrigado pelo contato.");
+        toast.success(msg || "Mensagem enviada com sucesso! Obrigado pelo contato.");
       } else if (res.activationPending) {
         setActivationPending(true);
         toast.warning("Ativação necessária no e-mail do destinatário para liberar as mensagens.");
       } else {
-        toast.error(res.message || "Não foi possível enviar sua mensagem. Tente novamente.");
+        toast.error(msg || "Não foi possível enviar sua mensagem. Tente novamente.");
       }
     } catch (err: unknown) {
       console.error("Erro no envio do formulário de contato:", err);
+
+      // Tentativa de emergência pelo navegador
+      try {
+        const cleanName = sanitizeText(name.trim());
+        const cleanEmail = sanitizeText(email.trim());
+        const cleanSubject = sanitizeText(subject.trim());
+        const cleanMessage = sanitizeText(message.trim());
+
+        const clientFs = await fetch("https://formsubmit.co/ajax/ubiratan.silva.gouveia@gmail.com", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            name: cleanName,
+            email: cleanEmail,
+            subject: cleanSubject,
+            _subject: `[Word Quest Hub] ${cleanSubject} - ${cleanName}`,
+            message: cleanMessage,
+            _replyto: cleanEmail,
+            _template: "table",
+            _captcha: "false",
+          }),
+        });
+        const cJson = (await clientFs.json().catch(() => null)) as { success?: string | boolean } | null;
+        if (cJson?.success === "true" || cJson?.success === true) {
+          localStorage.setItem("bo:last_contact_sent", Date.now().toString());
+          setSent(true);
+          toast.success("Mensagem enviada com sucesso! Obrigado pelo contato.");
+          return;
+        }
+      } catch {}
+
       const errMsg = err instanceof Error ? err.message : "Não foi possível enviar sua mensagem. Tente novamente.";
       toast.error(errMsg);
     } finally {

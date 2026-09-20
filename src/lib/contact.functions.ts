@@ -117,21 +117,20 @@ export const sendContactMessage = createServerFn({ method: "POST" })
           });
         };
 
-        // 1. Tentar destinatário primário
-        let resendRes = await sendViaResend(TARGET_EMAIL);
-
-        // 2. Se a conta Resend estiver em modo sandbox/onboarding, tentar e-mail do titular da conta
-        if (!resendRes.ok && resendRes.status === 403) {
-          const verifiedAccountEmail = process.env["RESEND_VERIFIED_EMAIL"] || "ubiratangouveia680@gmail.com";
-          if (verifiedAccountEmail && verifiedAccountEmail !== TARGET_EMAIL) {
-            console.info("Resend em modo de teste: redirecionando para a conta verificada do titular:", verifiedAccountEmail);
-            resendRes = await sendViaResend(verifiedAccountEmail);
-          }
-        }
+        // 1. Tentar destinatário primário via Resend
+        const resendRes = await sendViaResend(TARGET_EMAIL);
 
         if (resendRes.ok) {
           sent = true;
           usedProvider = "resend";
+        } else if (resendRes.status === 403) {
+          // Se a conta Resend estiver restrita ao titular, enviar cópia para a conta titular
+          const verifiedAccountEmail = process.env["RESEND_VERIFIED_EMAIL"] || "ubiratangouveia680@gmail.com";
+          if (verifiedAccountEmail && verifiedAccountEmail !== TARGET_EMAIL) {
+            console.info("Resend restrito: enviando cópia para titular:", verifiedAccountEmail);
+            await sendViaResend(verifiedAccountEmail).catch(() => {});
+          }
+          // Não marca 'sent = true' aqui para permitir que o FormSubmit envie para o TARGET_EMAIL real
         } else {
           const errText = await resendRes.text();
           console.warn("Resend retornou erro:", resendRes.status, errText);
@@ -172,7 +171,7 @@ export const sendContactMessage = createServerFn({ method: "POST" })
       }
     }
 
-    // 4. Provedor 3: FormSubmit (com verificação rigorosa de ativação)
+    // 4. Provedor 3: FormSubmit (entrega direta para ubiratan.silva.gouveia@gmail.com)
     if (!sent) {
       try {
         const fsRes = await fetch(`https://formsubmit.co/ajax/${TARGET_EMAIL}`, {
@@ -205,7 +204,6 @@ export const sendContactMessage = createServerFn({ method: "POST" })
           activationPending = true;
           console.warn("FormSubmit precisa de ativação em:", TARGET_EMAIL);
         } else if (fsRes.ok) {
-          // Se retornou 200 e não avisou de erro, considerar enviado
           sent = true;
           usedProvider = "formsubmit";
         }
