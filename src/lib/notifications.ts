@@ -261,7 +261,7 @@ export function formatVerseNotification(period: NotificationPeriod) {
   }
 
   // Formatação limpa, profissional e com quebras duplas para visual nativo do Android e Chrome
-  const body = `"${daily.text}"\n\n📖 ${daily.bookName} ${daily.chapter}:${daily.verse}\n\nToque para ler o versículo completo no Word Quest Hub.`;
+  const body = `"${daily.text}"\n\n📖 ${daily.bookName} ${daily.chapter}:${daily.verse}\n\nToque para ler o versículo completo na Bíblia Online.`;
 
   return {
     title,

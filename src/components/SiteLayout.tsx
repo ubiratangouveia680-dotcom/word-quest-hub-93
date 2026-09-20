@@ -1,5 +1,28 @@
 import { Link } from "@tanstack/react-router";
-import { BookOpen, Heart, Home, Menu, Moon, Search, Sun, User, Users } from "lucide-react";
+import {
+  BookOpen,
+  Calendar,
+  Compass,
+  Heart,
+  HeartHandshake,
+  History,
+  Home,
+  Info,
+  LogIn,
+  LogOut,
+  Mail,
+  Menu,
+  Moon,
+  Search,
+  Settings,
+  Sparkles,
+  Sun,
+  User,
+  UserPlus,
+  Users,
+  X,
+  HelpCircle,
+} from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useSettings } from "@/lib/storage";
 import { useAuth } from "@/lib/auth-context";
@@ -11,18 +34,19 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
+  SheetClose,
 } from "@/components/ui/sheet";
 import { OnlineCounter } from "@/components/OnlineCounter";
 
-const NAV = [
+const DESKTOP_NAV = [
+  { to: "/", label: "Início" },
   { to: "/biblia", label: "Bíblia" },
-  { to: "/comunidade", label: "Comunidade" },
   { to: "/versiculo-do-dia", label: "Versículo do Dia" },
-  { to: "/versiculos", label: "Versículos" },
-  { to: "/estudos", label: "Estudos" },
-  { to: "/devocionais", label: "Devocionais" },
-  { to: "/pergunte-a-biblia", label: "Pergunte à Bíblia" },
   { to: "/oracoes", label: "Orações" },
+  { to: "/estudos", label: "Estudos Bíblicos" },
+  { to: "/devocionais", label: "Devocionais" },
+  { to: "/comunidade", label: "Comunidade" },
+  { to: "/pergunte-a-biblia", label: "Pergunte à Bíblia" },
 ] as const;
 
 const BOTTOM = [
@@ -33,33 +57,37 @@ const BOTTOM = [
   { to: "/perfil", label: "Perfil", icon: User },
 ] as const;
 
-export function ThemeToggle() {
+export function ThemeToggle({ className = "" }: { className?: string }) {
   const { settings, update } = useSettings();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const dark = mounted && settings.theme === "dark";
+
   return (
     <Button
       variant="ghost"
       size="icon"
+      className={className}
       aria-label={dark ? "Ativar modo claro" : "Ativar modo escuro"}
       onClick={() => update({ theme: dark ? "light" : "dark" })}
     >
-      {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+      {dark ? <Sun className="size-4 text-gold" /> : <Moon className="size-4" />}
     </Button>
   );
 }
 
 function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2">
-      <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+    <Link to="/" className="flex items-center gap-2.5 shrink-0">
+      <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
         <BookOpen className="size-5" />
       </span>
       <span className="leading-tight">
-        <span className="block font-display text-lg font-semibold">Bíblia Online</span>
+        <span className="block font-display text-lg font-bold text-foreground">
+          Bíblia Online
+        </span>
         <span className="hidden text-[11px] text-muted-foreground sm:block">
-          Leia, compreenda e compartilhe a Palavra.
+          Leia, compreenda e compartilhe a Palavra de Deus.
         </span>
       </span>
     </Link>
@@ -68,161 +96,374 @@ function Logo() {
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const { user, profile, isAuthenticated } = useAuth();
+  const { user, profile, isAuthenticated, signOut } = useAuth();
+  const { settings, update } = useSettings();
 
-  const userDisplayName = profile?.name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Perfil";
+  const userDisplayName =
+    profile?.name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Perfil";
+
+  const handleSignOut = async () => {
+    await signOut();
+    setOpen(false);
+  };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4">
+    <div className="flex min-h-screen flex-col bg-background text-foreground antialiased selection:bg-gold/25 selection:text-foreground">
+      {/* CABEÇALHO */}
+      <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          {/* 1. Logo */}
           <Logo />
-          <nav className="hidden items-center gap-1 lg:flex">
-            {NAV.map((item) => (
+
+          {/* 2. Menu Desktop */}
+          <nav className="hidden items-center gap-0.5 xl:gap-1 lg:flex" aria-label="Navegação Principal">
+            {DESKTOP_NAV.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
-                className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                activeProps={{ className: "text-foreground font-medium" }}
+                className="rounded-lg px-2.5 py-1.5 text-xs xl:text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                activeProps={{ className: "text-foreground font-semibold bg-accent/60" }}
               >
                 {item.label}
               </Link>
             ))}
           </nav>
+
+          {/* 3. Ações no Cabeçalho */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <Button asChild variant="ghost" size="icon" aria-label="Pesquisar">
+            {/* Botão de Pesquisa (visível no desktop e mobile) */}
+            <Button asChild variant="ghost" size="icon" className="shrink-0" aria-label="Buscar na Bíblia">
               <Link to="/busca" search={{ q: "" }}>
-                <Search className="size-4" />
+                <Search className="size-4.5" />
               </Link>
             </Button>
-            <ThemeToggle />
 
-            {/* Desktop Auth indicator / button */}
+            {/* Alternador de Tema (visível no desktop) */}
+            <div className="hidden sm:inline-flex">
+              <ThemeToggle />
+            </div>
+
+            {/* Acesso ao Usuário Desktop */}
             <div className="hidden lg:flex items-center ml-1">
               {isAuthenticated ? (
-                <Button asChild variant="outline" size="sm" className="h-9 gap-1.5 border-border">
+                <Button asChild variant="outline" size="sm" className="h-9 gap-2 border-border/80 hover:border-gold/50">
                   <Link to="/perfil">
-                    <User className="size-3.5 text-gold" />
-                    <span className="max-w-[120px] truncate text-xs font-medium">
+                    <span className="flex size-5 items-center justify-center rounded-full bg-gold/15 text-gold font-bold text-[10px]">
+                      {userDisplayName.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="max-w-[110px] truncate text-xs font-medium">
                       {userDisplayName}
                     </span>
                   </Link>
                 </Button>
               ) : (
-                <Button asChild size="sm" className="h-9 px-3 text-xs font-medium">
+                <Button asChild size="sm" className="h-9 px-3.5 text-xs font-semibold">
                   <Link to="/auth" search={{ mode: "signin" }}>
-                    Entrar
+                    <LogIn className="mr-1.5 size-3.5" /> Entrar
                   </Link>
                 </Button>
               )}
             </div>
 
+            {/* 4. Menu Hamburger Mobile (Apenas [Logo] [Pesquisar] [☰] no mobile) */}
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="lg:hidden shrink-0 cursor-pointer"
-                  aria-label="Abrir menu"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setOpen(true);
-                  }}
+                  className="lg:hidden shrink-0 cursor-pointer text-foreground hover:bg-accent"
+                  aria-label="Abrir menu de navegação"
                 >
-                  <Menu className="size-5" />
+                  <Menu className="size-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-80 max-w-[85vw] flex flex-col justify-between overflow-y-auto p-5">
-                <div>
-                  <SheetHeader className="text-left border-b border-border/60 pb-3 mb-2">
-                    <SheetTitle className="text-base font-semibold flex items-center gap-2">
-                      <BookOpen className="size-4 text-gold" /> Menu de Navegação
-                    </SheetTitle>
-                    <SheetDescription className="text-xs text-muted-foreground">
-                      Acesse a Bíblia, comunidade, estudos e recursos.
+
+              <SheetContent
+                side="right"
+                className="w-[88vw] max-w-sm flex flex-col justify-between overflow-y-auto p-0 bg-background border-l border-border shadow-2xl z-[70]"
+              >
+                <div className="p-5 pb-6 space-y-5">
+                  {/* Cabeçalho do Drawer com Logo e Botão Fechar */}
+                  <SheetHeader className="text-left border-b border-border/60 pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                          <BookOpen className="size-4" />
+                        </span>
+                        <SheetTitle className="text-base font-bold">Bíblia Online</SheetTitle>
+                      </div>
+                      <SheetClose asChild>
+                        <Button variant="ghost" size="icon" className="size-8 rounded-full">
+                          <X className="size-4" />
+                        </Button>
+                      </SheetClose>
+                    </div>
+                    <SheetDescription className="text-xs text-muted-foreground mt-1">
+                      Leia, compreenda e compartilhe a Palavra de Deus.
                     </SheetDescription>
                   </SheetHeader>
 
-                  {/* Mobile user status card */}
-                  <div className="mt-4 mb-2 mx-1">
+                  {/* Card do Usuário (Entrar/Criar conta ou Perfil/Sair) */}
+                  <div className="rounded-xl border border-border/80 bg-accent/30 p-3.5">
                     {isAuthenticated ? (
-                      <div className="rounded-lg bg-accent/40 p-3 border border-border/70 flex items-center justify-between">
-                        <div className="min-w-0 pr-2">
-                          <p className="text-xs font-semibold text-foreground truncate">
-                            {userDisplayName}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground truncate">
-                            {user?.email}
-                          </p>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gold/20 text-gold font-bold text-sm">
+                            {userDisplayName.charAt(0).toUpperCase()}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-foreground truncate">{userDisplayName}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+                          </div>
                         </div>
-                        <Link
-                          to="/perfil"
-                          onClick={() => setOpen(false)}
-                          className="text-xs text-gold font-medium shrink-0 hover:underline"
-                        >
-                          Ver perfil
-                        </Link>
+                        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border/50">
+                          <Button asChild size="sm" variant="outline" className="h-8 text-xs font-medium">
+                            <Link to="/perfil" onClick={() => setOpen(false)}>
+                              <User className="mr-1.5 size-3.5 text-gold" /> Meu Perfil
+                            </Link>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleSignOut}
+                            className="h-8 text-xs font-medium text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <LogOut className="mr-1.5 size-3.5" /> Sair
+                          </Button>
+                        </div>
                       </div>
                     ) : (
-                      <div className="flex gap-2">
-                        <Button asChild size="sm" className="w-full">
-                          <Link
-                            to="/auth"
-                            search={{ mode: "signin" }}
-                            onClick={() => setOpen(false)}
-                          >
-                            Entrar / Cadastrar
-                          </Link>
-                        </Button>
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          Acesse sua conta para salvar favoritos, anotações e progresso diário.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          <Button asChild size="sm" className="h-8.5 text-xs font-semibold">
+                            <Link to="/auth" search={{ mode: "signin" }} onClick={() => setOpen(false)}>
+                              <LogIn className="mr-1 size-3.5" /> Entrar
+                            </Link>
+                          </Button>
+                          <Button asChild size="sm" variant="outline" className="h-8.5 text-xs font-semibold">
+                            <Link to="/auth" search={{ mode: "signup" }} onClick={() => setOpen(false)}>
+                              <UserPlus className="mr-1 size-3.5" /> Criar conta
+                            </Link>
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  <nav className="mt-4 flex flex-col gap-1 px-1">
-                    {NAV.map((item) => (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        onClick={() => setOpen(false)}
-                        className="rounded-md px-3 py-2.5 text-base hover:bg-accent"
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                    <Link
-                      to="/comunidade"
-                      onClick={() => setOpen(false)}
-                      className="rounded-md px-3 py-2.5 text-base hover:bg-accent flex items-center justify-between"
-                    >
-                      <span>📖 Comunidade Palavra Viva</span>
-                      <Users className="size-4 text-primary" />
-                    </Link>
-                    <Link
-                      to="/favoritos"
-                      onClick={() => setOpen(false)}
-                      className="rounded-md px-3 py-2.5 text-base hover:bg-accent flex items-center justify-between"
-                    >
-                      <span>Meus Favoritos</span>
-                      <Heart className="size-4 text-gold" />
-                    </Link>
-                    <Link
-                      to="/perfil"
-                      onClick={() => setOpen(false)}
-                      className="rounded-md px-3 py-2.5 text-base hover:bg-accent flex items-center justify-between"
-                    >
-                      <span>Meu Perfil</span>
-                      <User className="size-4 text-muted-foreground" />
-                    </Link>
+                  {/* NAVEGAÇÃO ESTRUTURADA EM CATEGORIAS */}
+                  <nav className="space-y-4 text-sm" aria-label="Menu Mobile">
+                    {/* INÍCIO */}
+                    <div>
+                      <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                        Início
+                      </p>
+                      <div className="mt-1 space-y-0.5">
+                        <Link
+                          to="/"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Home className="size-4 text-primary" />
+                          <span>Início</span>
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* BÍBLIA */}
+                    <div>
+                      <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                        Bíblia
+                      </p>
+                      <div className="mt-1 space-y-0.5">
+                        <Link
+                          to="/biblia"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <BookOpen className="size-4 text-gold" />
+                          <span>Bíblia Sagrada</span>
+                        </Link>
+                        <Link
+                          to="/versiculo-do-dia"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Calendar className="size-4 text-primary" />
+                          <span>Versículo do Dia</span>
+                        </Link>
+                        <Link
+                          to="/favoritos"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Heart className="size-4 text-gold" />
+                          <span>Favoritos</span>
+                        </Link>
+                        <Link
+                          to="/perfil"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <History className="size-4 text-muted-foreground" />
+                          <span>Histórico de Leitura</span>
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* CONTEÚDO */}
+                    <div>
+                      <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                        Conteúdo
+                      </p>
+                      <div className="mt-1 space-y-0.5">
+                        <Link
+                          to="/oracoes"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <HeartHandshake className="size-4 text-rose-500" />
+                          <span>Orações Bíblicas</span>
+                        </Link>
+                        <Link
+                          to="/estudos"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Compass className="size-4 text-primary" />
+                          <span>Estudos Bíblicos</span>
+                        </Link>
+                        <Link
+                          to="/devocionais"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Sparkles className="size-4 text-gold" />
+                          <span>Devocionais Diários</span>
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* COMUNIDADE */}
+                    <div>
+                      <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                        Comunidade
+                      </p>
+                      <div className="mt-1 space-y-0.5">
+                        <Link
+                          to="/comunidade"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center justify-between rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <Users className="size-4 text-emerald-600 dark:text-emerald-400" />
+                            <span>Comunidade Palavra Viva</span>
+                          </span>
+                          <span className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-semibold">
+                            Ativa
+                          </span>
+                        </Link>
+                        <Link
+                          to="/perfil"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <User className="size-4 text-muted-foreground" />
+                          <span>Meu Perfil</span>
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* FERRAMENTAS */}
+                    <div>
+                      <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                        Ferramentas
+                      </p>
+                      <div className="mt-1 space-y-0.5">
+                        <Link
+                          to="/busca"
+                          search={{ q: "" }}
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Search className="size-4 text-primary" />
+                          <span>Buscar na Bíblia</span>
+                        </Link>
+                        <Link
+                          to="/pergunte-a-biblia"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <HelpCircle className="size-4 text-gold" />
+                          <span>Pergunte à Bíblia</span>
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* OUTROS */}
+                    <div>
+                      <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                        Outros & Preferências
+                      </p>
+                      <div className="mt-1 space-y-0.5">
+                        {/* Controle de Tema no Menu Mobile */}
+                        <button
+                          type="button"
+                          onClick={() => update({ theme: settings.theme === "dark" ? "light" : "dark" })}
+                          className="w-full flex items-center justify-between rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
+                        >
+                          <span className="flex items-center gap-2.5">
+                            {settings.theme === "dark" ? (
+                              <Sun className="size-4 text-gold" />
+                            ) : (
+                              <Moon className="size-4 text-muted-foreground" />
+                            )}
+                            <span>Tema {settings.theme === "dark" ? "Escuro" : "Claro"}</span>
+                          </span>
+                          <span className="text-[11px] text-muted-foreground font-semibold capitalize">
+                            {settings.theme === "dark" ? "Ativo" : "Padrão"}
+                          </span>
+                        </button>
+
+                        <Link
+                          to="/perfil"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Settings className="size-4 text-muted-foreground" />
+                          <span>Configurações</span>
+                        </Link>
+                        <Link
+                          to="/sobre"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Info className="size-4 text-muted-foreground" />
+                          <span>Sobre Nós</span>
+                        </Link>
+                        <Link
+                          to="/contato"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Mail className="size-4 text-muted-foreground" />
+                          <span>Contato</span>
+                        </Link>
+                      </div>
+                    </div>
                   </nav>
                 </div>
 
-                <div className="border-t border-border p-4 text-center text-xs text-muted-foreground space-y-2.5">
+                {/* Rodapé do Menu Mobile */}
+                <div className="border-t border-border bg-card/60 p-4 text-center text-xs text-muted-foreground space-y-2.5">
                   <div className="flex justify-center">
                     <OnlineCounter showDetails />
                   </div>
                   <p>
-                    Desenvolvido por <span className="font-medium text-foreground">Ubiratan Gouveia</span>
+                    © {new Date().getFullYear()} Bíblia Online. Todos os direitos reservados.
                   </p>
                 </div>
               </SheetContent>
@@ -231,51 +472,54 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
+      {/* CONTEÚDO PRINCIPAL */}
       <main className="flex-1">{children}</main>
 
+      {/* RODAPÉ DESKTOP & GERAL */}
       <footer className="border-t border-border bg-cream pb-24 lg:pb-0">
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <p className="font-display text-lg font-semibold">Bíblia Online</p>
+            <p className="font-display text-lg font-bold text-foreground">Bíblia Online</p>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              Leia, compreenda e compartilhe a Palavra. Texto bíblico disponibilizado através da Bible API. Plataforma para edificação e estudo das Escrituras.
+              Leia, compreenda e compartilhe a Palavra de Deus. Texto bíblico disponibilizado através de fontes fiéis para edificação, consolo e estudo das Escrituras Sagradas.
             </p>
           </div>
           <div>
-            <p className="text-sm font-semibold">Navegação Principal</p>
+            <p className="text-sm font-semibold text-foreground">Navegação Principal</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/biblia" className="hover:text-foreground">Bíblia Online</Link></li>
-              <li><Link to="/comunidade" className="hover:text-foreground">📖 Comunidade Palavra Viva</Link></li>
-              <li><Link to="/biblia/antigo-testamento" className="hover:text-foreground">Antigo Testamento</Link></li>
-              <li><Link to="/biblia/novo-testamento" className="hover:text-foreground">Novo Testamento</Link></li>
-              <li><Link to="/versiculo-do-dia" className="hover:text-foreground">Versículo do Dia</Link></li>
-              <li><Link to="/versiculos" className="hover:text-foreground">Versículos por Tema</Link></li>
-              <li><Link to="/oracoes" className="hover:text-foreground">Orações</Link></li>
-              <li><Link to="/estudos" className="hover:text-foreground">Estudos Bíblicos</Link></li>
-              <li><Link to="/devocionais" className="hover:text-foreground">Devocionais</Link></li>
+              <li><Link to="/biblia" className="hover:text-foreground transition-colors">Bíblia Online</Link></li>
+              <li><Link to="/comunidade" className="hover:text-foreground transition-colors">📖 Comunidade Palavra Viva</Link></li>
+              <li><Link to="/biblia/antigo-testamento" className="hover:text-foreground transition-colors">Antigo Testamento</Link></li>
+              <li><Link to="/biblia/novo-testamento" className="hover:text-foreground transition-colors">Novo Testamento</Link></li>
+              <li><Link to="/versiculo-do-dia" className="hover:text-foreground transition-colors">Versículo do Dia</Link></li>
+              <li><Link to="/versiculos" className="hover:text-foreground transition-colors">Versículos por Tema</Link></li>
+              <li><Link to="/oracoes" className="hover:text-foreground transition-colors">Orações</Link></li>
+              <li><Link to="/estudos" className="hover:text-foreground transition-colors">Estudos Bíblicos</Link></li>
+              <li><Link to="/devocionais" className="hover:text-foreground transition-colors">Devocionais</Link></li>
             </ul>
           </div>
           <div>
-            <p className="text-sm font-semibold">Ferramentas & Recursos</p>
+            <p className="text-sm font-semibold text-foreground">Ferramentas & Recursos</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/comunidade" className="hover:text-foreground">Comunidade Palavra Viva</Link></li>
-              <li><Link to="/busca" search={{ q: "" }} className="hover:text-foreground">Busca na Bíblia</Link></li>
-              <li><Link to="/favoritos" className="hover:text-foreground">Meus Favoritos</Link></li>
-              <li><Link to="/pergunte" search={{ q: "" }} className="hover:text-foreground">Pergunte à Bíblia</Link></li>
-              <li><Link to="/perfil" className="hover:text-foreground">Meu Histórico</Link></li>
+              <li><Link to="/comunidade" className="hover:text-foreground transition-colors">Comunidade Cristã</Link></li>
+              <li><Link to="/busca" search={{ q: "" }} className="hover:text-foreground transition-colors">Busca na Bíblia</Link></li>
+              <li><Link to="/favoritos" className="hover:text-foreground transition-colors">Meus Favoritos</Link></li>
+              <li><Link to="/pergunte-a-biblia" className="hover:text-foreground transition-colors">Pergunte à Bíblia</Link></li>
+              <li><Link to="/perfil" className="hover:text-foreground transition-colors">Meu Histórico</Link></li>
             </ul>
           </div>
           <div>
-            <p className="text-sm font-semibold">Institucional & Políticas</p>
+            <p className="text-sm font-semibold text-foreground">Institucional & Políticas</p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/sobre" className="hover:text-foreground">Sobre Nós</Link></li>
-              <li><Link to="/contato" className="hover:text-foreground">Contato</Link></li>
-              <li><Link to="/privacidade" className="hover:text-foreground">Política de Privacidade</Link></li>
-              <li><Link to="/cookies" className="hover:text-foreground">Política de Cookies</Link></li>
-              <li><Link to="/termos" className="hover:text-foreground">Termos de Uso</Link></li>
+              <li><Link to="/sobre" className="hover:text-foreground transition-colors">Sobre Nós</Link></li>
+              <li><Link to="/contato" className="hover:text-foreground transition-colors">Contato</Link></li>
+              <li><Link to="/privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</Link></li>
+              <li><Link to="/cookies" className="hover:text-foreground transition-colors">Política de Cookies</Link></li>
+              <li><Link to="/termos" className="hover:text-foreground transition-colors">Termos de Uso</Link></li>
             </ul>
           </div>
         </div>
+
         <div className="border-t border-border py-6 text-center text-xs text-muted-foreground space-y-3 px-4 flex flex-col items-center justify-center">
           <OnlineCounter showDetails />
           <div className="space-y-1">
@@ -287,8 +531,8 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         </div>
       </footer>
 
-
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur lg:hidden">
+      {/* BARRA INFERIOR MOBILE */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur lg:hidden" aria-label="Navegação Inferior Mobile">
         <ul className="mx-auto flex max-w-lg">
           {BOTTOM.map((item) => (
             <li key={item.to} className="flex-1">
@@ -296,10 +540,10 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 to={item.to}
                 activeOptions={{ exact: item.to === "/" }}
                 className="flex flex-col items-center gap-1 py-2 text-[11px] text-muted-foreground relative"
-                activeProps={{ className: "text-primary font-medium" }}
+                activeProps={{ className: "text-primary font-semibold" }}
               >
                 <item.icon className="size-5" />
-                {item.label}
+                <span>{item.label}</span>
               </Link>
             </li>
           ))}

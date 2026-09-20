@@ -132,7 +132,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@type": "WebSite",
           name: "Bíblia Online",
           url: SITE_URL,
-          slogan: "Leia, compreenda e compartilhe a Palavra.",
+          slogan: "Leia, compreenda e compartilhe a Palavra de Deus.",
           inLanguage: "pt-BR",
           potentialAction: {
             "@type": "SearchAction",

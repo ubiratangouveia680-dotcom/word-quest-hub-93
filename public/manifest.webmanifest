@@ -1,7 +1,7 @@
 {
   "name": "Bíblia Online",
   "short_name": "Bíblia",
-  "description": "Leia, compreenda e compartilhe a Palavra.",
+  "description": "Leia, compreenda e compartilhe a Palavra de Deus.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -75,11 +75,11 @@ export const sendContactMessage = createServerFn({ method: "POST" })
     const resendApiKey = process.env["RESEND_API_KEY"];
     if (resendApiKey) {
       try {
-        const fromEmail = process.env["CONTACT_FROM_EMAIL"] || "Word Quest Hub <onboarding@resend.dev>";
+        const fromEmail = process.env["CONTACT_FROM_EMAIL"] || "Bíblia Online <onboarding@resend.dev>";
         const emailHtml = `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
             <div style="background-color: #92400e; color: #ffffff; padding: 24px; text-align: center;">
-              <h1 style="margin: 0; font-size: 22px; font-weight: 700;">Word Quest Hub</h1>
+              <h1 style="margin: 0; font-size: 22px; font-weight: 700;">Bíblia Online</h1>
               <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Nova mensagem recebida pelo formulário de contato</p>
             </div>
             <div style="padding: 28px; color: #1e293b; line-height: 1.6;">
@@ -91,11 +91,11 @@ export const sendContactMessage = createServerFn({ method: "POST" })
               <h3 style="font-size: 15px; color: #475569; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Mensagem:</h3>
               <div style="background-color: #fffbeb; border: 1px solid #fef3c7; padding: 18px; border-radius: 8px; font-size: 15px; color: #451a03; white-space: pre-wrap;">${data.message}</div>
               <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: center;">
-                <a href="mailto:${data.email}?subject=Re: [Word Quest Hub] ${encodeURIComponent(data.subject)}" style="display: inline-block; background-color: #92400e; color: #ffffff; font-weight: 600; font-size: 13px; padding: 10px 22px; border-radius: 6px; text-decoration: none;">Responder a ${data.name}</a>
+                <a href="mailto:${data.email}?subject=Re: [Bíblia Online] ${encodeURIComponent(data.subject)}" style="display: inline-block; background-color: #92400e; color: #ffffff; font-weight: 600; font-size: 13px; padding: 10px 22px; border-radius: 6px; text-decoration: none;">Responder a ${data.name}</a>
               </div>
             </div>
             <div style="background-color: #f1f5f9; padding: 14px; text-align: center; font-size: 12px; color: #64748b;">
-              Enviado em ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} pelo Word Quest Hub.
+              Enviado em ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} pelo Bíblia Online.
             </div>
           </div>
         `;
@@ -111,7 +111,7 @@ export const sendContactMessage = createServerFn({ method: "POST" })
               from: fromEmail,
               to: [toRecipient],
               reply_to: data.email,
-              subject: `[Contato Word Quest Hub] ${data.subject} - ${data.name}`,
+              subject: `[Contato Bíblia Online] ${data.subject} - ${data.name}`,
               html: emailHtml,
             }),
           });
@@ -154,9 +154,9 @@ export const sendContactMessage = createServerFn({ method: "POST" })
             access_key: web3formsKey,
             name: data.name,
             email: data.email,
-            subject: `[Contato Word Quest Hub] ${data.subject} - ${data.name}`,
+            subject: `[Contato Bíblia Online] ${data.subject} - ${data.name}`,
             message: data.message,
-            from_name: "Word Quest Hub",
+            from_name: "Bíblia Online",
             reply_to: data.email,
           }),
         });
@@ -186,7 +186,7 @@ export const sendContactMessage = createServerFn({ method: "POST" })
           body: JSON.stringify({
             name: data.name,
             email: data.email,
-            _subject: `[Contato Word Quest Hub] ${data.subject} - ${data.name}`,
+            _subject: `[Contato Bíblia Online] ${data.subject} - ${data.name}`,
             subject: data.subject,
             message: data.message,
             _replyto: data.email,

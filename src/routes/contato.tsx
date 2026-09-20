@@ -154,7 +154,7 @@ function ContactPage() {
               name: cleanName,
               email: cleanEmail,
               subject: cleanSubject,
-              _subject: `[Word Quest Hub] ${cleanSubject} - ${cleanName}`,
+              _subject: `[Bíblia Online] ${cleanSubject} - ${cleanName}`,
               message: cleanMessage,
               _replyto: cleanEmail,
               _template: "table",
@@ -201,7 +201,7 @@ function ContactPage() {
             name: cleanName,
             email: cleanEmail,
             subject: cleanSubject,
-            _subject: `[Word Quest Hub] ${cleanSubject} - ${cleanName}`,
+            _subject: `[Bíblia Online] ${cleanSubject} - ${cleanName}`,
             message: cleanMessage,
             _replyto: cleanEmail,
             _template: "table",
@@ -225,7 +225,7 @@ function ContactPage() {
   };
 
   const directMailtoUrl = `mailto:ubiratan.silva.gouveia@gmail.com?subject=${encodeURIComponent(
-    subject ? `[Word Quest Hub] ${subject}` : "Contato - Word Quest Hub"
+    subject ? `[Bíblia Online] ${subject}` : "Contato - Bíblia Online"
   )}&body=${encodeURIComponent(
     message ? `${message}\n\nAtenciosamente,\n${name || "Visitante"} (${email || "sem e-mail informado"})` : ""
   )}`;

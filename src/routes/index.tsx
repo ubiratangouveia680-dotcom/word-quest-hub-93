@@ -7,10 +7,12 @@ import {
   Calendar,
   Compass,
   Heart,
+  HeartHandshake,
   HelpCircle,
   MessageSquare,
   Search,
   Sparkles,
+  Users,
 } from "lucide-react";
 import { SiteLayout } from "@/components/SiteLayout";
 import { AdBanner, AdDesktop, AdMobile } from "@/components/Ads";
@@ -18,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DailyVerseCard } from "@/components/DailyVerseCard";
 import { ContinueReading } from "@/components/ContinueReading";
+import { DailyJourney } from "@/components/DailyJourney";
 import { STUDIES, DEVOTIONALS, PRAYERS } from "@/lib/content";
 import { NEW_TESTAMENT, OLD_TESTAMENT } from "@/lib/bible-books";
 
@@ -28,12 +31,12 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Leia a Bíblia online gratuitamente: livros, capítulos e versículos em português, versículo do dia, estudos bíblicos, devocionais e orações.",
+          "Leia a Bíblia online gratuitamente: livros, capítulos e versículos em português, versículo do dia, estudos bíblicos, devocionais e orações. Leia, compreenda e compartilhe a Palavra de Deus.",
       },
       { property: "og:title", content: "Bíblia Online — Leia a Bíblia Sagrada em português" },
       {
         property: "og:description",
-        content: "Encontre livros, capítulos e versículos em poucos segundos.",
+        content: "Encontre livros, capítulos e versículos em poucos segundos. Leia, compreenda e compartilhe a Palavra de Deus.",
       },
       { property: "og:url", content: "/" },
     ],
@@ -45,7 +48,7 @@ export const Route = createFileRoute("/")({
 const QUICK_LINKS = [
   { label: "Bíblia", to: "/biblia", icon: BookOpen, desc: "66 livros sagrados" },
   { label: "Versículo do Dia", to: "/versiculo-do-dia", icon: Calendar, desc: "Reflexão diária" },
-  { label: "Orações", to: "/oracoes", icon: Heart, desc: "Para todos os momentos" },
+  { label: "Orações", to: "/oracoes", icon: HeartHandshake, desc: "Para todos os momentos" },
   { label: "Estudos", to: "/estudos", icon: Compass, desc: "Aprofunde a leitura" },
   { label: "Devocionais", to: "/devocionais", icon: Sparkles, desc: "Edificação contínua" },
   { label: "Pergunte à Bíblia", to: "/pergunte-a-biblia", icon: HelpCircle, desc: "Tire suas dúvidas" },
@@ -66,75 +69,77 @@ function Index() {
 
   return (
     <SiteLayout>
-      {/* 2. Apresentação da Bíblia Online */}
-      <section className="warm-panel mx-4 mt-4 px-5 py-10 sm:px-8 lg:mx-auto lg:max-w-6xl lg:py-16">
+      {/* 2. ÁREA PRINCIPAL "BÍBLIA ONLINE" (HERO) */}
+      <section className="warm-panel mx-4 mt-4 px-5 py-10 sm:px-8 lg:mx-auto lg:max-w-6xl lg:py-14">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-1 text-xs text-muted-foreground">
-            <Sparkles className="size-3.5 text-gold" /> Leia, compreenda e compartilhe a Palavra
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-1 text-xs font-semibold text-muted-foreground">
+            <Sparkles className="size-3.5 text-gold" /> Leia, compreenda e compartilhe a Palavra de Deus
           </span>
-          <h1 className="mt-4 font-display text-4xl font-semibold sm:text-5xl lg:text-6xl tracking-tight">
+          <h1 className="mt-4 font-display text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl text-foreground">
             Leia a Bíblia Online
           </h1>
-          <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+          <p className="mt-3.5 text-sm sm:text-base text-muted-foreground leading-relaxed">
             Acesso rápido a todos os livros, capítulos e versículos da Palavra de Deus em português,
-            com estudos explicativos, devocionais diários e respostas para suas dúvidas de fé.
+            com estudos explicativos, devocionais diários, orações e respostas para suas dúvidas de fé.
           </p>
 
-          {/* Barra de Pesquisa */}
+          {/* 3. BUSCA DA BÍBLIA */}
           <form
-            className="mt-8 flex flex-col gap-2 sm:flex-row max-w-2xl mx-auto"
+            className="mt-7 flex flex-col gap-2.5 sm:flex-row max-w-2xl mx-auto"
             onSubmit={(e) => {
               e.preventDefault();
               navigate({ to: "/busca", search: { q } });
             }}
           >
-            <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Pesquise por livro, capítulo, versículo ou palavra (ex: João 3:16, amor)..."
-              className="h-12 bg-background shadow-xs"
-              aria-label="Pesquisar na Bíblia"
-            />
-            <Button type="submit" size="lg" className="h-12 px-6">
-              <Search className="mr-1.5 size-4" /> Pesquisar
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Pesquise por livro, capítulo, versículo ou palavra (ex: João 3:16, amor, paz)..."
+                className="h-12 pl-10 bg-background shadow-xs text-sm"
+                aria-label="Pesquisar na Bíblia"
+              />
+            </div>
+            <Button type="submit" size="lg" className="h-12 px-6 text-sm font-semibold shrink-0">
+              Pesquisar
             </Button>
           </form>
 
-          {/* Acesso rápido aos pilares principais (mobile: 2 colunas com Devocionais ao lado de Pergunte à Bíblia) */}
-          <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            {QUICK_LINKS.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="surface group flex flex-col items-center justify-center rounded-xl p-3 text-center transition-all hover:border-gold/50 hover:bg-accent/40"
+          {/* Atalhos rápidos de busca popular */}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground">
+            <span className="font-medium">Buscas frequentes:</span>
+            {["Salmo 23", "João 3:16", "Salmo 91", "Amor", "Fé", "Perdão"].map((term) => (
+              <button
+                key={term}
+                type="button"
+                onClick={() => navigate({ to: "/busca", search: { q: term } })}
+                className="rounded-full bg-accent/60 px-2.5 py-0.5 hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
               >
-                <item.icon className="size-5 text-gold transition-transform group-hover:scale-110" />
-                <span className="mt-1.5 text-xs font-semibold text-foreground">{item.label}</span>
-                <span className="text-[10px] text-muted-foreground">{item.desc}</span>
-              </Link>
+                {term}
+              </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 11. Área reservada para publicidade (superior) */}
+      {/* Publicidade superior suave */}
       <div className="mx-auto mt-6 w-full max-w-6xl px-4">
         <AdBanner />
       </div>
 
       <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1fr_300px]">
-        <div className="space-y-12">
-          {/* Histórico do leitor */}
-          <ContinueReading />
-
-          {/* 3. Versículo do Dia */}
-          <section>
+        <div className="space-y-10">
+          {/* 4. VERSÍCULO DO DIA */}
+          <section aria-labelledby="versiculo-do-dia-heading">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-gold">Inspiração Diária</span>
-                <h2 className="font-display text-2xl font-semibold">Versículo do Dia</h2>
+                <h2 id="versiculo-do-dia-heading" className="font-display text-2xl font-bold">
+                  Versículo do Dia
+                </h2>
               </div>
-              <Link to="/versiculo-do-dia" className="text-xs font-medium text-primary hover:underline">
+              <Link to="/versiculo-do-dia" className="text-xs font-semibold text-primary hover:underline">
                 Página completa com reflexão →
               </Link>
             </div>
@@ -143,51 +148,72 @@ function Index() {
             </div>
           </section>
 
-          {/* 4. Acesso rápido à Bíblia */}
-          <section>
-            <SectionHeader
-              title="Acesso rápido à Bíblia"
-              href="/biblia"
-              linkLabel="Ver todos os 66 livros"
-            />
-            <p className="mt-1 text-sm text-muted-foreground">
-              Navegue pelos livros do Novo e do Antigo Testamento:
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-              {NEW_TESTAMENT.slice(0, 8).map((b) => (
+          {/* 5. CONTINUE SUA LEITURA */}
+          <section aria-labelledby="continue-leitura-heading">
+            <h2 id="continue-leitura-heading" className="sr-only">Continue sua leitura</h2>
+            <ContinueReading />
+          </section>
+
+          {/* 6. MINHA JORNADA DE HOJE */}
+          <section aria-labelledby="jornada-heading">
+            <DailyJourney />
+          </section>
+
+          {/* 7. ACESSO RÁPIDO */}
+          <section aria-labelledby="acesso-rapido-heading" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-wider text-gold">Navegação Expressa</span>
+                <h2 id="acesso-rapido-heading" className="font-display text-2xl font-bold">
+                  Acesso Rápido
+                </h2>
+              </div>
+              <Link to="/biblia" className="text-xs font-semibold text-primary hover:underline">
+                Ver todos os 66 livros →
+              </Link>
+            </div>
+
+            {/* Pilares Principais */}
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
+              {QUICK_LINKS.map((item) => (
                 <Link
-                  key={b.slug}
-                  to="/biblia/$book"
-                  params={{ book: b.slug }}
-                  className="surface flex items-center gap-2.5 px-3.5 py-3 text-sm transition-all hover:bg-accent hover:border-gold/40"
+                  key={item.to}
+                  to={item.to as any}
+                  className="surface group flex flex-col items-center justify-center rounded-xl p-3.5 text-center transition-all hover:border-gold/50 hover:bg-accent/40"
                 >
-                  <BookOpen className="size-4 text-gold shrink-0" />
-                  <span className="truncate">{b.name}</span>
+                  <item.icon className="size-5 text-gold transition-transform group-hover:scale-110" />
+                  <span className="mt-1.5 text-xs font-bold text-foreground">{item.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{item.desc}</span>
                 </Link>
               ))}
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-              {OLD_TESTAMENT.slice(0, 4).map((b) => (
-                <Link
-                  key={b.slug}
-                  to="/biblia/$book"
-                  params={{ book: b.slug }}
-                  className="surface flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
-                >
-                  <BookMarked className="size-3.5 text-gold shrink-0" />
-                  <span className="truncate">{b.name}</span>
-                </Link>
-              ))}
+
+            {/* Livros em Destaque */}
+            <div className="pt-2">
+              <p className="text-xs font-medium text-muted-foreground mb-2">Novo Testamento:</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {NEW_TESTAMENT.slice(0, 4).map((b) => (
+                  <Link
+                    key={b.slug}
+                    to="/biblia/$book"
+                    params={{ book: b.slug }}
+                    className="surface flex items-center gap-2.5 px-3 py-2.5 text-xs font-medium transition-all hover:bg-accent hover:border-gold/40"
+                  >
+                    <BookOpen className="size-3.5 text-gold shrink-0" />
+                    <span className="truncate">{b.name}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </section>
 
           <AdMobile />
 
-          {/* 5. Orações */}
-          <section>
+          {/* 8. ORAÇÕES BÍBLICAS */}
+          <section aria-labelledby="oracoes-heading">
             <SectionHeader title="Orações Bíblicas" href="/oracoes" linkLabel="Ver todas as orações" />
-            <p className="mt-1 text-sm text-muted-foreground">
-              Textos originais para orar pela manhã, à noite, pela família, saúde e proteção:
+            <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Textos originais para orar pela manhã, à noite, pela família, saúde, libertação e proteção:
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {PRAYERS.map((p) => (
@@ -203,11 +229,11 @@ function Index() {
             </div>
           </section>
 
-          {/* 6. Estudos Bíblicos */}
-          <section>
+          {/* 9. ESTUDOS BÍBLICOS */}
+          <section aria-labelledby="estudos-heading">
             <SectionHeader title="Estudos Bíblicos" href="/estudos" linkLabel="Ver todos os estudos" />
-            <p className="mt-1 text-sm text-muted-foreground">
-              Compreenda temas centrais da fé com fundamentação bíblica e reflexão prática:
+            <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Compreenda temas centrais da fé com fundamentação bíblica, teologia sadia e reflexão prática:
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {STUDIES.slice(0, 4).map((s) => (
@@ -215,21 +241,21 @@ function Index() {
                   key={s.slug}
                   to="/estudos/$slug"
                   params={{ slug: s.slug }}
-                  className="surface p-4 transition-all hover:border-gold/40 hover:bg-accent/40"
+                  className="surface p-4 transition-all hover:border-gold/40 hover:bg-accent/40 rounded-xl"
                 >
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gold">{s.category}</span>
-                  <h3 className="mt-1 font-display text-base font-semibold">{s.title}</h3>
-                  <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">{s.excerpt}</p>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gold">{s.category}</span>
+                  <h3 className="mt-1 font-display text-base font-bold text-foreground">{s.title}</h3>
+                  <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2 leading-relaxed">{s.excerpt}</p>
                 </Link>
               ))}
             </div>
           </section>
 
-          {/* 7. Devocionais */}
-          <section>
+          {/* 10. DEVOCIONAIS DIÁRIOS */}
+          <section aria-labelledby="devocionais-heading">
             <SectionHeader title="Devocionais Diários" href="/devocionais" linkLabel="Ver devocionais" />
-            <p className="mt-1 text-sm text-muted-foreground">
-              Pequenas meditações para nutrir o coração e orientar as atitudes do dia:
+            <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Pequenas meditações para nutrir o coração e orientar as atitudes do seu dia com a Palavra:
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {DEVOTIONALS.slice(0, 3).map((d) => (
@@ -237,21 +263,55 @@ function Index() {
                   key={d.slug}
                   to="/devocionais/$slug"
                   params={{ slug: d.slug }}
-                  className="surface p-4 transition-all hover:border-gold/40 hover:bg-accent/40"
+                  className="surface p-4 transition-all hover:border-gold/40 hover:bg-accent/40 rounded-xl flex flex-col justify-between"
                 >
-                  <span className="text-[11px] font-semibold text-gold">{d.verseRef}</span>
-                  <h3 className="mt-1 font-display text-sm font-semibold">{d.title}</h3>
-                  <p className="mt-2 line-clamp-3 text-xs text-muted-foreground">{d.reflection}</p>
+                  <div>
+                    <span className="text-[11px] font-semibold text-gold">{d.verseRef}</span>
+                    <h3 className="mt-1 font-display text-sm font-bold text-foreground">{d.title}</h3>
+                    <p className="mt-2 line-clamp-3 text-xs text-muted-foreground leading-relaxed">{d.reflection}</p>
+                  </div>
+                  <span className="mt-3 text-[11px] font-medium text-primary flex items-center">
+                    Ler devocional <ArrowRight className="size-3 ml-1" />
+                  </span>
                 </Link>
               ))}
             </div>
           </section>
 
-          {/* 8. Conteúdos Populares */}
-          <section>
-            <h2 className="font-display text-2xl font-semibold">Versículos mais buscados</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Passagens bíblicas mais acessadas por leitores para consolo, fortalecimento e louvor:
+          {/* 11. COMUNIDADE */}
+          <section aria-labelledby="comunidade-heading" className="rounded-2xl border border-border/80 bg-card p-6 sm:p-7 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Users className="size-6" />
+                </div>
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                    Comunhão Cristã Online
+                  </span>
+                  <h2 id="comunidade-heading" className="font-display text-2xl font-bold text-foreground mt-0.5">
+                    Comunidade Palavra Viva
+                  </h2>
+                  <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
+                    Conecte-se com irmãos na fé em todo o Brasil. Compartilhe pedidos de oração, reflexões de versículos, tire dúvidas e edifique vidas com o Evangelho.
+                  </p>
+                </div>
+              </div>
+              <Button asChild className="shrink-0 h-10 px-5 text-xs font-semibold">
+                <Link to="/comunidade">
+                  Participar da Comunidade <ArrowRight className="ml-1.5 size-4" />
+                </Link>
+              </Button>
+            </div>
+          </section>
+
+          {/* 12. VERSÍCULOS POPULARES */}
+          <section aria-labelledby="versiculos-populares-heading">
+            <h2 id="versiculos-populares-heading" className="font-display text-2xl font-bold">
+              Versículos mais buscados
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Passagens bíblicas mais acessadas por leitores para consolo, fortalecimento, esperança e louvor:
             </p>
             <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
               {POPULAR_VERSES.map((pv) => (
@@ -263,45 +323,54 @@ function Index() {
                     chapter: String(pv.chapter),
                     verse: String(pv.verse),
                   }}
-                  className="surface flex items-center justify-between p-3 text-sm hover:border-gold/40 transition-colors"
+                  className="surface flex items-center justify-between p-3.5 text-sm hover:border-gold/40 transition-colors rounded-xl"
                 >
-                  <span className="font-medium text-foreground">{pv.ref}</span>
+                  <span className="font-bold text-foreground text-xs sm:text-sm">{pv.ref}</span>
                   <span className="text-xs text-muted-foreground italic truncate max-w-[55%]">{pv.text}</span>
                 </Link>
               ))}
             </div>
           </section>
 
-          {/* 9. Pergunte à Bíblia & 10. Conteúdo Relacionado */}
-          <section className="warm-panel p-6 sm:p-7">
-            <div className="flex items-center gap-2">
-              <HelpCircle className="size-5 text-gold" />
-              <h2 className="font-display text-xl font-semibold">Pergunte à Bíblia</h2>
+          {/* 13. PERGUNTE À BÍBLIA */}
+          <section aria-labelledby="pergunte-heading" className="warm-panel p-6 sm:p-7 rounded-2xl border border-gold/30">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-gold/15 text-gold">
+                <HelpCircle className="size-5" />
+              </div>
+              <div>
+                <h2 id="pergunte-heading" className="font-display text-xl font-bold text-foreground">
+                  Pergunte à Bíblia
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Estudo bíblico e esclarecimento de dúvidas
+                </p>
+              </div>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              Tire dúvidas sobre passagens, termos históricos e ensinamentos bíblicos com respostas orientadas pelo texto das Escrituras.
+            <p className="mt-3 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Tire dúvidas sobre passagens, contexto histórico, ensinamentos de Jesus e temas bíblicos com respostas orientadas fielmente pelas Sagradas Escrituras.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {[
-                "Como fortalecer minha fé?",
+                "O que a Bíblia diz sobre ansiedade?",
+                "Como vencer o medo segundo a Bíblia?",
                 "O que a Bíblia ensina sobre perdão?",
-                "Como lidar com momentos difíceis?",
                 "Quais versículos falam sobre esperança?",
               ].map((query) => (
                 <Link
                   key={query}
-                  to="/pergunte"
+                  to="/pergunte-a-biblia"
                   search={{ q: query }}
-                  className="rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground hover:border-gold hover:text-foreground transition-colors"
+                  className="rounded-full border border-border bg-background px-3.5 py-1.5 text-xs text-muted-foreground hover:border-gold hover:text-foreground transition-colors"
                 >
-                  {query}
+                  💬 {query}
                 </Link>
               ))}
             </div>
             <div className="mt-5">
-              <Button asChild size="sm" variant="outline">
-                <Link to="/pergunte" search={{ q: "" }}>
-                  <MessageSquare className="mr-1.5 size-4 text-gold" /> Abrir assistente de perguntas
+              <Button asChild size="sm" variant="outline" className="h-9 px-4 text-xs font-semibold">
+                <Link to="/pergunte-a-biblia">
+                  <MessageSquare className="mr-1.5 size-4 text-gold" /> Abrir Pergunte à Bíblia
                 </Link>
               </Button>
             </div>
@@ -311,16 +380,20 @@ function Index() {
         {/* Barra lateral em desktop */}
         <aside className="space-y-6">
           <AdDesktop />
-          <div className="surface p-5">
-            <h3 className="font-display text-base font-semibold">Sobre a Bíblia Online</h3>
+
+          <div className="surface p-5 rounded-xl border border-border/80">
+            <h3 className="font-display text-base font-bold text-foreground">Sobre a Bíblia Online</h3>
             <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
               Portal dedicado a oferecer uma leitura digna, rápida e acessível da Palavra de Deus em língua portuguesa.
             </p>
-            <div className="mt-4 space-y-2 text-xs">
-              <Link to="/sobre" className="block text-primary hover:underline">
+            <p className="mt-2 text-xs text-gold font-medium italic">
+              "Lâmpada para os meus pés é tua palavra e luz, para o meu caminho." — Salmos 119:105
+            </p>
+            <div className="mt-4 space-y-2 text-xs border-t border-border/50 pt-3">
+              <Link to="/sobre" className="block text-primary hover:underline font-medium">
                 → Conheça nossa missão e padrões
               </Link>
-              <Link to="/contato" className="block text-primary hover:underline">
+              <Link to="/contato" className="block text-primary hover:underline font-medium">
                 → Fale com a equipe
               </Link>
             </div>
@@ -342,11 +415,10 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-end justify-between gap-4">
-      <h2 className="font-display text-2xl font-semibold">{title}</h2>
-      <Link to={href} className="text-xs font-medium text-primary hover:underline">
+      <h2 className="font-display text-2xl font-bold text-foreground">{title}</h2>
+      <Link to={href} className="text-xs font-semibold text-primary hover:underline shrink-0">
         {linkLabel} →
       </Link>
     </div>
   );
 }
-

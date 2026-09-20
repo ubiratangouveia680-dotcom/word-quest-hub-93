@@ -1,5 +1,5 @@
-// Service Worker para Word Quest Hub - Notificações do Versículo do Dia
-const CACHE_NAME = 'word-quest-sw-v2';
+// Service Worker para Bíblia Online - Notificações do Versículo do Dia
+const CACHE_NAME = 'biblia-online-sw-v3';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -13,7 +13,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('push', (event) => {
   let data = {
     title: '🌙 Versículo da Noite',
-    body: 'Toque para ler o versículo completo no Word Quest Hub.',
+    body: 'Toque para ler o versículo completo na Bíblia Online.',
     url: '/versiculo-do-dia',
     tag: 'versiculo-da-noite',
   };
@@ -56,7 +56,7 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Se já houver uma aba aberta com o site Word Quest Hub, foca nela e navega diretamente
+      // Se já houver uma aba aberta com o site Bíblia Online, foca nela e navega diretamente
       for (const client of clientList) {
         if (client.url && client.url.startsWith(self.location.origin) && 'focus' in client) {
           if ('navigate' in client) {
