@@ -40,9 +40,9 @@ const topic = (
   reflection,
   application,
   verses,
-  faq,
-  relatedPrayers,
-  relatedChapters,
+  ...(faq ? { faq } : {}),
+  ...(relatedPrayers ? { relatedPrayers } : {}),
+  ...(relatedChapters ? { relatedChapters } : {}),
 });
 
 export const BIBLE_TOPICS: BibleTopic[] = [

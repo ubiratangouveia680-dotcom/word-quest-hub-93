@@ -125,7 +125,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       type?: string;
       children?: string;
       async?: boolean;
-      crossOrigin?: string;
+      crossOrigin?: "anonymous" | "use-credentials" | "";
       src?: string;
     }> = [
       {
@@ -185,8 +185,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { property: "og:locale", content: "pt_BR" },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "theme-color", content: "#fbf9f4" },
-        ...(import.meta.env.VITE_GOOGLE_SITE_VERIFICATION
-          ? [{ name: "google-site-verification", content: import.meta.env.VITE_GOOGLE_SITE_VERIFICATION }]
+      ...(import.meta.env["VITE_GOOGLE_SITE_VERIFICATION"]
+        ? [{ name: "google-site-verification", content: import.meta.env["VITE_GOOGLE_SITE_VERIFICATION"] }]
           : []),
       ],
       links: [

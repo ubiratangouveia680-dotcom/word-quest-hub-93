@@ -13,7 +13,7 @@ export function NotificationPermissionBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!isPushNotificationSupported()) return;
+    if (!isPushNotificationSupported()) return undefined;
 
     const perm = getNotificationPermission();
     // Only display prompt if not yet decided and user hasn't dismissed it
@@ -23,6 +23,7 @@ export function NotificationPermissionBanner() {
       }, 2500); // 2.5s polite delay
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, []);
 
   if (!visible) return null;

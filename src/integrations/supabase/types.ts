@@ -59,6 +59,559 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_notification_settings: {
+        Row: {
+          custom_afternoon_title: string
+          custom_evening_title: string
+          custom_morning_title: string
+          default_afternoon_time: string
+          default_evening_time: string
+          default_morning_time: string
+          global_enabled: boolean
+          id: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          custom_afternoon_title?: string
+          custom_evening_title?: string
+          custom_morning_title?: string
+          default_afternoon_time?: string
+          default_evening_time?: string
+          default_morning_time?: string
+          global_enabled?: boolean
+          id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          custom_afternoon_title?: string
+          custom_evening_title?: string
+          custom_morning_title?: string
+          default_afternoon_time?: string
+          default_evening_time?: string
+          default_morning_time?: string
+          global_enabled?: boolean
+          id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      answer_likes: {
+        Row: {
+          answer_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          answer_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          answer_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_likes_answer_id_fkey"
+            columns: ["answer_id"]
+            isOneToOne: false
+            referencedRelation: "answers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      answers: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_accepted: boolean
+          likes_count: number
+          parent_id: string | null
+          question_id: string
+          updated_at: string
+          user_id: string
+          verse_reference: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_accepted?: boolean
+          likes_count?: number
+          parent_id?: string | null
+          question_id: string
+          updated_at?: string
+          user_id: string
+          verse_reference?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_accepted?: boolean
+          likes_count?: number
+          parent_id?: string | null
+          question_id?: string
+          updated_at?: string
+          user_id?: string
+          verse_reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answers_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "answers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_blocked_users: {
+        Row: {
+          blocked_user_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          blocked_user_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          blocked_user_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      community_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          name: string
+          order_index: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon: string
+          id: string
+          name: string
+          order_index?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          name?: string
+          order_index?: number
+        }
+        Relationships: []
+      }
+      community_reports: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string
+          reporter_id: string
+          status: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason: string
+          reporter_id: string
+          status?: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string
+          reporter_id?: string
+          status?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          status: string
+          subject: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          status?: string
+          subject: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          status?: string
+          subject?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      favorites: {
+        Row: {
+          book: string
+          chapter: number
+          created_at: string
+          id: string
+          reference: string
+          text: string | null
+          user_id: string
+          verse: number | null
+        }
+        Insert: {
+          book: string
+          chapter: number
+          created_at?: string
+          id?: string
+          reference: string
+          text?: string | null
+          user_id: string
+          verse?: number | null
+        }
+        Update: {
+          book?: string
+          chapter?: number
+          created_at?: string
+          id?: string
+          reference?: string
+          text?: string | null
+          user_id?: string
+          verse?: number | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          actor_id: string
+          answer_id: string | null
+          created_at: string
+          id: string
+          message: string
+          question_id: string
+          read: boolean
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          answer_id?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          question_id: string
+          read?: boolean
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          answer_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          question_id?: string
+          read?: boolean
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_answer_id_fkey"
+            columns: ["answer_id"]
+            isOneToOne: false
+            referencedRelation: "answers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          id: string
+          last_seen_at: string | null
+          name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_seen_at?: string | null
+          name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_seen_at?: string | null
+          name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      question_likes: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_likes_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questions: {
+        Row: {
+          accepted_answer_id: string | null
+          answers_count: number
+          body: string
+          category_id: string
+          created_at: string
+          id: string
+          is_answered: boolean
+          likes_count: number
+          title: string
+          updated_at: string
+          user_id: string
+          verse_reference: string | null
+          views_count: number
+        }
+        Insert: {
+          accepted_answer_id?: string | null
+          answers_count?: number
+          body: string
+          category_id: string
+          created_at?: string
+          id?: string
+          is_answered?: boolean
+          likes_count?: number
+          title: string
+          updated_at?: string
+          user_id: string
+          verse_reference?: string | null
+          views_count?: number
+        }
+        Update: {
+          accepted_answer_id?: string | null
+          answers_count?: number
+          body?: string
+          category_id?: string
+          created_at?: string
+          id?: string
+          is_answered?: boolean
+          likes_count?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+          verse_reference?: string | null
+          views_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_questions_accepted_answer"
+            columns: ["accepted_answer_id"]
+            isOneToOne: false
+            referencedRelation: "answers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "community_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          reaction_name: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          reaction_name: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          reaction_name?: string
+          target_id?: string
+          target_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reading_history: {
+        Row: {
+          book: string
+          chapter: number
+          created_at: string
+          id: string
+          reference: string
+          updated_at: string
+          user_id: string
+          verse: number | null
+        }
+        Insert: {
+          book: string
+          chapter: number
+          created_at?: string
+          id?: string
+          reference: string
+          updated_at?: string
+          user_id: string
+          verse?: number | null
+        }
+        Update: {
+          book?: string
+          chapter?: number
+          created_at?: string
+          id?: string
+          reference?: string
+          updated_at?: string
+          user_id?: string
+          verse?: number | null
+        }
+        Relationships: []
+      }
+      user_notification_settings: {
+        Row: {
+          afternoon_enabled: boolean
+          afternoon_time: string
+          created_at: string
+          evening_enabled: boolean
+          evening_time: string
+          id: string
+          morning_enabled: boolean
+          morning_time: string
+          push_subscription: Json | null
+          timezone: string
+          updated_at: string
+          user_id: string | null
+          verse_notifications_enabled: boolean
+        }
+        Insert: {
+          afternoon_enabled?: boolean
+          afternoon_time?: string
+          created_at?: string
+          evening_enabled?: boolean
+          evening_time?: string
+          id?: string
+          morning_enabled?: boolean
+          morning_time?: string
+          push_subscription?: Json | null
+          timezone?: string
+          updated_at?: string
+          user_id?: string | null
+          verse_notifications_enabled?: boolean
+        }
+        Update: {
+          afternoon_enabled?: boolean
+          afternoon_time?: string
+          created_at?: string
+          evening_enabled?: boolean
+          evening_time?: string
+          id?: string
+          morning_enabled?: boolean
+          morning_time?: string
+          push_subscription?: Json | null
+          timezone?: string
+          updated_at?: string
+          user_id?: string | null
+          verse_notifications_enabled?: boolean
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -77,6 +630,48 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      verse_notification_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          idempotency_key: string
+          notification_type: string
+          scheduled_at: string | null
+          sent_at: string
+          status: string
+          user_id: string | null
+          verse_date: string
+          verse_reference: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key: string
+          notification_type: string
+          scheduled_at?: string | null
+          sent_at?: string
+          status?: string
+          user_id?: string | null
+          verse_date: string
+          verse_reference: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string
+          notification_type?: string
+          scheduled_at?: string | null
+          sent_at?: string
+          status?: string
+          user_id?: string | null
+          verse_date?: string
+          verse_reference?: string
         }
         Relationships: []
       }

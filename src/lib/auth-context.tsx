@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fetchProfile = useCallback(async (userId: string, userEmail?: string, userMetaName?: string) => {
+  const fetchProfile = useCallback(async (userId: string, userEmail?: string, userMetaName?: string | null) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(data as UserProfile);
       } else {
         // Se ainda não existir perfil (ex: trigger não disparado), cria perfil local/remoto
-        const fallbackName = userMetaName || (userEmail ? userEmail.split("@")[0] : "Usuário");
+        const fallbackName = userMetaName ?? (userEmail ? (userEmail.split("@")[0] ?? "Usuário") : "Usuário");
         const { data: newProfile, error: insertError } = await supabase
           .from("profiles")
           .upsert({
@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchProfile(
           session.user.id,
           session.user.email,
-          session.user.user_metadata?.name || session.user.user_metadata?.full_name
+          session.user.user_metadata?.["name"] || session.user.user_metadata?.["full_name"]
         ).finally(() => {
           if (isMounted) setIsLoading(false);
         });
@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await fetchProfile(
             currentSession.user.id,
             currentSession.user.email,
-            currentSession.user.user_metadata?.name || currentSession.user.user_metadata?.full_name
+            currentSession.user.user_metadata?.["name"] || currentSession.user.user_metadata?.["full_name"]
           );
         } else {
           setProfile(null);
@@ -168,7 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await fetchProfile(
         user.id,
         user.email,
-        user.user_metadata?.name || user.user_metadata?.full_name
+        user.user_metadata?.["name"] || user.user_metadata?.["full_name"]
       );
     }
   }, [user, fetchProfile]);
@@ -312,33 +312,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const uid = user.id;
 
-      // 1. Remover curtidas e salvos comunitários
-      try {
-        await supabase.from("community_likes").delete().eq("user_id", uid);
-      } catch {
-        // Ignora caso tabela não exista ou permissão
-      }
-
-      try {
-        await supabase.from("community_bookmarks").delete().eq("user_id", uid);
-      } catch {
-        // Ignora
-      }
-
-      // 2. Remover comentários e posts
-      try {
-        await supabase.from("community_comments").delete().eq("user_id", uid);
-      } catch {
-        // Ignora
-      }
-
-      try {
-        await supabase.from("community_posts").delete().eq("user_id", uid);
-      } catch {
-        // Ignora
-      }
-
-      // 3. Remover perfil
+      // Os dados comunitários relacionados são removidos pelo banco em cascata.
       try {
         await supabase.from("profiles").delete().eq("user_id", uid);
       } catch {

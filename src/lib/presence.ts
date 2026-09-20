@@ -170,7 +170,7 @@ function ensureSharedChannel() {
 
 function subscribeToPresence(userId: string | undefined, listener: PresenceListener) {
   const subscriptionId = Symbol("presence-subscriber");
-  subscribers.set(subscriptionId, { userId, listener });
+  subscribers.set(subscriptionId, userId ? { userId, listener } : { listener });
   syncIdentity();
   ensureSharedChannel();
   listener(currentStats);

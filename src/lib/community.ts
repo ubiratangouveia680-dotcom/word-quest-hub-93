@@ -367,12 +367,11 @@ export async function fetchQuestionById(id: string, currentUserId?: string | nul
   }
 
   // Increment views count asynchronously (ignore failure if restricted)
-  supabase
+  void supabase
     .from("questions")
     .update({ views_count: (data.views_count || 0) + 1 })
     .eq("id", id)
-    .then(() => {})
-    .catch(() => {});
+    .then(() => undefined);
 
   // Fetch author profile safely
   let authorProfile: QuestionAuthor = {
@@ -738,7 +737,13 @@ export async function updateQuestion(
   questionId: string,
   updates: { title?: string; body?: string; categoryId?: string; verseReference?: string }
 ) {
-  const payload: Record<string, unknown> = {
+  const payload: {
+    updated_at: string;
+    title?: string;
+    body?: string;
+    category_id?: string;
+    verse_reference?: string | null;
+  } = {
     updated_at: new Date().toISOString(),
   };
   if (updates.title !== undefined) {
