@@ -17,6 +17,7 @@ const VISITOR_STORAGE_KEY = "bo:presence_device_session_id";
 const CHANNEL_NAME = "global_online_presence";
 
 let sharedChannel: RealtimeChannel | null = null;
+let channelInitialization: Promise<void> | null = null;
 let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
 let isTracking = false;
 let isTabActive = true;
@@ -128,29 +129,42 @@ function syncIdentity() {
 }
 
 function ensureSharedChannel() {
-  if (sharedChannel) return;
+  if (sharedChannel || channelInitialization) return;
 
-  const channel = supabase.channel(CHANNEL_NAME, {
-    config: { presence: { key: getVisitorDeviceId() } },
-  });
+  channelInitialization = (async () => {
+    // Vite can preserve the client across a hot update while resetting this
+    // module. Remove that stale subscribed channel before adding callbacks.
+    const staleChannel = supabase
+      .getChannels()
+      .find((candidate) => candidate.topic === `realtime:${CHANNEL_NAME}`);
+    if (staleChannel) await supabase.removeChannel(staleChannel);
 
-  // Presence callbacks must all be registered before subscribe().
-  channel
-    .on("presence", { event: "sync" }, updateStatsFromPresence)
-    .on("presence", { event: "join" }, updateStatsFromPresence)
-    .on("presence", { event: "leave" }, updateStatsFromPresence);
+    const channel = supabase.channel(CHANNEL_NAME, {
+      config: { presence: { key: getVisitorDeviceId() } },
+    });
 
-  sharedChannel = channel;
-  installActivityListeners();
+    // Presence callbacks must all be registered before subscribe().
+    channel
+      .on("presence", { event: "sync" }, updateStatsFromPresence)
+      .on("presence", { event: "join" }, updateStatsFromPresence)
+      .on("presence", { event: "leave" }, updateStatsFromPresence);
 
-  channel.subscribe((status) => {
-    if (status === "SUBSCRIBED") {
-      void trackPresence();
-      resetInactivityTimer();
-    } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
-      isTracking = false;
-      publish({ ...currentStats, isConnected: false });
-    }
+    sharedChannel = channel;
+    installActivityListeners();
+
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        void trackPresence();
+        resetInactivityTimer();
+      } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
+        isTracking = false;
+        publish({ ...currentStats, isConnected: false });
+      }
+    });
+  })().catch((error) => {
+    channelInitialization = null;
+    console.warn("Erro ao iniciar presença:", error);
+    publish({ ...currentStats, isConnected: false });
   });
 }
 

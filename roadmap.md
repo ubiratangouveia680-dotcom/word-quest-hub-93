@@ -1,5 +1,6 @@
 # Roadmap — revisão profissional Bíblia Online
 
+- [x] Corrigir colisão de assinaturas no contador de pessoas online
 - [ ] Auditar estrutura, rotas, conteúdo, SEO, mobile e funcionalidades existentes
 - [ ] Definir arquitetura de conteúdo original e escalável
 - [ ] Melhorar home, navegação e busca rápida
