@@ -101,7 +101,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   const { settings, update } = useSettings();
 
   const userDisplayName =
-    profile?.name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Perfil";
+    profile?.name || user?.user_metadata?.["name"] || user?.email?.split("@")[0] || "Perfil";
 
   const handleSignOut = async () => {
     await signOut();

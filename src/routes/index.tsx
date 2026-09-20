@@ -46,12 +46,12 @@ export const Route = createFileRoute("/")({
 
 // 2. ACESSOS RÁPIDOS ("Explore a Bíblia")
 const QUICK_LINKS = [
-  { label: "Bíblia", to: "/biblia", desc: "66 livros sagrados", emoji: "📖" },
-  { label: "Orações", to: "/oracoes", desc: "Para todos os momentos", emoji: "🙏" },
-  { label: "Versículo do Dia", to: "/versiculo-do-dia", desc: "Reflexão diária", emoji: "📅" },
-  { label: "Estudos Bíblicos", to: "/estudos", desc: "Aprofunde a leitura", emoji: "📚" },
-  { label: "Devocionais", to: "/devocionais", desc: "Edificação contínua", emoji: "🌅" },
-  { label: "Comunidade", to: "/comunidade", desc: "Comunhão na fé", emoji: "💬" },
+  { label: "Bíblia", to: "/biblia", desc: "66 livros sagrados", icon: BookOpen },
+  { label: "Orações", to: "/oracoes", desc: "Para todos os momentos", icon: HeartHandshake },
+  { label: "Versículo do Dia", to: "/versiculo-do-dia", desc: "Reflexão diária", icon: Calendar },
+  { label: "Estudos Bíblicos", to: "/estudos", desc: "Aprofunde a leitura", icon: Compass },
+  { label: "Devocionais", to: "/devocionais", desc: "Edificação contínua", icon: Sparkles },
+  { label: "Comunidade", to: "/comunidade", desc: "Comunhão na fé", icon: Users },
 ] as const;
 
 // 6. CATEGORIAS DE ORAÇÃO
@@ -180,9 +180,7 @@ function Index() {
               to={item.to as any}
               className="surface group flex flex-col items-center justify-center rounded-2xl p-3 sm:p-4 text-center transition-all hover:border-gold/50 hover:bg-accent/40 min-h-[90px] sm:min-h-[96px] touch-manipulation active:scale-[0.98]"
             >
-              <span className="text-2xl select-none" aria-hidden="true">
-                {item.emoji}
-              </span>
+              <item.icon className="size-6 text-primary" aria-hidden="true" />
               <span className="mt-1.5 text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                 {item.label}
               </span>
