@@ -4,7 +4,14 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useSettings } from "@/lib/storage";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { OnlineCounter } from "@/components/OnlineCounter";
 
 const NAV = [
@@ -112,12 +119,31 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menu">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden shrink-0 cursor-pointer"
+                  aria-label="Abrir menu"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setOpen(true);
+                  }}
+                >
                   <Menu className="size-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72 flex flex-col justify-between">
+              <SheetContent side="right" className="w-80 max-w-[85vw] flex flex-col justify-between overflow-y-auto p-5">
                 <div>
+                  <SheetHeader className="text-left border-b border-border/60 pb-3 mb-2">
+                    <SheetTitle className="text-base font-semibold flex items-center gap-2">
+                      <BookOpen className="size-4 text-gold" /> Menu de Navegação
+                    </SheetTitle>
+                    <SheetDescription className="text-xs text-muted-foreground">
+                      Acesse a Bíblia, comunidade, estudos e recursos.
+                    </SheetDescription>
+                  </SheetHeader>
+
                   {/* Mobile user status card */}
                   <div className="mt-4 mb-2 mx-1">
                     {isAuthenticated ? (
