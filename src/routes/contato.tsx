@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
-import { supabase } from "@/integrations/supabase/client";
 import { url } from "@/lib/site";
+import { sendContactMessage } from "@/lib/contact.functions";
 
 export const Route = createFileRoute("/contato")({
   head: () => ({
@@ -107,11 +107,11 @@ function ContactPage() {
       return;
     }
 
-    // 3. Prevenção de múltiplos envios consecutivos (Cooldown anti-spam de 20s)
+    // 3. Prevenção de múltiplos envios consecutivos (Cooldown anti-spam de 15s)
     const lastSentAt = localStorage.getItem("bo:last_contact_sent");
     if (lastSentAt) {
       const diff = Date.now() - parseInt(lastSentAt, 10);
-      if (diff < 20000) {
+      if (diff < 15000) {
         toast.error("Por favor, aguarde alguns segundos antes de enviar outra mensagem.");
         return;
       }
@@ -125,26 +125,28 @@ function ContactPage() {
       const cleanSubject = sanitizeText(subject.trim());
       const cleanMessage = sanitizeText(message.trim());
 
-      const { error } = await supabase.from("contact_messages").insert({
-        name: cleanName,
-        email: cleanEmail,
-        subject: cleanSubject,
-        message: cleanMessage,
-        user_id: user?.id || null,
-        status: "pending",
+      const res = await sendContactMessage({
+        data: {
+          name: cleanName,
+          email: cleanEmail,
+          subject: cleanSubject,
+          message: cleanMessage,
+          honeypot: honeypot.trim(),
+          userId: user?.id || null,
+        },
       });
 
-      if (error) {
-        console.error("Erro ao salvar mensagem no Supabase:", error);
-        toast.error("Não foi possível enviar sua mensagem. Tente novamente.");
-      } else {
+      if (res.success) {
         localStorage.setItem("bo:last_contact_sent", Date.now().toString());
         setSent(true);
-        toast.success("Mensagem enviada com sucesso! Obrigado pelo contato.");
+        toast.success(res.message || "Mensagem enviada com sucesso! Obrigado pelo contato.");
+      } else {
+        toast.error(res.message || "Não foi possível enviar sua mensagem. Tente novamente.");
       }
-    } catch (err) {
-      console.error("Erro inesperado no envio de contato:", err);
-      toast.error("Não foi possível enviar sua mensagem. Tente novamente.");
+    } catch (err: unknown) {
+      console.error("Erro no envio do formulário de contato:", err);
+      const errMsg = err instanceof Error ? err.message : "Não foi possível enviar sua mensagem. Tente novamente.";
+      toast.error(errMsg);
     } finally {
       setSubmitting(false);
     }
