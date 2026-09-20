@@ -7,8 +7,18 @@ export interface UserProfile {
   user_id: string;
   name: string | null;
   email: string | null;
+  avatar_url: string | null;
+  username?: string | null;
+  bio?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface UpdateProfileParams {
+  name?: string;
+  username?: string | null;
+  bio?: string | null;
+  avatar_url?: string | null;
 }
 
 interface AuthContextType {
@@ -22,7 +32,8 @@ interface AuthContextType {
   signOut: () => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
-  updateProfile: (patch: { name?: string; avatar_url?: string | null }) => Promise<{ error: Error | null }>;
+  updateProfile: (patch: UpdateProfileParams) => Promise<{ error: Error | null }>;
+  checkUsernameAvailable: (username: string) => Promise<{ available: boolean; message?: string }>;
   refreshProfile: () => Promise<void>;
   deleteAccount: () => Promise<{ error: Error | null }>;
 }
@@ -63,56 +74,122 @@ export function getFriendlyAuthErrorMessage(error: AuthError | Error | unknown):
   return msg || "Ocorreu um erro ao processar sua solicitação. Tente novamente.";
 }
 
+export async function checkUsernameAvailable(
+  rawUsername: string,
+  currentUserId?: string
+): Promise<{ available: boolean; message?: string }> {
+  const clean = rawUsername.trim().toLowerCase().replace(/^@/, "");
+  if (!clean) {
+    return { available: false, message: "O nome de usuário não pode estar em branco." };
+  }
+  if (!/^[a-z0-9_]{3,20}$/.test(clean)) {
+    return {
+      available: false,
+      message: "O nome de usuário deve ter entre 3 e 20 caracteres (somente letras minúsculas, números e underline).",
+    };
+  }
+
+  try {
+    let query = supabase.from("profiles").select("user_id").eq("username", clean);
+    if (currentUserId) {
+      query = query.neq("user_id", currentUserId);
+    }
+    const { data, error } = await query.maybeSingle();
+
+    if (error && error.message?.includes("column profiles.username does not exist")) {
+      return { available: true };
+    }
+
+    if (data) {
+      return { available: false, message: "Este nome de usuário já está em uso por outro membro." };
+    }
+
+    return { available: true };
+  } catch {
+    return { available: true };
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fetchProfile = useCallback(async (userId: string, userEmail?: string, userMetaName?: string | null) => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (error && error.code !== "PGRST116") {
-        console.warn("Erro ao buscar perfil:", error.message);
-      }
-
-      if (data) {
-        setProfile(data as UserProfile);
-      } else {
-        // Se ainda não existir perfil (ex: trigger não disparado), cria perfil local/remoto
-        const fallbackName = userMetaName ?? (userEmail ? (userEmail.split("@")[0] ?? "Usuário") : "Usuário");
-        const { data: newProfile, error: insertError } = await supabase
+  const fetchProfile = useCallback(
+    async (userId: string, userEmail?: string, userMeta?: Record<string, any> | null) => {
+      try {
+        const { data, error } = await supabase
           .from("profiles")
-          .upsert({
-            user_id: userId,
-            email: userEmail || null,
-            name: fallbackName,
-          }, { onConflict: "user_id" })
           .select("*")
+          .eq("user_id", userId)
           .maybeSingle();
 
-        if (!insertError && newProfile) {
-          setProfile(newProfile as UserProfile);
-        } else {
-          setProfile({
-            id: userId,
-            user_id: userId,
-            name: fallbackName,
-            email: userEmail || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+        if (error && error.code !== "PGRST116") {
+          console.warn("Erro ao buscar perfil:", error.message);
         }
+
+        const meta = userMeta || {};
+        const metaName = meta["name"] || meta["full_name"] || null;
+        const metaUsername = meta["username"] || null;
+        const metaBio = meta["bio"] || null;
+        const metaAvatar = meta["avatar_url"] || null;
+
+        if (data) {
+          const row = data as any;
+          setProfile({
+            ...row,
+            avatar_url: row.avatar_url ?? metaAvatar ?? null,
+            username: row.username ?? metaUsername ?? null,
+            bio: row.bio ?? metaBio ?? null,
+          } as UserProfile);
+        } else {
+          // Se ainda não existir perfil (ex: trigger não disparado), cria perfil local/remoto
+          const fallbackName = metaName ?? (userEmail ? (userEmail.split("@")[0] ?? "Usuário") : "Usuário");
+          const { data: newProfile, error: insertError } = await supabase
+            .from("profiles")
+            .upsert(
+              {
+                user_id: userId,
+                email: userEmail || null,
+                name: fallbackName,
+                avatar_url: metaAvatar,
+                ...(metaUsername ? { username: metaUsername } : {}),
+                ...(metaBio ? { bio: metaBio } : {}),
+              } as any,
+              { onConflict: "user_id" }
+            )
+            .select("*")
+            .maybeSingle();
+
+          if (!insertError && newProfile) {
+            const p = newProfile as any;
+            setProfile({
+              ...p,
+              avatar_url: p.avatar_url ?? metaAvatar ?? null,
+              username: p.username ?? metaUsername ?? null,
+              bio: p.bio ?? metaBio ?? null,
+            } as UserProfile);
+          } else {
+            setProfile({
+              id: userId,
+              user_id: userId,
+              name: fallbackName,
+              email: userEmail || null,
+              avatar_url: metaAvatar,
+              username: metaUsername,
+              bio: metaBio,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Falha ao sincronizar perfil:", err);
       }
-    } catch (err) {
-      console.error("Falha ao sincronizar perfil:", err);
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -126,7 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchProfile(
           session.user.id,
           session.user.email,
-          session.user.user_metadata?.["name"] || session.user.user_metadata?.["full_name"]
+          session.user.user_metadata
         ).finally(() => {
           if (isMounted) setIsLoading(false);
         });
@@ -148,7 +225,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await fetchProfile(
             currentSession.user.id,
             currentSession.user.email,
-            currentSession.user.user_metadata?.["name"] || currentSession.user.user_metadata?.["full_name"]
+            currentSession.user.user_metadata
           );
         } else {
           setProfile(null);
@@ -168,7 +245,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await fetchProfile(
         user.id,
         user.email,
-        user.user_metadata?.["name"] || user.user_metadata?.["full_name"]
+        user.user_metadata
       );
     }
   }, [user, fetchProfile]);
@@ -278,32 +355,91 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const updateProfile = useCallback(async (patch: { name?: string; avatar_url?: string | null }) => {
-    if (!user) {
-      return { error: new Error("Usuário não autenticado.") };
-    }
-    try {
-      const updates: { name?: string; avatar_url?: string | null; updated_at: string } = {
-        updated_at: new Date().toISOString(),
-      };
-      if (patch.name !== undefined) updates.name = patch.name.trim();
-      if (patch.avatar_url !== undefined) updates.avatar_url = patch.avatar_url;
 
-      const { error } = await supabase
-        .from("profiles")
-        .update(updates)
-        .eq("user_id", user.id);
+  const checkUsernameAvailableCallback = useCallback(
+    async (username: string) => {
+      return checkUsernameAvailable(username, user?.id);
+    },
+    [user?.id]
+  );
 
-      if (error) {
-        return { error: new Error(error.message) };
+  const updateProfile = useCallback(
+    async (patch: UpdateProfileParams) => {
+      if (!user) {
+        return { error: new Error("Usuário não autenticado.") };
       }
+      try {
+        const updates: {
+          name?: string;
+          username?: string | null;
+          bio?: string | null;
+          avatar_url?: string | null;
+          updated_at: string;
+        } = {
+          updated_at: new Date().toISOString(),
+        };
 
-      await refreshProfile();
-      return { error: null };
-    } catch (err) {
-      return { error: err instanceof Error ? err : new Error(String(err)) };
-    }
-  }, [user, refreshProfile]);
+        if (patch.name !== undefined) updates.name = patch.name.trim();
+        if (patch.avatar_url !== undefined) updates.avatar_url = patch.avatar_url;
+        if (patch.bio !== undefined) updates.bio = patch.bio ? patch.bio.trim() : null;
+
+        if (patch.username !== undefined) {
+          const cleanUser = patch.username ? patch.username.trim().toLowerCase().replace(/^@/, "") : null;
+          if (cleanUser) {
+            const avail = await checkUsernameAvailable(cleanUser, user.id);
+            if (!avail.available) {
+              return { error: new Error(avail.message || "Nome de usuário indisponível.") };
+            }
+            updates.username = cleanUser;
+          } else {
+            updates.username = null;
+          }
+        }
+
+        // 1. Tentar atualizar tabela profiles
+        const { error: dbError } = await supabase
+          .from("profiles")
+          .update(updates as any)
+          .eq("user_id", user.id);
+
+        if (dbError) {
+          if (
+            dbError.message?.includes("column") &&
+            (dbError.message?.includes("username") || dbError.message?.includes("bio"))
+          ) {
+            // Se as colunas adicionais ainda não existirem no schema, atualiza campos básicos
+            const fallbackUpdates: any = { updated_at: updates.updated_at };
+            if (updates.name !== undefined) fallbackUpdates.name = updates.name;
+            if (updates.avatar_url !== undefined) fallbackUpdates.avatar_url = updates.avatar_url;
+            await supabase.from("profiles").update(fallbackUpdates).eq("user_id", user.id);
+          } else if (dbError.code === "23505") {
+            return { error: new Error("Este nome de usuário já está em uso por outro membro.") };
+          } else {
+            return { error: new Error(dbError.message) };
+          }
+        }
+
+        // 2. Sincronizar simultaneamente com Supabase Auth user_metadata
+        const metaUpdates: Record<string, any> = {};
+        if (updates.name !== undefined) metaUpdates.name = updates.name;
+        if (updates.username !== undefined) metaUpdates.username = updates.username;
+        if (updates.bio !== undefined) metaUpdates.bio = updates.bio;
+        if (updates.avatar_url !== undefined) metaUpdates.avatar_url = updates.avatar_url;
+
+        if (Object.keys(metaUpdates).length > 0) {
+          await supabase.auth.updateUser({ data: metaUpdates }).catch((err) => {
+            console.warn("Aviso ao atualizar metadados do Auth:", err);
+          });
+        }
+
+        await refreshProfile();
+        return { error: null };
+      } catch (err) {
+        return { error: err instanceof Error ? err : new Error(String(err)) };
+      }
+    },
+    [user, refreshProfile]
+  );
 
   const deleteAccount = useCallback(async () => {
     if (!user) {
@@ -353,6 +489,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     resetPassword,
     updatePassword,
     updateProfile,
+    checkUsernameAvailable: checkUsernameAvailableCallback,
     refreshProfile,
     deleteAccount,
   };

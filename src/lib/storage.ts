@@ -248,6 +248,17 @@ export function saveProgress(p: Omit<ReadingProgress, "at">) {
   });
 }
 
+export async function clearReadingHistory(userId?: string): Promise<void> {
+  write(PROGRESS_KEY, []);
+  if (userId) {
+    try {
+      await supabase.from("reading_history").delete().eq("user_id", userId);
+    } catch (err) {
+      console.warn("Erro ao limpar histórico remoto:", err);
+    }
+  }
+}
+
 export function useProgress() {
   const [history, setHistory] = useState<ReadingProgress[]>([]);
 

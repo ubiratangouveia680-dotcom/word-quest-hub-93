@@ -22,11 +22,19 @@ import {
   Users,
   X,
   HelpCircle,
+  ChevronDown,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useSettings } from "@/lib/storage";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -100,8 +108,10 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   const { user, profile, isAuthenticated, signOut } = useAuth();
   const { settings, update } = useSettings();
 
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.["avatar_url"] || null;
   const userDisplayName =
     profile?.name || user?.user_metadata?.["name"] || user?.email?.split("@")[0] || "Perfil";
+  const userHandle = profile?.username || user?.user_metadata?.["username"] || null;
 
   const handleSignOut = async () => {
     await signOut();
@@ -150,16 +160,85 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             {/* Acesso ao Usuário Desktop */}
             <div className="hidden lg:flex items-center ml-1">
               {isAuthenticated ? (
-                <Button asChild variant="outline" size="sm" className="h-9 gap-2 border-border/80 hover:border-gold/50">
-                  <Link to="/perfil">
-                    <span className="flex size-5 items-center justify-center rounded-full bg-gold/15 text-gold font-bold text-[10px]">
-                      {userDisplayName.charAt(0).toUpperCase()}
-                    </span>
-                    <span className="max-w-[110px] truncate text-xs font-medium">
-                      {userDisplayName}
-                    </span>
-                  </Link>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 gap-2 pl-2 pr-2.5 border-border/80 hover:border-gold/50 cursor-pointer"
+                    >
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold font-bold text-xs overflow-hidden border border-gold/30">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt={userDisplayName} className="size-full object-cover" />
+                        ) : (
+                          userDisplayName.charAt(0).toUpperCase()
+                        )}
+                      </span>
+                      <span className="max-w-[110px] truncate text-xs font-semibold">
+                        {userDisplayName}
+                      </span>
+                      <ChevronDown className="size-3 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent align="end" className="w-56 p-2 rounded-xl shadow-lg border border-border">
+                    <div className="px-2 py-2 border-b border-border/60 mb-1">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold font-bold text-xs overflow-hidden border border-gold/30">
+                          {avatarUrl ? (
+                            <img src={avatarUrl} alt={userDisplayName} className="size-full object-cover" />
+                          ) : (
+                            userDisplayName.charAt(0).toUpperCase()
+                          )}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-foreground truncate">{userDisplayName}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {userHandle ? `@${userHandle}` : user?.email}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <DropdownMenuItem asChild className="text-xs cursor-pointer rounded-lg py-2">
+                      <Link to="/perfil" className="flex items-center gap-2">
+                        <User className="size-3.5 text-gold" />
+                        <span>Meu Perfil</span>
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild className="text-xs cursor-pointer rounded-lg py-2">
+                      <Link to="/favoritos" className="flex items-center gap-2">
+                        <Heart className="size-3.5 text-rose-500" />
+                        <span>Favoritos</span>
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild className="text-xs cursor-pointer rounded-lg py-2">
+                      <Link to="/perfil" className="flex items-center gap-2">
+                        <History className="size-3.5 text-amber-500" />
+                        <span>Histórico de Leitura</span>
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild className="text-xs cursor-pointer rounded-lg py-2">
+                      <Link to="/perfil" className="flex items-center gap-2">
+                        <Settings className="size-3.5 text-muted-foreground" />
+                        <span>Configurações</span>
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator className="my-1" />
+
+                    <DropdownMenuItem
+                      onClick={handleSignOut}
+                      className="text-xs cursor-pointer rounded-lg py-2 text-destructive focus:text-destructive focus:bg-destructive/10 flex items-center gap-2"
+                    >
+                      <LogOut className="size-3.5" />
+                      <span>Sair da conta</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <Button asChild size="sm" className="h-9 px-3.5 text-xs font-semibold">
                   <Link to="/auth" search={{ mode: "signin" }}>
@@ -213,25 +292,45 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                     {isAuthenticated ? (
                       <div className="space-y-3">
                         <div className="flex items-center gap-2.5">
-                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gold/20 text-gold font-bold text-sm">
-                            {userDisplayName.charAt(0).toUpperCase()}
+                          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gold/20 text-gold font-bold text-sm ring-2 ring-gold/30 overflow-hidden">
+                            {avatarUrl ? (
+                              <img
+                                src={avatarUrl}
+                                alt={userDisplayName}
+                                className="size-full object-cover"
+                              />
+                            ) : (
+                              userDisplayName.charAt(0).toUpperCase()
+                            )}
                           </span>
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-foreground truncate">{userDisplayName}</p>
-                            <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              {userHandle ? `@${userHandle}` : user?.email}
+                            </p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border/50">
-                          <Button asChild size="sm" variant="outline" className="h-8 text-xs font-medium">
+                        <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-border/50 text-xs">
+                          <Button asChild size="sm" variant="outline" className="h-8 text-xs font-medium justify-start">
                             <Link to="/perfil" onClick={() => setOpen(false)}>
-                              <User className="mr-1.5 size-3.5 text-gold" /> Meu Perfil
+                              <User className="mr-1.5 size-3.5 text-gold" /> Perfil
+                            </Link>
+                          </Button>
+                          <Button asChild size="sm" variant="outline" className="h-8 text-xs font-medium justify-start">
+                            <Link to="/favoritos" onClick={() => setOpen(false)}>
+                              <Heart className="mr-1.5 size-3.5 text-rose-500" /> Favoritos
+                            </Link>
+                          </Button>
+                          <Button asChild size="sm" variant="ghost" className="h-8 text-xs font-medium justify-start">
+                            <Link to="/perfil" onClick={() => setOpen(false)}>
+                              <History className="mr-1.5 size-3.5 text-amber-500" /> Histórico
                             </Link>
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={handleSignOut}
-                            className="h-8 text-xs font-medium text-destructive hover:text-destructive hover:bg-destructive/10"
+                            className="h-8 text-xs font-medium justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
                             <LogOut className="mr-1.5 size-3.5" /> Sair
                           </Button>
