@@ -87,7 +87,7 @@ function Logo() {
         <span className="block font-display text-lg font-bold text-foreground">
           Bíblia Online
         </span>
-        <span className="hidden text-[11px] text-muted-foreground sm:block">
+        <span className="hidden text-[11px] text-muted-foreground xl:block">
           Leia, compreenda e compartilhe a Palavra de Deus.
         </span>
       </span>
@@ -122,7 +122,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               <Link
                 key={item.to}
                 to={item.to}
-                className="rounded-lg px-2.5 py-1.5 text-xs xl:text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="rounded-lg px-2 py-1.5 text-xs xl:px-2.5 xl:text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground whitespace-nowrap"
                 activeProps={{ className: "text-foreground font-semibold bg-accent/60" }}
               >
                 {item.label}
@@ -185,7 +185,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
               <SheetContent
                 side="right"
-                className="w-[88vw] max-w-sm flex flex-col justify-between overflow-y-auto p-0 bg-background border-l border-border shadow-2xl z-[70]"
+                className="w-[88vw] max-w-sm flex flex-col justify-between overflow-y-auto p-0 bg-background border-l border-border shadow-2xl z-[70] pb-[calc(1rem+env(safe-area-inset-bottom,0px))]"
               >
                 <div className="p-5 pb-6 space-y-5">
                   {/* Cabeçalho do Drawer com Logo e Botão Fechar */}
@@ -483,7 +483,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <main className="flex-1">{children}</main>
 
       {/* RODAPÉ DESKTOP & GERAL */}
-      <footer className="border-t border-border bg-cream pb-24 lg:pb-0">
+      <footer className="border-t border-border bg-cream pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
         <div className="mx-auto w-full max-w-6xl px-4 py-10">
           <div className="mb-8 max-w-xl">
             <p className="font-display text-xl font-bold text-foreground">Bíblia Online</p>
@@ -549,18 +549,21 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       </footer>
 
       {/* BARRA INFERIOR MOBILE */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur lg:hidden" aria-label="Navegação Inferior Mobile">
-        <ul className="mx-auto flex max-w-lg">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md lg:hidden pb-[max(0.35rem,env(safe-area-inset-bottom,0px))] shadow-[0_-4px_16px_rgba(0,0,0,0.04)]"
+        aria-label="Navegação Inferior Mobile"
+      >
+        <ul className="mx-auto flex max-w-md items-center justify-around px-1">
           {BOTTOM.map((item) => (
             <li key={item.to} className="flex-1">
               <Link
                 to={item.to}
                 activeOptions={{ exact: item.to === "/" }}
-                className="flex flex-col items-center gap-1 py-2 text-[11px] text-muted-foreground relative"
-                activeProps={{ className: "text-primary font-semibold" }}
+                className="flex flex-col items-center justify-center gap-1 min-h-[48px] py-1.5 text-[11px] font-medium text-muted-foreground transition-all active:scale-95 touch-manipulation relative rounded-lg hover:text-foreground"
+                activeProps={{ className: "text-primary font-bold after:absolute after:bottom-1 after:h-0.5 after:w-4 after:rounded-full after:bg-primary" }}
               >
-                <item.icon className="size-5" />
-                <span>{item.label}</span>
+                <item.icon className="size-5 shrink-0" />
+                <span className="leading-none tracking-tight">{item.label}</span>
               </Link>
             </li>
           ))}

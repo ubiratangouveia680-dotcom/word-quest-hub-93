@@ -30,10 +30,10 @@ function BookGrid({ books }: { books: BibleBook[] }) {
           key={b.slug}
           to="/biblia/$book"
           params={{ book: b.slug }}
-          className="surface flex items-center justify-between px-3 py-2.5 text-sm transition-colors hover:bg-accent"
+          className="surface flex items-center justify-between px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm transition-colors hover:bg-accent rounded-xl min-h-[44px] touch-manipulation"
         >
-          <span>{b.name}</span>
-          <span className="text-xs text-muted-foreground">{b.chapters}</span>
+          <span className="truncate mr-1 font-medium">{b.name}</span>
+          <span className="text-[11px] sm:text-xs text-muted-foreground shrink-0">{b.chapters}</span>
         </Link>
       ))}
     </div>

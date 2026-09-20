@@ -100,6 +100,8 @@
 
   html {
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
   }
 
   body {
@@ -107,11 +109,20 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1, h2, h3, .font-display {
     font-family: var(--font-serif);
     letter-spacing: -0.01em;
+  }
+
+  /* Otimização de alvos de toque em telas móveis */
+  button, a, input, select, textarea {
+    touch-action: manipulation;
   }
 }
 
@@ -133,6 +144,24 @@
   height: 1px;
 }
 
+/* Ocultar barra de rolagem visual mantendo funcionalidade de scroll */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Safe areas para celulares com entalhe / home indicator */
+@utility pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem));
+}
+
+@utility pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top, 0.5rem));
+}
+
 .reading-text {
   font-family: var(--font-serif);
   font-size: var(--reading-size);
@@ -143,3 +172,4 @@
 [data-font="base"] { --reading-size: 1.0625rem; }
 [data-font="lg"] { --reading-size: 1.25rem; }
 [data-font="xl"] { --reading-size: 1.5rem; }
+

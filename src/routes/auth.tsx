@@ -160,7 +160,7 @@ function AuthPage() {
 
   return (
     <SiteLayout>
-      <div className="mx-auto w-full max-w-md px-4 py-12">
+      <div className="mx-auto w-full max-w-md px-4 py-8 sm:py-12">
         {mode === "forgot" && (
           <button
             type="button"

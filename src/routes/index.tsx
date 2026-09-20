@@ -85,8 +85,8 @@ function Index() {
   useEffect(() => {
     let active = true;
     fetchQuestions({ limit: 2 })
-      .then(({ questions }) => {
-        if (active && questions && questions.length > 0) {
+      .then((questions) => {
+        if (active && Array.isArray(questions) && questions.length > 0) {
           setRecentQuestions(questions);
         }
       })
@@ -105,18 +105,18 @@ function Index() {
   return (
     <SiteLayout>
       {/* 1. HERO PRINCIPAL & PESQUISA */}
-      <section className="warm-panel mx-4 mt-4 px-4 py-8 sm:px-8 sm:py-12 lg:mx-auto lg:max-w-6xl">
+      <section className="warm-panel mx-3 sm:mx-4 mt-3 sm:mt-4 px-3.5 py-6 sm:px-8 sm:py-12 lg:mx-auto lg:max-w-6xl">
         <div className="mx-auto max-w-3xl text-center">
-          <h1 className="font-display text-3xl font-bold tracking-tight sm:text-5xl lg:text-6xl text-foreground">
+          <h1 className="font-display text-2xl xs:text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
             Bíblia Online
           </h1>
-          <p className="mt-2.5 text-sm sm:text-base text-muted-foreground font-medium">
+          <p className="mt-2 text-xs xs:text-sm sm:text-base text-muted-foreground font-medium">
             Leia, compreenda e compartilhe a Palavra de Deus.
           </p>
 
           {/* Caixa de pesquisa */}
           <form
-            className="mt-6 flex flex-col gap-2.5 sm:flex-row max-w-2xl mx-auto"
+            className="mt-5 sm:mt-6 flex flex-col gap-2 sm:flex-row max-w-2xl mx-auto"
             onSubmit={(e) => {
               e.preventDefault();
               navigate({ to: "/busca", search: { q: q.trim() } });
@@ -128,21 +128,21 @@ function Index() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Pesquise na Bíblia por livro, capítulo, versículo ou palavra..."
-                className="h-12 pl-10 bg-background shadow-xs text-sm"
+                className="h-11 sm:h-12 pl-10 pr-3 bg-background shadow-xs text-sm"
                 aria-label="Pesquise na Bíblia por livro, capítulo, versículo ou palavra"
               />
             </div>
             <Button
               type="submit"
               size="lg"
-              className="h-12 px-6 text-sm font-semibold shrink-0 cursor-pointer"
+              className="h-11 sm:h-12 px-6 text-sm font-semibold shrink-0 cursor-pointer w-full sm:w-auto"
             >
               Pesquisar
             </Button>
           </form>
 
           {/* Atalhos rápidos de sugestões bíblicas */}
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground px-1">
             <span className="font-medium">Sugestões:</span>
             {["Salmo 23", "João 3:16", "Salmo 91", "Amor", "Paz", "Esperança"].map((term) => (
               <button
@@ -161,7 +161,7 @@ function Index() {
       {/* 2. ACESSOS RÁPIDOS ("Explore a Bíblia") */}
       <section
         aria-labelledby="explore-biblia-heading"
-        className="mx-auto mt-6 w-full max-w-6xl px-4"
+        className="mx-auto mt-6 w-full max-w-6xl px-3 sm:px-4"
       >
         <div className="flex items-center justify-between mb-3">
           <h2 id="explore-biblia-heading" className="font-display text-xl sm:text-2xl font-bold text-foreground">
@@ -172,13 +172,13 @@ function Index() {
           </Link>
         </div>
 
-        {/* No celular: 2 cards por linha, fáceis de tocar, sem elementos minúsculos */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
+        {/* No celular: 2 cards por linha (3 a partir de telas pequenas), fáceis de tocar */}
+        <div className="grid grid-cols-2 gap-2.5 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-6 sm:gap-3">
           {QUICK_LINKS.map((item) => (
             <Link
               key={item.to}
               to={item.to as any}
-              className="surface group flex flex-col items-center justify-center rounded-2xl p-4 text-center transition-all hover:border-gold/50 hover:bg-accent/40 min-h-[96px] touch-manipulation"
+              className="surface group flex flex-col items-center justify-center rounded-2xl p-3 sm:p-4 text-center transition-all hover:border-gold/50 hover:bg-accent/40 min-h-[90px] sm:min-h-[96px] touch-manipulation active:scale-[0.98]"
             >
               <span className="text-2xl select-none" aria-hidden="true">
                 {item.emoji}

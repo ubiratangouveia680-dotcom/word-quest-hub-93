@@ -69,13 +69,13 @@ function BookPage() {
         </div>
 
         <h2 className="mt-8 font-display text-xl font-semibold">Capítulos</h2>
-        <div className="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-8 md:grid-cols-10">
+        <div className="mt-4 grid grid-cols-5 xs:grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
           {Array.from({ length: book.chapters }, (_, i) => i + 1).map((c) => (
             <Link
               key={c}
               to="/biblia/$book/$chapter"
               params={{ book: book.slug, chapter: String(c) }}
-              className="surface flex h-11 items-center justify-center text-sm transition-colors hover:bg-accent"
+              className="surface flex h-11 items-center justify-center text-sm font-semibold transition-all hover:bg-accent active:scale-95 rounded-xl touch-manipulation"
             >
               {c}
             </Link>

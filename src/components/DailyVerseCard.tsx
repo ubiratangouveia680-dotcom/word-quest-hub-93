@@ -66,7 +66,7 @@ export function DailyVerseCard() {
   };
 
   return (
-    <article className="warm-panel rounded-2xl p-5 sm:p-7 border border-gold/30 shadow-xs">
+    <article className="warm-panel rounded-2xl p-4 sm:p-7 border border-gold/30 shadow-xs">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3.5">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-gold">
           ✨ Versículo do Dia
@@ -76,16 +76,16 @@ export function DailyVerseCard() {
         </span>
       </div>
 
-      <div className="py-5">
+      <div className="py-4 sm:py-5">
         <blockquote className="reading-text text-base sm:text-lg italic text-foreground leading-relaxed">
           "{verse?.text || ref.text || "Carregando o versículo do dia..."}"
         </blockquote>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3.5 border-t border-border/50">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3.5 border-t border-border/50">
         <div className="flex flex-wrap items-center gap-2">
           {/* Botão Ler capítulo */}
-          <Button asChild size="sm" className="h-9 px-4 text-xs font-semibold">
+          <Button asChild size="sm" className="h-9 px-3.5 sm:px-4 text-xs font-semibold flex-1 xs:flex-initial">
             <Link
               to="/biblia/$book/$chapter"
               params={{ book: ref.bookSlug, chapter: String(ref.chapter) }}
@@ -100,7 +100,7 @@ export function DailyVerseCard() {
             variant="outline"
             size="sm"
             onClick={handleFavorite}
-            className={`h-9 px-3.5 text-xs font-medium transition-colors ${
+            className={`h-9 px-3 sm:px-3.5 text-xs font-medium transition-colors flex-1 xs:flex-initial ${
               fav ? "border-destructive/40 text-destructive bg-destructive/5" : ""
             }`}
           >
@@ -114,7 +114,7 @@ export function DailyVerseCard() {
             variant="outline"
             size="sm"
             onClick={handleShare}
-            className="h-9 px-3.5 text-xs font-medium"
+            className="h-9 px-3 sm:px-3.5 text-xs font-medium flex-1 xs:flex-initial"
           >
             <Share2 className="mr-1.5 size-3.5 text-muted-foreground" />
             <span>Compartilhar</span>
@@ -123,7 +123,7 @@ export function DailyVerseCard() {
 
         <Link
           to="/versiculo-do-dia"
-          className="text-xs font-semibold text-primary hover:underline ml-auto"
+          className="text-xs font-semibold text-primary hover:underline self-end sm:self-auto sm:ml-auto"
         >
           Ver reflexão completa →
         </Link>

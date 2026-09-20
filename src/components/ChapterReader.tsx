@@ -154,7 +154,7 @@ export function ChapterReader({
   return (
     <article>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-3xl font-semibold">
+        <h1 className="font-display text-2xl sm:text-3xl font-semibold">
           {book.name} {chapter}
         </h1>
         <FontSizeControls />
@@ -168,7 +168,7 @@ export function ChapterReader({
         </p>
       ) : audioStatus !== "checking" ? (
         <div className="mt-3 flex min-h-10 flex-wrap items-center gap-2" aria-live="polite">
-          <Button variant="outline" size="sm" onClick={toggleReading}>
+          <Button variant="outline" size="sm" onClick={toggleReading} className="h-9 text-xs sm:text-sm">
             {audioStatus === "speaking" ? (
               <Pause className="mr-1.5 size-4" />
             ) : audioStatus === "paused" ? (
@@ -180,7 +180,7 @@ export function ChapterReader({
           </Button>
           {(audioStatus === "speaking" || audioStatus === "paused") && (
             <>
-              <Button variant="ghost" size="icon" aria-label="Parar leitura" onClick={stopReading}>
+              <Button variant="ghost" size="icon" aria-label="Parar leitura" onClick={stopReading} className="size-9">
                 <Square className="size-4" />
               </Button>
               <span className="text-xs text-muted-foreground">
@@ -215,7 +215,7 @@ export function ChapterReader({
                 </Link>
                 {v.text}
               </p>
-              <div className="mt-1 flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
+              <div className="mt-1 flex items-center gap-1.5 opacity-80 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                 <VerseActions
                   id={`verse:${book.slug}:${chapter}:${v.verse}`}
                   kind="verse"
@@ -227,13 +227,13 @@ export function ChapterReader({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-7"
+                  className="size-8 sm:size-7"
                   aria-label="Anotar"
                   onClick={() => setOpenNote(openNote === v.verse ? null : v.verse)}
                 >
                   <NotebookPen className={`size-3.5 ${notes[String(v.verse)] ? "text-gold" : ""}`} />
                 </Button>
-                <Button variant="ghost" size="icon" className="size-7" aria-label="Explicar com IA" asChild>
+                <Button variant="ghost" size="icon" className="size-8 sm:size-7" aria-label="Explicar com IA" asChild>
                   <Link to="/pergunte" search={{ q: `Explique ${title}` }}>
                     <Sparkles className="size-3.5" />
                   </Link>
@@ -241,7 +241,7 @@ export function ChapterReader({
               </div>
               {openNote === v.verse && (
                 <Textarea
-                  className="mt-2"
+                  className="mt-2 text-sm"
                   placeholder="Sua anotação sobre este versículo..."
                   defaultValue={notes[String(v.verse)] ?? ""}
                   onBlur={(e) => setNote(String(v.verse), e.target.value)}
@@ -255,20 +255,24 @@ export function ChapterReader({
       <AdMobile className="mt-8" />
       <AdEndOfChapter className="mt-6" />
 
-      <nav className="mt-8 flex items-center justify-between gap-3">
+      <nav className="mt-8 flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-2.5 sm:gap-3">
         {prev ? (
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="h-10 text-xs sm:text-sm">
             <Link to="/biblia/$book/$chapter" params={{ book: prev.book, chapter: String(prev.chapter) }}>
-              <ChevronLeft className="mr-1 size-4" /> Capítulo anterior
+              <ChevronLeft className="mr-1 size-4" />
+              <span className="xs:hidden">Cap. anterior</span>
+              <span className="hidden xs:inline">Capítulo anterior</span>
             </Link>
           </Button>
         ) : (
           <span />
         )}
         {next && (
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="h-10 text-xs sm:text-sm ml-auto xs:ml-0">
             <Link to="/biblia/$book/$chapter" params={{ book: next.book, chapter: String(next.chapter) }}>
-              Próximo capítulo <ChevronRight className="ml-1 size-4" />
+              <span className="xs:hidden">Próx. capítulo</span>
+              <span className="hidden xs:inline">Próximo capítulo</span>
+              <ChevronRight className="ml-1 size-4" />
             </Link>
           </Button>
         )}

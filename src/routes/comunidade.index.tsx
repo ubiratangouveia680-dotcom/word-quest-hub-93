@@ -533,7 +533,7 @@ function ComunidadeFeedPage() {
           </form>
 
           {/* Categorias canônicas em pílulas com rolagem suave */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth touch-pan-x -mx-4 px-4 sm:mx-0 sm:px-0">
             <button
               onClick={() => setSelectedCategory("todas")}
               className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold whitespace-nowrap transition-all ${
@@ -820,7 +820,7 @@ function ComunidadeFeedPage() {
 
         {/* MODAL: + Nova Publicação */}
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle className="font-display text-xl font-bold flex items-center gap-2">
                 <span>✨</span> Nova Publicação
@@ -931,7 +931,7 @@ function ComunidadeFeedPage() {
 
         {/* MODAL: Aviso de Visitante / Login Necessário */}
         <Dialog open={isVisitorModalOpen} onOpenChange={setIsVisitorModalOpen}>
-          <DialogContent className="sm:max-w-md text-center">
+          <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 text-center">
             <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-primary/10 text-2xl">
               🕊️
             </div>
@@ -969,7 +969,7 @@ function ComunidadeFeedPage() {
             }
           }}
         >
-          <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle className="font-display text-lg flex items-center gap-2">
                 <UserIcon className="size-4 text-primary" /> Perfil Público
@@ -1059,7 +1059,7 @@ function ComunidadeFeedPage() {
 
         {/* MODAL: Denunciar Publicação */}
         <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle className="font-display text-lg flex items-center gap-2">
                 <Flag className="size-4 text-destructive" /> Denunciar Publicação
@@ -1136,7 +1136,7 @@ function ComunidadeFeedPage() {
 
         {/* MODAL: Editar Publicação */}
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle className="font-display text-xl flex items-center gap-2">
                 <Pencil className="size-5 text-primary" /> Editar Publicação
