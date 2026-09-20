@@ -345,7 +345,6 @@ export async function showDailyVerseNotification(
         badge: badgeUrl,
         tag: content.tag,
         data: { url: targetUrl },
-        renotify: true,
       });
     } else if (typeof Notification !== "undefined") {
       new Notification(content.title, {

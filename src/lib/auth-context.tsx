@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(data as UserProfile);
       } else {
         // Se ainda não existir perfil (ex: trigger não disparado), cria perfil local/remoto
-        const fallbackName = userMetaName ?? (userEmail ? userEmail.split("@")[0] : "Usuário");
+        const fallbackName = userMetaName ?? (userEmail ? (userEmail.split("@")[0] ?? "Usuário") : "Usuário");
         const { data: newProfile, error: insertError } = await supabase
           .from("profiles")
           .upsert({
