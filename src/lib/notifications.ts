@@ -32,8 +32,8 @@ export function normalizeTime(timeStr?: string, defaultTime = "08:00"): string {
   const clean = String(timeStr).trim();
   const parts = clean.split(":");
   if (parts.length >= 2) {
-    const h = parts[0].padStart(2, "0");
-    const m = parts[1].padStart(2, "0");
+    const h = (parts[0] ?? "00").padStart(2, "0");
+    const m = (parts[1] ?? "00").padStart(2, "0");
     return `${h}:${m}`;
   }
   return defaultTime;
@@ -88,7 +88,7 @@ export async function fetchNotificationSettings(userId?: string): Promise<VerseN
   try {
     // 1. Try Supabase Auth metadata first (reliable for logged-in user without requiring extra tables)
     const { data: authData } = await supabase.auth.getUser();
-    const meta = authData?.user?.user_metadata?.verse_notification_settings;
+    const meta = authData?.user?.user_metadata?.["verse_notification_settings"];
     if (meta) {
       const merged: VerseNotificationSettings = {
         verse_notifications_enabled: meta.verse_notifications_enabled ?? local.verse_notifications_enabled,
@@ -345,7 +345,6 @@ export async function showDailyVerseNotification(
         badge: badgeUrl,
         tag: content.tag,
         data: { url: targetUrl },
-        vibrate: [100, 50, 100],
         renotify: true,
       });
     } else if (typeof Notification !== "undefined") {
@@ -367,10 +366,10 @@ export async function showDailyVerseNotification(
         user_id: userId,
         notification_type: period,
         verse_reference: content.reference,
-        verse_date: todayStr,
+        verse_date: todayStr ?? new Date().toISOString().slice(0, 10),
         status: "sent",
         idempotency_key: idempotencyKey,
-      }).catch(() => {});
+      }).then(() => undefined);
     }
 
     return true;
@@ -398,7 +397,7 @@ export async function checkAndDispatchDailyVerses(userId?: string) {
   const isTimeFor = (targetTime: string) => {
     const normalized = normalizeTime(targetTime, "08:00");
     const [targetH, targetM] = normalized.split(":").map((v) => parseInt(v, 10));
-    if (isNaN(targetH) || isNaN(targetM)) return false;
+    if (targetH === undefined || targetM === undefined || isNaN(targetH) || isNaN(targetM)) return false;
 
     const targetTotalMin = targetH * 60 + targetM;
     const currentTotalMin = currentHours * 60 + currentMinutes;

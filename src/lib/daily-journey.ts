@@ -96,7 +96,7 @@ export function useDailyJourney(userId?: string) {
     const fetchRemote = async () => {
       try {
         const { data } = await supabase.auth.getUser();
-        const journeyMeta = data?.user?.user_metadata?.daily_journeys?.[today];
+        const journeyMeta = data?.user?.user_metadata?.["daily_journeys"]?.[today];
         if (journeyMeta && active) {
           const local = readLocalJourney(today);
           const merged = { ...local, ...journeyMeta };
@@ -121,7 +121,7 @@ export function useDailyJourney(userId?: string) {
       if (userId) {
         try {
           const { data } = await supabase.auth.getUser();
-          const existing = data?.user?.user_metadata?.daily_journeys || {};
+          const existing = data?.user?.user_metadata?.["daily_journeys"] || {};
           await supabase.auth.updateUser({
             data: {
               daily_journeys: {
@@ -146,7 +146,7 @@ export function useDailyJourney(userId?: string) {
       if (userId) {
         try {
           const { data } = await supabase.auth.getUser();
-          const existing = data?.user?.user_metadata?.daily_journeys || {};
+          const existing = data?.user?.user_metadata?.["daily_journeys"] || {};
           await supabase.auth.updateUser({
             data: {
               daily_journeys: {

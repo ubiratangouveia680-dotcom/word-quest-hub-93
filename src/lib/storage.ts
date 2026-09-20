@@ -80,7 +80,7 @@ export function useFavorites() {
           id: row.reference || row.id,
           kind: "verse",
           title: row.reference,
-          text: row.text ?? undefined,
+          ...(row.text ? { text: row.text } : {}),
           href: `/biblia/${row.book}/${row.chapter}${row.verse ? `#v${row.verse}` : ""}`,
           createdAt: new Date(row.created_at).getTime(),
         }));
