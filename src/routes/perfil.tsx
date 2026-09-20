@@ -71,6 +71,17 @@ import {
   type VerseNotificationSettings,
   type NotificationPeriod,
 } from "@/lib/notifications";
+import {
+  fetchMyPrayerRequests,
+  deletePrayerRequest,
+  type PrayerRequest,
+} from "@/lib/prayer-wall";
+import {
+  getPrayerNotificationPreferences,
+  savePrayerNotificationPreferences,
+  type PrayerPushPreferences,
+  DEFAULT_PRAYER_PUSH_PREFS,
+} from "@/lib/push.functions";
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/perfil")({
@@ -91,7 +102,7 @@ export const Route = createFileRoute("/perfil")({
   component: ProfilePage,
 });
 
-type TabType = "favoritos" | "historico" | "oracoes" | "salvos" | "publicacoes" | "configuracoes";
+type TabType = "favoritos" | "historico" | "oracoes" | "salvos" | "publicacoes" | "pedidos_oracao" | "configuracoes";
 
 function ProfilePage() {
   const navigate = useNavigate();
@@ -133,7 +144,17 @@ function ProfilePage() {
   const [userPosts, setUserPosts] = useState<Question[]>([]);
   const [loadingUserPosts, setLoadingUserPosts] = useState(false);
 
-  // Carregar notificações
+  // Meus pedidos de oração
+  const [myPrayers, setMyPrayers] = useState<PrayerRequest[]>([]);
+  const [loadingMyPrayers, setLoadingMyPrayers] = useState(false);
+  const [prayerToDelete, setPrayerToDelete] = useState<string | null>(null);
+  const [isDeletingPrayer, setIsDeletingPrayer] = useState(false);
+
+  // Preferências de Notificação de Oração
+  const [prayerPushPrefs, setPrayerPushPrefs] = useState<PrayerPushPreferences>(DEFAULT_PRAYER_PUSH_PREFS);
+  const [isSavingPrayerPrefs, setIsSavingPrayerPrefs] = useState(false);
+
+  // Carregar notificações e pedidos do usuário
   useEffect(() => {
     setHasNotificationSupport(isPushNotificationSupported());
     setPermissionStatus(getNotificationPermission());
@@ -141,8 +162,66 @@ function ProfilePage() {
       fetchNotificationSettings(user.id).then((settings) => {
         setNotifSettings(settings);
       });
+      fetchMyPrayerRequests(user.id).then((list) => {
+        setMyPrayers(list);
+      });
+      getPrayerNotificationPreferences({ data: user.id })
+        .then((prefs) => setPrayerPushPrefs(prefs))
+        .catch(() => {});
     }
   }, [user?.id]);
+
+  // Carregar pedidos de oração do usuário
+  const loadMyPrayers = async () => {
+    if (!user?.id) return;
+    setLoadingMyPrayers(true);
+    try {
+      const data = await fetchMyPrayerRequests(user.id);
+      setMyPrayers(data);
+    } catch (err) {
+      console.warn("Erro ao carregar pedidos de oração:", err);
+    } finally {
+      setLoadingMyPrayers(false);
+    }
+  };
+
+  // Excluir pedido de oração
+  const handleDeletePrayerRequest = async () => {
+    if (!prayerToDelete || !user?.id) return;
+    try {
+      setIsDeletingPrayer(true);
+      const ok = await deletePrayerRequest(prayerToDelete, user.id);
+      if (ok) {
+        toast.success("Pedido de oração excluído com sucesso.");
+        setMyPrayers((prev) => prev.filter((p) => p.id !== prayerToDelete));
+      } else {
+        toast.error("Não foi possível excluir o pedido.");
+      }
+    } catch {
+      toast.error("Erro ao excluir o pedido de oração.");
+    } finally {
+      setIsDeletingPrayer(false);
+      setPrayerToDelete(null);
+    }
+  };
+
+  // Atualizar preferência individual de push
+  const handleTogglePrayerPref = async (key: keyof PrayerPushPreferences) => {
+    if (!user?.id) return;
+    const next = { ...prayerPushPrefs, [key]: !prayerPushPrefs[key] };
+    setPrayerPushPrefs(next);
+    setIsSavingPrayerPrefs(true);
+    try {
+      await savePrayerNotificationPreferences({
+        data: { userId: user.id, preferences: next },
+      });
+      toast.success("Preferências de notificação salvas.");
+    } catch {
+      toast.error("Erro ao salvar preferências.");
+    } finally {
+      setIsSavingPrayerPrefs(false);
+    }
+  };
 
   // Carregar publicações do usuário na comunidade
   const loadUserPosts = async () => {
@@ -614,6 +693,22 @@ function ProfilePage() {
 
             <button
               type="button"
+              onClick={() => setActiveTab("pedidos_oracao")}
+              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all touch-manipulation ${
+                activeTab === "pedidos_oracao"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              }`}
+            >
+              <span>🙏</span>
+              <span>Meus Pedidos de Oração</span>
+              <span className="rounded-full bg-background/20 px-1.5 py-0.2 text-[10px] font-mono">
+                {myPrayers.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab("configuracoes")}
               className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all touch-manipulation ${
                 activeTab === "configuracoes"
@@ -1014,6 +1109,132 @@ function ProfilePage() {
             </div>
           )}
 
+          {/* ABA 5.5: MEUS PEDIDOS DE ORAÇÃO */}
+          {activeTab === "pedidos_oracao" && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                <div>
+                  <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+                    <span>🙏</span>
+                    <span>Meus Pedidos de Oração</span>
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Gerencie seus pedidos publicados na comunidade e acompanhe os irmãos que estão intercedendo por você.
+                  </p>
+                </div>
+
+                <Button
+                  asChild
+                  size="sm"
+                  className="h-8 text-xs font-semibold gap-1.5 self-start sm:self-auto bg-gold text-primary-foreground hover:bg-gold/90 cursor-pointer"
+                >
+                  <Link to="/comunidade/pedidos-de-oracao">
+                    <Plus className="size-3.5" /> Publicar Novo Pedido
+                  </Link>
+                </Button>
+              </div>
+
+              {loadingMyPrayers ? (
+                <div className="space-y-3">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="surface p-4 rounded-xl border border-border/80 animate-pulse h-24" />
+                  ))}
+                </div>
+              ) : myPrayers.length === 0 ? (
+                <div className="surface p-8 sm:p-12 rounded-2xl border border-dashed border-border/80 text-center space-y-3">
+                  <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-gold/15 text-2xl">
+                    🙏
+                  </div>
+                  <h3 className="font-bold text-sm text-foreground">
+                    Você ainda não publicou pedidos de oração
+                  </h3>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                    Compartilhe suas súplicas com a comunidade de fé ou interceda pelos pedidos de outros irmãos.
+                  </p>
+                  <Button asChild size="sm" className="text-xs font-semibold cursor-pointer">
+                    <Link to="/comunidade/pedidos-de-oracao">+ Fazer meu primeiro pedido</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {myPrayers.map((prayer) => (
+                    <div
+                      key={prayer.id}
+                      className="surface p-4 sm:p-5 rounded-2xl border border-border/80 space-y-3 transition-all hover:border-gold/30"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {prayer.is_anonymous ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                <Lock className="size-2.5 text-gold" />
+                                Publicado como anônimo
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">
+                                Publicado com seu nome
+                              </span>
+                            )}
+                            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                              <Calendar className="size-3" />
+                              {formatRelativeDate(prayer.created_at)}
+                            </span>
+                          </div>
+
+                          <p className="text-sm text-foreground/95 whitespace-pre-line leading-relaxed pt-1 break-words">
+                            {prayer.content}
+                          </p>
+
+                          {prayer.verse_reference && (
+                            <div className="inline-flex items-center gap-1 rounded bg-gold/10 px-2 py-0.5 text-[11px] font-semibold text-gold mt-1">
+                              <BookOpen className="size-3" />
+                              <span>{prayer.verse_reference}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Botão Excluir Pedido */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setPrayerToDelete(prayer.id)}
+                          className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 cursor-pointer"
+                          title="Excluir pedido de oração"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+
+                      <hr className="border-border/60" />
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-amber-600 dark:text-amber-400 inline-flex items-center gap-1.5">
+                          <span>🙏</span>
+                          <span>
+                            {prayer.prayed_count === 1
+                              ? "1 pessoa está orando"
+                              : `${prayer.prayed_count} pessoas estão orando`}
+                          </span>
+                        </span>
+
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-[11px] font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+                        >
+                          <Link to="/comunidade/pedidos-de-oracao">
+                            Ver no Mural →
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ABA 6: CONFIGURAÇÕES */}
           {activeTab === "configuracoes" && (
             <div className="space-y-6">
@@ -1209,6 +1430,86 @@ function ProfilePage() {
                 </div>
               </div>
 
+              {/* SUB-SEÇÃO 3.5: NOTIFICAÇÕES DA COMUNIDADE & ORAÇÕES */}
+              <div className="surface p-5 rounded-2xl border border-border/80 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-display text-base font-bold text-foreground flex items-center gap-2">
+                      <Bell className="size-4 text-gold" /> Notificações do Mural de Oração
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Escolha quais alertas deseja receber em seus navegadores e dispositivos autorizados.
+                    </p>
+                  </div>
+                  {hasNotificationSupport && permissionStatus !== "granted" && (
+                    <Button
+                      onClick={handleRequestPermission}
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs font-semibold gap-1"
+                    >
+                      <Bell className="size-3 text-gold" /> Ativar Push
+                    </Button>
+                  )}
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  {/* Novos pedidos de oração */}
+                  <div className="rounded-xl border border-border/60 bg-accent/20 p-3.5 flex items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="pref-prayer-requests" className="text-xs font-bold text-foreground cursor-pointer">
+                        Novos pedidos de oração
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        Receba avisos quando novos pedidos de oração forem publicados por irmãos da comunidade.
+                      </p>
+                    </div>
+                    <Switch
+                      id="pref-prayer-requests"
+                      checked={prayerPushPrefs.prayer_requests_enabled}
+                      onCheckedChange={() => handleTogglePrayerPref("prayer_requests_enabled")}
+                      disabled={isSavingPrayerPrefs}
+                    />
+                  </div>
+
+                  {/* Pessoas orando pelos meus pedidos */}
+                  <div className="rounded-xl border border-border/60 bg-accent/20 p-3.5 flex items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="pref-prayer-support" className="text-xs font-bold text-foreground cursor-pointer">
+                        Pessoas orando pelos meus pedidos
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        Seja notificado sempre que alguém clicar em "Vou orar por você" no seu pedido.
+                      </p>
+                    </div>
+                    <Switch
+                      id="pref-prayer-support"
+                      checked={prayerPushPrefs.prayer_support_enabled}
+                      onCheckedChange={() => handleTogglePrayerPref("prayer_support_enabled")}
+                      disabled={isSavingPrayerPrefs}
+                    />
+                  </div>
+
+                  {/* Avisos da comunidade */}
+                  <div className="rounded-xl border border-border/60 bg-accent/20 p-3.5 flex items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="pref-community" className="text-xs font-bold text-foreground cursor-pointer">
+                        Avisos da comunidade
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        Receba mensagens importantes, respostas e comunicados fraternos da comunidade Palavra Viva.
+                      </p>
+                    </div>
+                    <Switch
+                      id="pref-community"
+                      checked={prayerPushPrefs.community_enabled}
+                      onCheckedChange={() => handleTogglePrayerPref("community_enabled")}
+                      disabled={isSavingPrayerPrefs}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* SUB-SEÇÃO 4: APARÊNCIA & LEITURA */}
               <div className="surface p-5 rounded-2xl border border-border/80 space-y-4">
                 <div>
@@ -1315,6 +1616,35 @@ function ProfilePage() {
         onOpenChange={setIsEditModalOpen}
         profile={profile}
       />
+
+      {/* DIÁLOGO DE CONFIRMAÇÃO PARA EXCLUIR PEDIDO DE ORAÇÃO */}
+      <AlertDialog
+        open={Boolean(prayerToDelete)}
+        onOpenChange={(open) => !open && setPrayerToDelete(null)}
+      >
+        <AlertDialogContent className="rounded-2xl max-w-md p-5 sm:p-6">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-foreground">
+              Tem certeza que deseja excluir este pedido de oração?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              Esta ação removerá o pedido do mural da comunidade e do seu histórico permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="pt-2">
+            <AlertDialogCancel disabled={isDeletingPrayer} className="text-xs">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePrayerRequest}
+              disabled={isDeletingPrayer}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs font-semibold"
+            >
+              {isDeletingPrayer ? "Excluindo..." : "Sim, excluir pedido"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SiteLayout>
   );
 }

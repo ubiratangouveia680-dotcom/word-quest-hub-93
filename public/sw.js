@@ -1,5 +1,5 @@
-// Service Worker para Bíblia Online - Notificações do Versículo do Dia
-const CACHE_NAME = 'biblia-online-sw-v3';
+// Service Worker para Bíblia Online - Notificações do Versículo do Dia e Mural de Oração
+const CACHE_NAME = 'biblia-online-sw-v4';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

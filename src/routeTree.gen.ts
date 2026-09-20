@@ -37,6 +37,7 @@ import { Route as BibliaAntigoTestamentoRouteImport } from './routes/biblia.anti
 import { Route as BibliaNovoTestamentoRouteImport } from './routes/biblia.novo-testamento'
 import { Route as ComunidadeIndexRouteImport } from './routes/comunidade.index'
 import { Route as ComunidadeIdRouteImport } from './routes/comunidade.$id'
+import { Route as ComunidadePedidosDeOracaoRouteImport } from './routes/comunidade.pedidos-de-oracao'
 import { Route as DevocionaisIndexRouteImport } from './routes/devocionais.index'
 import { Route as DevocionaisSlugRouteImport } from './routes/devocionais.$slug'
 import { Route as EstudosIndexRouteImport } from './routes/estudos.index'
@@ -194,6 +195,12 @@ const ComunidadeIdRoute = ComunidadeIdRouteImport.update({
   path: '/comunidade/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComunidadePedidosDeOracaoRoute =
+  ComunidadePedidosDeOracaoRouteImport.update({
+    id: '/comunidade/pedidos-de-oracao',
+    path: '/comunidade/pedidos-de-oracao',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const DevocionaisIndexRoute = DevocionaisIndexRouteImport.update({
   id: '/devocionais/',
   path: '/devocionais/',
@@ -302,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/biblia/antigo-testamento': typeof BibliaAntigoTestamentoRoute
   '/biblia/novo-testamento': typeof BibliaNovoTestamentoRoute
   '/comunidade/$id': typeof ComunidadeIdRoute
+  '/comunidade/pedidos-de-oracao': typeof ComunidadePedidosDeOracaoRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
   '/oracoes/$slug': typeof OracoesSlugRoute
@@ -344,6 +352,7 @@ export interface FileRoutesByTo {
   '/biblia/antigo-testamento': typeof BibliaAntigoTestamentoRoute
   '/biblia/novo-testamento': typeof BibliaNovoTestamentoRoute
   '/comunidade/$id': typeof ComunidadeIdRoute
+  '/comunidade/pedidos-de-oracao': typeof ComunidadePedidosDeOracaoRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
   '/oracoes/$slug': typeof OracoesSlugRoute
@@ -391,6 +400,7 @@ export interface FileRoutesById {
   '/biblia/antigo-testamento': typeof BibliaAntigoTestamentoRoute
   '/biblia/novo-testamento': typeof BibliaNovoTestamentoRoute
   '/comunidade/$id': typeof ComunidadeIdRoute
+  '/comunidade/pedidos-de-oracao': typeof ComunidadePedidosDeOracaoRoute
   '/devocionais/$slug': typeof DevocionaisSlugRoute
   '/estudos/$slug': typeof EstudosSlugRoute
   '/oracoes/$slug': typeof OracoesSlugRoute
@@ -439,6 +449,7 @@ export interface FileRouteTypes {
     | '/biblia/antigo-testamento'
     | '/biblia/novo-testamento'
     | '/comunidade/$id'
+    | '/comunidade/pedidos-de-oracao'
     | '/devocionais/$slug'
     | '/estudos/$slug'
     | '/oracoes/$slug'
@@ -481,6 +492,7 @@ export interface FileRouteTypes {
     | '/biblia/antigo-testamento'
     | '/biblia/novo-testamento'
     | '/comunidade/$id'
+    | '/comunidade/pedidos-de-oracao'
     | '/devocionais/$slug'
     | '/estudos/$slug'
     | '/oracoes/$slug'
@@ -527,6 +539,7 @@ export interface FileRouteTypes {
     | '/biblia/antigo-testamento'
     | '/biblia/novo-testamento'
     | '/comunidade/$id'
+    | '/comunidade/pedidos-de-oracao'
     | '/devocionais/$slug'
     | '/estudos/$slug'
     | '/oracoes/$slug'
@@ -574,6 +587,7 @@ export interface RootRouteChildren {
   BibliaAntigoTestamentoRoute: typeof BibliaAntigoTestamentoRoute
   BibliaNovoTestamentoRoute: typeof BibliaNovoTestamentoRoute
   ComunidadeIdRoute: typeof ComunidadeIdRoute
+  ComunidadePedidosDeOracaoRoute: typeof ComunidadePedidosDeOracaoRoute
   DevocionaisSlugRoute: typeof DevocionaisSlugRoute
   EstudosSlugRoute: typeof EstudosSlugRoute
   BibliaIndexRoute: typeof BibliaIndexRoute
@@ -784,6 +798,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComunidadeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/comunidade/pedidos-de-oracao': {
+      id: '/comunidade/pedidos-de-oracao'
+      path: '/comunidade/pedidos-de-oracao'
+      fullPath: '/comunidade/pedidos-de-oracao'
+      preLoaderRoute: typeof ComunidadePedidosDeOracaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/devocionais/': {
       id: '/devocionais/'
       path: '/devocionais'
@@ -978,6 +999,7 @@ const rootRouteChildren: RootRouteChildren = {
   BibliaAntigoTestamentoRoute: BibliaAntigoTestamentoRoute,
   BibliaNovoTestamentoRoute: BibliaNovoTestamentoRoute,
   ComunidadeIdRoute: ComunidadeIdRoute,
+  ComunidadePedidosDeOracaoRoute: ComunidadePedidosDeOracaoRoute,
   DevocionaisSlugRoute: DevocionaisSlugRoute,
   EstudosSlugRoute: EstudosSlugRoute,
   BibliaIndexRoute: BibliaIndexRoute,

@@ -376,6 +376,117 @@ export type Database = {
           },
         ]
       }
+      prayer_notification_preferences: {
+        Row: {
+          community_enabled: boolean
+          prayer_requests_enabled: boolean
+          prayer_support_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          community_enabled?: boolean
+          prayer_requests_enabled?: boolean
+          prayer_support_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          community_enabled?: boolean
+          prayer_requests_enabled?: boolean
+          prayer_support_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prayer_reports: {
+        Row: {
+          created_at: string
+          id: string
+          prayer_request_id: string
+          reason: string
+          reporter_user_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prayer_request_id: string
+          reason: string
+          reporter_user_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prayer_request_id?: string
+          reason?: string
+          reporter_user_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      prayer_requests: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_anonymous: boolean
+          prayed_count: number
+          status: string
+          title: string | null
+          updated_at: string
+          user_id: string
+          verse_reference: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_anonymous?: boolean
+          prayed_count?: number
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+          verse_reference?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_anonymous?: boolean
+          prayed_count?: number
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+          verse_reference?: string | null
+        }
+        Relationships: []
+      }
+      prayer_support: {
+        Row: {
+          created_at: string
+          id: string
+          prayer_request_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prayer_request_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prayer_request_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -412,6 +523,45 @@ export type Database = {
           updated_at?: string
           user_id?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          device_name: string | null
+          endpoint: string
+          id: string
+          last_seen_at: string
+          p256dh: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          device_name?: string | null
+          endpoint: string
+          id?: string
+          last_seen_at?: string
+          p256dh: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          device_name?: string | null
+          endpoint?: string
+          id?: string
+          last_seen_at?: string
+          p256dh?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }

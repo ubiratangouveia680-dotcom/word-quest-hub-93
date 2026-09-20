@@ -471,6 +471,19 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                           </span>
                         </Link>
                         <Link
+                          to="/comunidade/pedidos-de-oracao"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center justify-between rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <span className="text-base leading-none">🙏</span>
+                            <span>Mural de Pedidos de Oração</span>
+                          </span>
+                          <span className="text-[10px] bg-gold/20 text-gold px-1.5 py-0.5 rounded-md font-semibold">
+                            Novo
+                          </span>
+                        </Link>
+                        <Link
                           to="/igrejas"
                           onClick={() => setOpen(false)}
                           className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium text-foreground hover:bg-accent transition-colors"

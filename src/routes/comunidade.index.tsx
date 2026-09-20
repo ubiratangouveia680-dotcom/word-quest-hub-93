@@ -60,6 +60,7 @@ import {
   Loader2,
   Calendar,
   Layers,
+  ArrowRight,
 } from "lucide-react";
 import { url } from "@/lib/site";
 
@@ -499,6 +500,38 @@ function ComunidadeFeedPage() {
             </div>
           </div>
         </section>
+
+        {/* Banner de Destaque: Mural de Pedidos de Oração */}
+        <div className="mb-6 rounded-2xl border border-gold/40 bg-gradient-to-r from-gold/15 via-gold/5 to-transparent p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start gap-3.5">
+            <div className="size-11 rounded-2xl bg-gold/20 text-gold flex items-center justify-center text-xl shrink-0 shadow-inner">
+              🙏
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-bold text-foreground">
+                  Mural de Pedidos de Oração
+                </h2>
+                <span className="rounded-full bg-gold/20 text-gold text-[10px] font-bold px-2 py-0.5">
+                  Novo
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground max-w-xl leading-relaxed">
+                Compartilhe seus pedidos de oração de forma pública ou anônima, e apoie os irmãos em oração com um clique.
+              </p>
+            </div>
+          </div>
+          <Button
+            asChild
+            size="sm"
+            className="shrink-0 w-full sm:w-auto font-semibold text-xs h-9 bg-gold text-primary-foreground hover:bg-gold/90 shadow-xs cursor-pointer"
+          >
+            <Link to="/comunidade/pedidos-de-oracao">
+              <span>Acessar Mural de Oração</span>
+              <ArrowRight className="ml-1.5 size-3.5" />
+            </Link>
+          </Button>
+        </div>
 
         {/* Barra de Pesquisa e Filtros */}
         <div className="space-y-4 mb-6">
