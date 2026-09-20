@@ -76,42 +76,58 @@ export const sendContactMessage = createServerFn({ method: "POST" })
     if (resendApiKey) {
       try {
         const fromEmail = process.env["CONTACT_FROM_EMAIL"] || "Word Quest Hub <onboarding@resend.dev>";
-        const resendRes = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${resendApiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: fromEmail,
-            to: [TARGET_EMAIL],
-            reply_to: data.email,
-            subject: `[Contato Word Quest Hub] ${data.subject} - ${data.name}`,
-            html: `
-              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
-                <div style="background-color: #92400e; color: #ffffff; padding: 24px; text-align: center;">
-                  <h1 style="margin: 0; font-size: 22px; font-weight: 700;">Word Quest Hub</h1>
-                  <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Nova mensagem recebida pelo formulário de contato</p>
-                </div>
-                <div style="padding: 28px; color: #1e293b; line-height: 1.6;">
-                  <div style="background-color: #f8fafc; border-left: 4px solid #d97706; padding: 14px 18px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
-                    <p style="margin: 0 0 6px 0; font-size: 14px;"><strong>Remetente:</strong> ${data.name}</p>
-                    <p style="margin: 0 0 6px 0; font-size: 14px;"><strong>E-mail:</strong> <a href="mailto:${data.email}" style="color: #92400e; text-decoration: none; font-weight: 600;">${data.email}</a></p>
-                    <p style="margin: 0; font-size: 14px;"><strong>Assunto:</strong> ${data.subject}</p>
-                  </div>
-                  <h3 style="font-size: 15px; color: #475569; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Mensagem:</h3>
-                  <div style="background-color: #fffbeb; border: 1px solid #fef3c7; padding: 18px; border-radius: 8px; font-size: 15px; color: #451a03; white-space: pre-wrap;">${data.message}</div>
-                  <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: center;">
-                    <a href="mailto:${data.email}?subject=Re: [Word Quest Hub] ${encodeURIComponent(data.subject)}" style="display: inline-block; background-color: #92400e; color: #ffffff; font-weight: 600; font-size: 13px; padding: 10px 22px; border-radius: 6px; text-decoration: none;">Responder a ${data.name}</a>
-                  </div>
-                </div>
-                <div style="background-color: #f1f5f9; padding: 14px; text-align: center; font-size: 12px; color: #64748b;">
-                  Enviado em ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} pelo Word Quest Hub.
-                </div>
+        const emailHtml = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
+            <div style="background-color: #92400e; color: #ffffff; padding: 24px; text-align: center;">
+              <h1 style="margin: 0; font-size: 22px; font-weight: 700;">Word Quest Hub</h1>
+              <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Nova mensagem recebida pelo formulário de contato</p>
+            </div>
+            <div style="padding: 28px; color: #1e293b; line-height: 1.6;">
+              <div style="background-color: #f8fafc; border-left: 4px solid #d97706; padding: 14px 18px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+                <p style="margin: 0 0 6px 0; font-size: 14px;"><strong>Remetente:</strong> ${data.name}</p>
+                <p style="margin: 0 0 6px 0; font-size: 14px;"><strong>E-mail:</strong> <a href="mailto:${data.email}" style="color: #92400e; text-decoration: none; font-weight: 600;">${data.email}</a></p>
+                <p style="margin: 0; font-size: 14px;"><strong>Assunto:</strong> ${data.subject}</p>
               </div>
-            `,
-          }),
-        });
+              <h3 style="font-size: 15px; color: #475569; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Mensagem:</h3>
+              <div style="background-color: #fffbeb; border: 1px solid #fef3c7; padding: 18px; border-radius: 8px; font-size: 15px; color: #451a03; white-space: pre-wrap;">${data.message}</div>
+              <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: center;">
+                <a href="mailto:${data.email}?subject=Re: [Word Quest Hub] ${encodeURIComponent(data.subject)}" style="display: inline-block; background-color: #92400e; color: #ffffff; font-weight: 600; font-size: 13px; padding: 10px 22px; border-radius: 6px; text-decoration: none;">Responder a ${data.name}</a>
+              </div>
+            </div>
+            <div style="background-color: #f1f5f9; padding: 14px; text-align: center; font-size: 12px; color: #64748b;">
+              Enviado em ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} pelo Word Quest Hub.
+            </div>
+          </div>
+        `;
+
+        const sendViaResend = async (toRecipient: string) => {
+          return fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${resendApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: fromEmail,
+              to: [toRecipient],
+              reply_to: data.email,
+              subject: `[Contato Word Quest Hub] ${data.subject} - ${data.name}`,
+              html: emailHtml,
+            }),
+          });
+        };
+
+        // 1. Tentar destinatário primário
+        let resendRes = await sendViaResend(TARGET_EMAIL);
+
+        // 2. Se a conta Resend estiver em modo sandbox/onboarding, tentar e-mail do titular da conta
+        if (!resendRes.ok && resendRes.status === 403) {
+          const verifiedAccountEmail = process.env["RESEND_VERIFIED_EMAIL"] || "ubiratangouveia680@gmail.com";
+          if (verifiedAccountEmail && verifiedAccountEmail !== TARGET_EMAIL) {
+            console.info("Resend em modo de teste: redirecionando para a conta verificada do titular:", verifiedAccountEmail);
+            resendRes = await sendViaResend(verifiedAccountEmail);
+          }
+        }
 
         if (resendRes.ok) {
           sent = true;
