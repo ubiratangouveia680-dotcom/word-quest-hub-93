@@ -16,6 +16,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { DEVOTIONALS, PRAYERS, STUDIES } from "@/lib/content";
 import { BIBLE_BOOKS } from "@/lib/bible-books";
 import { useGlobalOnlinePresence } from "@/lib/presence";
+import {
+  fetchCommunityReports,
+  resolveCommunityReport,
+  adminDeleteQuestion,
+  adminDeleteAnswer,
+  formatRelativeDate,
+} from "@/lib/community";
+import { Flag, Trash2, CheckCircle2, ShieldAlert, Loader2, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -173,6 +181,153 @@ function AdsForm() {
   );
 }
 
+function CommunityModerationSection() {
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const loadReports = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchCommunityReports();
+      setReports(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadReports();
+  }, []);
+
+  const handleDismiss = async (reportId: string) => {
+    setProcessingId(reportId);
+    try {
+      await resolveCommunityReport(reportId, "dismissed");
+      toast.success("Denúncia descartada.");
+      setReports((prev) => prev.filter((r) => r.id !== reportId));
+    } catch {
+      toast.error("Erro ao descartar denúncia.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDeleteContent = async (report: any) => {
+    const isPost = report.target_type === "question";
+    if (
+      !confirm(
+        `Tem certeza de que deseja excluir ${isPost ? "esta publicação" : "este comentário"} denunciado?`
+      )
+    )
+      return;
+
+    setProcessingId(report.id);
+    try {
+      if (isPost) {
+        await adminDeleteQuestion(report.target_id);
+      } else {
+        await adminDeleteAnswer(report.target_id);
+      }
+      await resolveCommunityReport(report.id, "resolved");
+      toast.success("Conteúdo excluído e denúncia resolvida com sucesso.");
+      setReports((prev) => prev.filter((r) => r.id !== report.id));
+    } catch {
+      toast.error("Erro ao excluir conteúdo denunciado.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  return (
+    <section className="surface mt-5 p-5 rounded-xl border border-border">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="size-5 text-destructive" />
+          <h2 className="font-display text-xl font-semibold">Moderação da Comunidade Palavra Viva</h2>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-0.5 text-xs font-semibold text-foreground">
+          {reports.length} denúncia(s)
+        </span>
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Denúncias enviadas pelos membros para análise da moderação fraterna.
+      </p>
+
+      {loading ? (
+        <div className="py-8 text-center text-muted-foreground">
+          <Loader2 className="mx-auto size-5 animate-spin text-primary mb-2" />
+          <p className="text-xs">Carregando denúncias...</p>
+        </div>
+      ) : reports.length === 0 ? (
+        <div className="mt-4 rounded-lg border border-dashed border-border/80 p-6 text-center text-xs text-muted-foreground">
+          <CheckCircle2 className="mx-auto size-6 text-emerald-500 mb-2" />
+          Nenhuma denúncia pendente. A Comunidade Palavra Viva está em paz e edificação mútua.
+        </div>
+      ) : (
+        <div className="mt-4 space-y-3">
+          {reports.map((rep) => (
+            <div
+              key={rep.id}
+              className="rounded-lg border border-border bg-card p-4 text-xs space-y-2"
+            >
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="font-bold text-destructive flex items-center gap-1">
+                  <Flag className="size-3.5" /> Motivo: {rep.reason}
+                </span>
+                <span className="text-muted-foreground text-[11px]">
+                  {formatRelativeDate(rep.created_at)}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-muted-foreground text-[11px]">
+                <span>
+                  Alvo: <strong>{rep.target_type === "question" ? "Publicação" : "Comentário"}</strong>
+                </span>
+                <span>•</span>
+                <span className="truncate max-w-[180px]">ID: {rep.target_id}</span>
+                {rep.target_type === "question" && (
+                  <Link
+                    to="/comunidade/$id"
+                    params={{ id: rep.target_id }}
+                    target="_blank"
+                    className="text-primary hover:underline inline-flex items-center gap-0.5 ml-auto font-medium"
+                  >
+                    Ver publicação <ExternalLink className="size-3" />
+                  </Link>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={processingId === rep.id}
+                  onClick={() => handleDismiss(rep.id)}
+                  className="h-8 text-xs"
+                >
+                  Descartar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  disabled={processingId === rep.id}
+                  onClick={() => handleDeleteContent(rep)}
+                  className="h-8 text-xs gap-1"
+                >
+                  <Trash2 className="size-3" /> Excluir Conteúdo
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function AdminPage() {
   const settings = useAdSettings();
   const [session, setSession] = useState<{ email: string | null; id?: string } | null | undefined>(undefined);
@@ -247,6 +402,7 @@ function AdminPage() {
                 Sair
               </button>
             </p>
+            <CommunityModerationSection />
             <AdsForm />
           </>
         )}

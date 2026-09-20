@@ -19,6 +19,74 @@ export const CHRISTIAN_REACTIONS = [
 // Quick inline emoji picker symbols
 export const INLINE_EMOJIS = ["🙏", "❤️", "🕊️", "✝️", "🙌", "👏", "😊", "😢", "😄", "🔥", "📖", "💡", "⭐"] as const;
 
+// Categorias canônicas da Comunidade Palavra Viva
+export interface CommunityCategoryItem {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+}
+
+export const COMMUNITY_CATEGORIES: CommunityCategoryItem[] = [
+  { id: "oracao", name: "Pedido de oração", emoji: "🙏", description: "Compartilhe suas súplicas e receba orações dos irmãos" },
+  { id: "biblia", name: "Versículo", emoji: "📖", description: "Passagens bíblicas que tocaram o seu coração" },
+  { id: "fe", name: "Reflexão", emoji: "💭", description: "Pensamentos sobre a vida diária e a aplicação da Palavra" },
+  { id: "vida-crista", name: "Testemunho", emoji: "❤️", description: "O que o Senhor tem feito e transformado em sua vida" },
+  { id: "duvidas", name: "Pergunta", emoji: "❓", description: "Dúvidas sobre passagens bíblicas, história ou fé" },
+  { id: "geral", name: "Devocional", emoji: "🌅", description: "Meditações para nutrir e edificar a comunhão diária" },
+];
+
+export function getCategoryMeta(categoryId: string): { name: string; emoji: string } {
+  const found = COMMUNITY_CATEGORIES.find((c) => c.id === categoryId);
+  if (found) return { name: found.name, emoji: found.emoji };
+  if (categoryId === "pedido-de-oracao" || categoryId === "oracao") return { name: "Pedido de oração", emoji: "🙏" };
+  if (categoryId === "versiculo" || categoryId === "biblia") return { name: "Versículo", emoji: "📖" };
+  if (categoryId === "reflexao" || categoryId === "fe") return { name: "Reflexão", emoji: "💭" };
+  if (categoryId === "testemunho" || categoryId === "vida-crista") return { name: "Testemunho", emoji: "❤️" };
+  if (categoryId === "pergunta" || categoryId === "duvidas" || categoryId === "estudos-biblicos") return { name: "Pergunta", emoji: "❓" };
+  if (categoryId === "devocional" || categoryId === "geral" || categoryId === "conhecimento") return { name: "Devocional", emoji: "🌅" };
+  return { name: "Comunidade", emoji: "💬" };
+}
+
+export const REPORT_REASONS = [
+  "Spam",
+  "Conteúdo ofensivo",
+  "Conteúdo inadequado",
+  "Assédio",
+  "Outro",
+] as const;
+
+export type ReportReason = typeof REPORT_REASONS[number];
+
+// Sanitização e proteção contra spam
+export function sanitizeText(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/javascript:/gi, "")
+    .trim();
+}
+
+const SPAM_COOLDOWN_MS = 15000;
+export function checkSpamCooldown(): { allowed: boolean; remainingSec: number } {
+  if (typeof window === "undefined") return { allowed: true, remainingSec: 0 };
+  const lastPost = localStorage.getItem("bo:last_post_time");
+  if (!lastPost) return { allowed: true, remainingSec: 0 };
+  const diff = Date.now() - parseInt(lastPost, 10);
+  if (diff < SPAM_COOLDOWN_MS) {
+    const remainingSec = Math.ceil((SPAM_COOLDOWN_MS - diff) / 1000);
+    return { allowed: false, remainingSec };
+  }
+  return { allowed: true, remainingSec: 0 };
+}
+
+export function recordPostTimestamp() {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("bo:last_post_time", String(Date.now()));
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -50,6 +118,8 @@ export interface Question {
   author?: QuestionAuthor;
   category?: Category;
   user_has_liked?: boolean;
+  user_has_prayed?: boolean;
+  prayed_count?: number;
   reactions_summary?: { [emoji: string]: number };
   user_reactions?: string[];
 }
@@ -89,27 +159,13 @@ export interface NotificationItem {
 // Categories
 // ----------------------------------------------------
 export async function fetchCategories(): Promise<Category[]> {
-  const { data, error } = await supabase
-    .from("community_categories")
-    .select("*")
-    .order("order_index", { ascending: true });
-
-  if (error) {
-    console.error("Error fetching categories:", error);
-    return [
-      { id: "biblia", name: "Bíblia", description: "Perguntas sobre as Escrituras", icon: "📖", order_index: 1 },
-      { id: "oracao", name: "Oração", description: "Pedidos e gratidão", icon: "🙏", order_index: 2 },
-      { id: "vida-crista", name: "Vida Cristã", description: "Desafios e testemunhos", icon: "❤️", order_index: 3 },
-      { id: "estudos-biblicos", name: "Estudos Bíblicos", description: "Aprofundamento na Palavra", icon: "📚", order_index: 4 },
-      { id: "duvidas", name: "Dúvidas", description: "Dúvidas e respostas", icon: "❓", order_index: 5 },
-      { id: "fe", name: "Fé", description: "Esperança e confiança", icon: "🕊️", order_index: 6 },
-      { id: "familia", name: "Família", description: "Princípios para o lar", icon: "👨‍👩‍👧", order_index: 7 },
-      { id: "historia-biblica", name: "História Bíblica", description: "Contexto e geografia", icon: "📜", order_index: 8 },
-      { id: "conhecimento", name: "Conhecimento", description: "Curiosidades e aprendizados", icon: "💡", order_index: 9 },
-      { id: "geral", name: "Geral", description: "Comunhão e conversas", icon: "📌", order_index: 10 },
-    ];
-  }
-  return data || [];
+  return COMMUNITY_CATEGORIES.map((c, index) => ({
+    id: c.id,
+    name: c.name,
+    description: c.description,
+    icon: c.emoji,
+    order_index: index + 1,
+  }));
 }
 
 // ----------------------------------------------------
@@ -120,6 +176,8 @@ export interface FetchQuestionsParams {
   filter?: "recent" | "popular" | "most_answered" | "most_liked" | "answered" | "unanswered";
   search?: string;
   currentUserId?: string | null;
+  limit?: number;
+  offset?: number;
 }
 
 export async function fetchQuestions({
@@ -154,6 +212,12 @@ export async function fetchQuestions({
   } else {
     // recent
     query = query.order("created_at", { ascending: false });
+  }
+
+  if (offset !== undefined && limit !== undefined) {
+    query = query.range(offset, offset + limit - 1);
+  } else if (limit !== undefined) {
+    query = query.limit(limit);
   }
 
   const { data, error } = await query;
@@ -213,14 +277,20 @@ export async function fetchQuestions({
     }
   });
 
-  return rawQuestions.map((q) => ({
-    ...q,
-    author: profileMap.get(q.user_id) || { id: q.user_id, name: "Irmão(ã) em Cristo", avatar_url: null },
-    category: Array.isArray(q.category) ? q.category[0] : q.category,
-    user_has_liked: likedQuestionIds.has(q.id),
-    reactions_summary: reactionsSummaryMap.get(q.id) || {},
-    user_reactions: userReactionsMap.get(q.id) || [],
-  }));
+  return rawQuestions.map((q) => {
+    const summary = reactionsSummaryMap.get(q.id) || {};
+    const userReactions = userReactionsMap.get(q.id) || [];
+    return {
+      ...q,
+      author: profileMap.get(q.user_id) || { id: q.user_id, name: "Irmão(ã) em Cristo", avatar_url: null },
+      category: Array.isArray(q.category) ? q.category[0] : q.category,
+      user_has_liked: likedQuestionIds.has(q.id),
+      user_has_prayed: userReactions.includes("🙏"),
+      prayed_count: summary["🙏"] || 0,
+      reactions_summary: summary,
+      user_reactions: userReactions,
+    };
+  });
 }
 
 export async function fetchQuestionById(id: string, currentUserId?: string | null): Promise<Question | null> {
@@ -284,8 +354,106 @@ export async function fetchQuestionById(id: string, currentUserId?: string | nul
     author: author || { id: data.user_id, name: "Irmão(ã) em Cristo", avatar_url: null },
     category: Array.isArray(data.category) ? data.category[0] : data.category,
     user_has_liked,
+    user_has_prayed: user_reactions.includes("🙏"),
+    prayed_count: reactions_summary["🙏"] || 0,
     reactions_summary,
     user_reactions,
+  };
+}
+
+// ----------------------------------------------------
+// Prayer Requests Intercession ("Orar por esta pessoa")
+// ----------------------------------------------------
+export async function togglePrayer(
+  questionId: string,
+  userId: string,
+  questionAuthorId?: string
+): Promise<{ userHasPrayed: boolean; prayedCount: number }> {
+  const { data: existing } = await supabase
+    .from("reactions")
+    .select("id")
+    .eq("target_type", "question")
+    .eq("target_id", questionId)
+    .eq("user_id", userId)
+    .eq("emoji", "🙏")
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from("reactions").delete().eq("id", existing.id);
+  } else {
+    await supabase.from("reactions").insert({
+      target_type: "question",
+      target_id: questionId,
+      user_id: userId,
+      emoji: "🙏",
+      reaction_name: "Oração",
+    });
+
+    if (questionAuthorId && questionAuthorId !== userId) {
+      await createNotification({
+        userId: questionAuthorId,
+        actorId: userId,
+        type: "reaction",
+        questionId,
+        message: "marcou que está orando pelo seu pedido de oração. 🙏",
+      });
+    }
+  }
+
+  const { count } = await supabase
+    .from("reactions")
+    .select("*", { count: "exact", head: true })
+    .eq("target_type", "question")
+    .eq("target_id", questionId)
+    .eq("emoji", "🙏");
+
+  return {
+    userHasPrayed: !existing,
+    prayedCount: count || 0,
+  };
+}
+
+// ----------------------------------------------------
+// Public Profile (LGPD Compliant - zero private exposure)
+// ----------------------------------------------------
+export interface PublicProfileData {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+  created_at: string;
+  questions: Question[];
+}
+
+export async function fetchPublicProfile(userId: string): Promise<PublicProfileData | null> {
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("id, name, avatar_url, created_at")
+    .eq("id", userId)
+    .single();
+
+  if (error || !profile) return null;
+
+  const { data: questions } = await supabase
+    .from("questions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  return {
+    id: profile.id,
+    name: profile.name || "Irmão(ã) em Cristo",
+    avatar_url: profile.avatar_url,
+    created_at: profile.created_at,
+    questions: (questions || []).map((q) => ({
+      ...q,
+      author: {
+        id: profile.id,
+        name: profile.name || "Irmão(ã) em Cristo",
+        avatar_url: profile.avatar_url,
+      },
+      user_has_liked: false,
+    })),
   };
 }
 
@@ -398,18 +566,22 @@ export async function fetchAnswers(questionId: string, currentUserId?: string | 
 export async function createQuestion(params: {
   userId: string;
   categoryId: string;
-  title: string;
+  title?: string;
   body: string;
   verseReference?: string;
 }): Promise<Question | null> {
+  const sanitizedBody = sanitizeText(params.body);
+  const rawTitle = params.title?.trim() || "";
+  const sanitizedTitle = rawTitle ? sanitizeText(rawTitle) : (sanitizedBody.slice(0, 60) + (sanitizedBody.length > 60 ? "..." : ""));
+
   const { data, error } = await supabase
     .from("questions")
     .insert({
       user_id: params.userId,
       category_id: params.categoryId,
-      title: params.title.trim(),
-      body: params.body.trim(),
-      verse_reference: params.verseReference?.trim() || null,
+      title: sanitizedTitle || "Publicação na Comunidade",
+      body: sanitizedBody,
+      verse_reference: params.verseReference?.trim() ? sanitizeText(params.verseReference.trim()) : null,
     })
     .select()
     .single();
@@ -451,14 +623,15 @@ export async function createAnswer(params: {
   questionAuthorId?: string;
   parentAnswerAuthorId?: string;
 }): Promise<Answer | null> {
+  const sanitizedBody = sanitizeText(params.body);
   const { data, error } = await supabase
     .from("answers")
     .insert({
       question_id: params.questionId,
       user_id: params.userId,
       parent_id: params.parentId || null,
-      body: params.body.trim(),
-      verse_reference: params.verseReference?.trim() || null,
+      body: sanitizedBody,
+      verse_reference: params.verseReference?.trim() ? sanitizeText(params.verseReference.trim()) : null,
     })
     .select()
     .single();
@@ -822,3 +995,52 @@ export function formatRelativeDate(isoDate: string): string {
     return "";
   }
 }
+
+// ----------------------------------------------------
+// Admin Moderation
+// ----------------------------------------------------
+export interface CommunityReportItem {
+  id: string;
+  target_type: string;
+  target_id: string;
+  reporter_id: string;
+  reason: string;
+  status: string;
+  created_at: string;
+  reporter_name?: string;
+  target_title?: string;
+  target_body?: string;
+}
+
+export async function fetchCommunityReports(): Promise<CommunityReportItem[]> {
+  const { data, error } = await supabase
+    .from("community_reports")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return data;
+}
+
+export async function resolveCommunityReport(reportId: string, status: "resolved" | "dismissed") {
+  const { error } = await supabase
+    .from("community_reports")
+    .update({ status })
+    .eq("id", reportId);
+  if (error) throw error;
+}
+
+export async function adminDeleteQuestion(questionId: string) {
+  const { error } = await supabase.from("questions").delete().eq("id", questionId);
+  if (error) throw error;
+}
+
+export async function adminDeleteAnswer(answerId: string, questionId: string) {
+  const { error } = await supabase.from("answers").delete().eq("id", answerId);
+  if (error) throw error;
+  const { data: q } = await supabase.from("questions").select("answers_count").eq("id", questionId).single();
+  if (q && q.answers_count > 0) {
+    await supabase.from("questions").update({ answers_count: q.answers_count - 1 }).eq("id", questionId);
+  }
+}
+

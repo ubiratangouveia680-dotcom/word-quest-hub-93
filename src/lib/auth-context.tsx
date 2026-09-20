@@ -22,7 +22,7 @@ interface AuthContextType {
   signOut: () => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
-  updateProfile: (patch: { name?: string }) => Promise<{ error: Error | null }>;
+  updateProfile: (patch: { name?: string; avatar_url?: string | null }) => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -277,15 +277,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const updateProfile = useCallback(async (patch: { name?: string }) => {
+  const updateProfile = useCallback(async (patch: { name?: string; avatar_url?: string | null }) => {
     if (!user) {
       return { error: new Error("Usuário não autenticado.") };
     }
     try {
-      const updates: { name?: string; updated_at: string } = {
+      const updates: { name?: string; avatar_url?: string | null; updated_at: string } = {
         updated_at: new Date().toISOString(),
       };
       if (patch.name !== undefined) updates.name = patch.name.trim();
+      if (patch.avatar_url !== undefined) updates.avatar_url = patch.avatar_url;
 
       const { error } = await supabase
         .from("profiles")
