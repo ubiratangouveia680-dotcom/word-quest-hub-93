@@ -36,6 +36,15 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 
@@ -128,9 +137,13 @@ function BibleQuizPage() {
     },
   });
 
+  // Modal para solicitar nome do visitante antes de salvar no ranking
+  const [guestNameModalOpen, setGuestNameModalOpen] = useState(false);
+  const [guestName, setGuestName] = useState("");
+
   // Mutação para submeter a prova
   const submitQuizMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (overrideName?: string) => {
       const answersArray: UserQuizAnswer[] = questions.map((q) => {
         const sel = selectedAnswers[q.id];
         return {
@@ -140,10 +153,12 @@ function BibleQuizPage() {
         };
       });
 
+      const nameToUse = overrideName || profile?.name || profile?.username || undefined;
+
       return await submitQuizAttempt(
         answersArray,
         user?.id,
-        profile?.name || profile?.username || undefined,
+        nameToUse,
         profile?.avatar_url
       );
     },
@@ -193,8 +208,26 @@ function BibleQuizPage() {
       return;
     }
 
+    // Se estiver logado, salva diretamente com a conta do usuário
+    if (isAuthenticated) {
+      setStep("submitting");
+      submitQuizMutation.mutate();
+    } else {
+      // Se não estiver logado, solicita o nome antes de finalizar
+      setGuestNameModalOpen(true);
+    }
+  };
+
+  const handleConfirmGuestName = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = guestName.trim();
+    if (!trimmed) {
+      toast.warning("Por favor, digite seu nome para registrar sua pontuação no ranking.");
+      return;
+    }
+    setGuestNameModalOpen(false);
     setStep("submitting");
-    submitQuizMutation.mutate();
+    submitQuizMutation.mutate(trimmed);
   };
 
   const handleRestart = () => {
@@ -684,8 +717,16 @@ function BibleQuizPage() {
                       </tr>
                     ) : rankings.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                          Nenhum resultado registrado ainda. Seja o primeiro a fazer a prova!
+                        <td colSpan={6} className="p-12 text-center text-muted-foreground">
+                          <div className="flex flex-col items-center justify-center space-y-2">
+                            <Trophy className="size-10 text-muted-foreground/30 stroke-1" />
+                            <p className="font-semibold text-foreground text-sm">
+                              Ainda não há participantes no ranking
+                            </p>
+                            <p className="text-xs text-muted-foreground max-w-sm">
+                              Seja o primeiro a realizar a prova bíblica, testar seus conhecimentos e garantir o 1º lugar no quadro de honra!
+                            </p>
+                          </div>
                         </td>
                       </tr>
                     ) : (
@@ -752,6 +793,66 @@ function BibleQuizPage() {
           </div>
         )}
       </div>
+
+      {/* MODAL PARA USUÁRIO NÃO LOGADO INFORMAR O NOME PARA O RANKING */}
+      <Dialog open={guestNameModalOpen} onOpenChange={setGuestNameModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
+              <Trophy className="size-6 text-amber-500" />
+            </div>
+            <DialogTitle className="text-center font-display text-xl font-bold">
+              Registrar no Ranking Bíblico
+            </DialogTitle>
+            <DialogDescription className="text-center text-xs text-muted-foreground">
+              Parabéns por responder as 10 questões! Digite seu nome para salvar sua pontuação no quadro de honra oficial.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleConfirmGuestName} className="space-y-4 pt-2">
+            <div>
+              <label htmlFor="guest-name" className="text-xs font-semibold text-foreground block mb-1.5">
+                Seu Nome ou Apelido
+              </label>
+              <Input
+                id="guest-name"
+                placeholder="Ex: Carlos Eduardo, Maria Silva..."
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                autoFocus
+                maxLength={40}
+                className="h-10 text-sm"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Sua pontuação e taxa de acertos serão salvas e exibidas no ranking com esse nome.
+              </p>
+            </div>
+
+            <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setGuestNameModalOpen(false);
+                  setStep("submitting");
+                  submitQuizMutation.mutate("Participante");
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Continuar como anônimo
+              </Button>
+              <Button
+                type="submit"
+                disabled={!guestName.trim()}
+                className="font-bold text-xs h-10 px-6 gap-1.5"
+              >
+                <Check className="size-4" /> Salvar e Ver Resultado
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </SiteLayout>
   );
 }
