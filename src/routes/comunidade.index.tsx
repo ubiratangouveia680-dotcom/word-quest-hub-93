@@ -11,6 +11,7 @@ import {
   recordPostTimestamp,
   sanitizeText,
   fetchQuestions,
+  fetchCategoriesFromDB,
   createQuestion,
   updateQuestion,
   deleteQuestion,
@@ -21,6 +22,7 @@ import {
   useOnlineMembersCount,
   formatRelativeDate,
   type Question,
+  type Category,
   type PublicProfileData,
   type ReportReason,
 } from "@/lib/community";
@@ -114,9 +116,13 @@ function ComunidadeFeedPage() {
   const [loadError, setLoadError] = useState(false);
   const [, startTransition] = useTransition();
 
+  // DB Categories State (loaded from Supabase, not static)
+  const [dbCategories, setDbCategories] = useState<Category[]>([]);
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
+
   // Create Publication Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [categoryId, setCategoryId] = useState<string>(COMMUNITY_CATEGORIES[0]?.id || "geral");
+  const [categoryId, setCategoryId] = useState<string>("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [verseReference, setVerseReference] = useState("");
@@ -128,7 +134,7 @@ function ComunidadeFeedPage() {
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editBody, setEditBody] = useState("");
-  const [editCategoryId, setEditCategoryId] = useState<string>(COMMUNITY_CATEGORIES[0]?.id || "geral");
+  const [editCategoryId, setEditCategoryId] = useState<string>("");
   const [editVerse, setEditVerse] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
@@ -151,10 +157,32 @@ function ComunidadeFeedPage() {
   const [reportDetails, setReportDetails] = useState("");
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
+  // Carrega categorias reais do banco ao montar o componente
+  useEffect(() => {
+    let active = true;
+    setIsCategoriesLoading(true);
+    fetchCategoriesFromDB().then((cats) => {
+      if (!active) return;
+      setDbCategories(cats);
+      // Inicializa o estado com o primeiro ID real do banco
+      if (cats.length > 0) {
+        setCategoryId((prev) => prev || cats[0]?.id || "");
+        setEditCategoryId((prev) => prev || cats[0]?.id || "");
+      }
+      setIsCategoriesLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setIsCategoriesLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
+
   // Verse share auto-open
   useEffect(() => {
     if (shareVerse === "1" || initialRef || initialText) {
-      setCategoryId("biblia"); // "Versículo"
+      // Usa o primeiro ID real do banco (ou fallback para o primeiro estático)
+      const firstCatId = dbCategories.length > 0 ? (dbCategories[0]?.id || "") : (COMMUNITY_CATEGORIES.find(c => c.id === "biblia")?.id || COMMUNITY_CATEGORIES[0]?.id || "");
+      setCategoryId(firstCatId);
       if (initialRef) setVerseReference(initialRef);
       if (initialText) setBody(`"${initialText}"`);
       if (isAuthenticated) {
@@ -164,7 +192,7 @@ function ComunidadeFeedPage() {
         setIsVisitorModalOpen(true);
       }
     }
-  }, [shareVerse, initialRef, initialText, isAuthenticated]);
+  }, [shareVerse, initialRef, initialText, isAuthenticated, dbCategories]);
 
   // Load questions from DB
   const loadFeed = async (reset = false) => {
@@ -236,6 +264,12 @@ function ComunidadeFeedPage() {
       return;
     }
 
+    // Valida que a categoria está selecionada e é real
+    if (!categoryId || !dbCategories.some((c) => c.id === categoryId)) {
+      setFormError("Por favor, selecione uma categoria válida antes de publicar.");
+      return;
+    }
+
     // Anti-spam cooldown check (15s)
     const cooldown = checkSpamCooldown(user.id);
     if (cooldown.isLimited) {
@@ -299,6 +333,13 @@ function ComunidadeFeedPage() {
     try {
       setIsSavingEdit(true);
       setEditError("");
+
+      // Valida que a categoria de edição é real
+      if (!editCategoryId || !dbCategories.some((c) => c.id === editCategoryId)) {
+        setEditError("Por favor, selecione uma categoria válida antes de salvar.");
+        setIsSavingEdit(false);
+        return;
+      }
 
       await updateQuestion(editingQuestion.id, {
         title: editTitle.trim() || undefined,
@@ -894,23 +935,34 @@ function ComunidadeFeedPage() {
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">
                   Selecione a Categoria *
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {COMMUNITY_CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setCategoryId(cat.id)}
-                      className={`flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition-all ${
-                        categoryId === cat.id
-                          ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
-                          : "border-border bg-card hover:bg-accent text-foreground"
-                      }`}
-                    >
-                      <span className="text-base">{cat.emoji}</span>
-                      <span className="truncate">{cat.name}</span>
-                    </button>
-                  ))}
-                </div>
+                {isCategoriesLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground py-3">
+                    <span className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    Carregando categorias...
+                  </div>
+                ) : dbCategories.length === 0 ? (
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive font-medium">
+                    ⚠️ Nenhuma categoria cadastrada. É necessário criar ao menos uma categoria antes de publicar.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {dbCategories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setCategoryId(cat.id)}
+                        className={`flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition-all ${
+                          categoryId === cat.id
+                            ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
+                            : "border-border bg-card hover:bg-accent text-foreground"
+                        }`}
+                      >
+                        <span className="text-base">{cat.icon}</span>
+                        <span className="truncate">{cat.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Título opcional */}
@@ -967,7 +1019,7 @@ function ComunidadeFeedPage() {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isSubmitting} className="font-bold">
+                <Button type="submit" disabled={isSubmitting || isCategoriesLoading || dbCategories.length === 0} className="font-bold">
                   {isSubmitting ? (
                     <>
                       <Loader2 className="size-4 animate-spin mr-2" /> Publicando...
@@ -1210,23 +1262,34 @@ function ComunidadeFeedPage() {
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">
                   Categoria *
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {COMMUNITY_CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setEditCategoryId(cat.id)}
-                      className={`flex items-center gap-2 rounded-lg border p-2 text-xs font-medium transition-all text-left ${
-                        editCategoryId === cat.id
-                          ? "border-primary bg-primary/10 text-foreground font-semibold shadow-xs"
-                          : "border-border bg-card hover:bg-accent text-muted-foreground"
-                      }`}
-                    >
-                      <span className="text-sm">{cat.emoji}</span>
-                      <span className="truncate">{cat.name}</span>
-                    </button>
-                  ))}
-                </div>
+                {isCategoriesLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground py-3">
+                    <span className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    Carregando categorias...
+                  </div>
+                ) : dbCategories.length === 0 ? (
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive font-medium">
+                    ⚠️ Nenhuma categoria cadastrada. É necessário criar ao menos uma categoria antes de salvar.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {dbCategories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setEditCategoryId(cat.id)}
+                        className={`flex items-center gap-2 rounded-lg border p-2 text-xs font-medium transition-all text-left ${
+                          editCategoryId === cat.id
+                            ? "border-primary bg-primary/10 text-foreground font-semibold shadow-xs"
+                            : "border-border bg-card hover:bg-accent text-muted-foreground"
+                        }`}
+                      >
+                        <span className="text-sm">{cat.icon}</span>
+                        <span className="truncate">{cat.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Título opcional */}
@@ -1280,7 +1343,7 @@ function ComunidadeFeedPage() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isSavingEdit}
+                  disabled={isSavingEdit || isCategoriesLoading || dbCategories.length === 0}
                   className="font-semibold"
                 >
                   {isSavingEdit ? (

@@ -11,6 +11,7 @@ import {
   deleteQuestion,
   updateQuestion,
   COMMUNITY_CATEGORIES,
+  fetchCategoriesFromDB,
   toggleQuestionLike,
   toggleAnswerLike,
   togglePrayer,
@@ -24,6 +25,7 @@ import {
   sanitizeText,
   type Question,
   type Answer,
+  type Category,
   type PublicProfileData,
   type ReportReason,
 } from "@/lib/community";
@@ -120,6 +122,10 @@ function QuestionDetailsPage() {
   const [publicProfile, setPublicProfile] = useState<PublicProfileData | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
+  // DB Categories State (loaded from Supabase, not static)
+  const [dbCategories, setDbCategories] = useState<Category[]>([]);
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
+
   // Load question and answers
   const loadData = async () => {
     setIsLoading(true);
@@ -143,6 +149,25 @@ function QuestionDetailsPage() {
   useEffect(() => {
     loadData();
   }, [id, user?.id]);
+
+  // Carrega categorias reais do banco ao montar o componente
+  useEffect(() => {
+    let active = true;
+    setIsCategoriesLoading(true);
+    fetchCategoriesFromDB().then((cats) => {
+      if (!active) return;
+      setDbCategories(cats);
+      if (cats.length > 0) {
+        // Inicializa editCategoryId com o primeiro ID real, apenas se ainda estiver vazio
+        setEditCategoryId((prev) => prev || cats[0]?.id || "");
+      }
+      setIsCategoriesLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setIsCategoriesLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
 
   // Handle Question Like
   const handleLikeQuestion = async () => {
@@ -302,6 +327,18 @@ function QuestionDetailsPage() {
     try {
       setIsSavingEdit(true);
       setEditError("");
+
+      // Valida que a categoria de edição é real e existe no banco
+      if (!editCategoryId || !editCategoryId.trim()) {
+        setEditError("Por favor, selecione uma categoria antes de salvar.");
+        setIsSavingEdit(false);
+        return;
+      }
+      if (dbCategories.length > 0 && !dbCategories.some((c) => c.id === editCategoryId)) {
+        setEditError("A categoria selecionada é inválida. Por favor, selecione uma categoria válida.");
+        setIsSavingEdit(false);
+        return;
+      }
 
       await updateQuestion(question.id, {
         title: editTitle.trim() || undefined,
@@ -1058,23 +1095,34 @@ function QuestionDetailsPage() {
                 <label className="text-xs font-semibold text-foreground mb-1.5 block">
                   Categoria *
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {COMMUNITY_CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setEditCategoryId(cat.id)}
-                      className={`flex items-center gap-2 rounded-lg border p-2 text-xs font-medium transition-all text-left ${
-                        editCategoryId === cat.id
-                          ? "border-primary bg-primary/10 text-foreground font-semibold shadow-xs"
-                          : "border-border bg-card hover:bg-accent text-muted-foreground"
-                      }`}
-                    >
-                      <span className="text-sm">{cat.emoji}</span>
-                      <span className="truncate">{cat.name}</span>
-                    </button>
-                  ))}
-                </div>
+                {isCategoriesLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground py-3">
+                    <span className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    Carregando categorias...
+                  </div>
+                ) : dbCategories.length === 0 ? (
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive font-medium">
+                    ⚠️ Nenhuma categoria cadastrada. É necessário criar ao menos uma categoria antes de salvar.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {dbCategories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setEditCategoryId(cat.id)}
+                        className={`flex items-center gap-2 rounded-lg border p-2 text-xs font-medium transition-all text-left ${
+                          editCategoryId === cat.id
+                            ? "border-primary bg-primary/10 text-foreground font-semibold shadow-xs"
+                            : "border-border bg-card hover:bg-accent text-muted-foreground"
+                        }`}
+                      >
+                        <span className="text-sm">{cat.icon}</span>
+                        <span className="truncate">{cat.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Título opcional */}

@@ -171,14 +171,52 @@ export interface NotificationItem {
 // ----------------------------------------------------
 // Categories
 // ----------------------------------------------------
+
+/**
+ * Busca as categorias da tabela `community_categories` no Supabase.
+ * Se a tabela não existir ou estiver vazia, usa os dados estáticos como fallback
+ * para manter compatibilidade.
+ */
+export async function fetchCategoriesFromDB(): Promise<Category[]> {
+  try {
+    const { data, error } = await supabase
+      .from("community_categories")
+      .select("id, name, description, icon, order_index")
+      .order("order_index", { ascending: true });
+
+    if (error) {
+      // Tabela pode não existir (42P01) ou outro erro — usa fallback estático
+      console.warn("[fetchCategoriesFromDB] Erro ao buscar categorias do banco, usando fallback estático:", error.message);
+      return COMMUNITY_CATEGORIES.map((c, index) => ({
+        id: c.id,
+        name: c.name,
+        description: c.description,
+        icon: c.emoji,
+        order_index: index + 1,
+      }));
+    }
+
+    if (!data || data.length === 0) {
+      // Tabela existe mas está vazia — retorna vazio para que a UI possa alertar o usuário
+      return [];
+    }
+
+    return data as Category[];
+  } catch {
+    // Fallback de segurança
+    return COMMUNITY_CATEGORIES.map((c, index) => ({
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      icon: c.emoji,
+      order_index: index + 1,
+    }));
+  }
+}
+
+/** @deprecated Use fetchCategoriesFromDB para obter categorias reais do banco. */
 export async function fetchCategories(): Promise<Category[]> {
-  return COMMUNITY_CATEGORIES.map((c, index) => ({
-    id: c.id,
-    name: c.name,
-    description: c.description,
-    icon: c.emoji,
-    order_index: index + 1,
-  }));
+  return fetchCategoriesFromDB();
 }
 
 // ----------------------------------------------------
@@ -761,15 +799,38 @@ export async function createQuestion(params: {
   const rawTitle = params.title?.trim() || "";
   const sanitizedTitle = rawTitle ? sanitizeText(rawTitle) : (sanitizedBody.slice(0, 60) + (sanitizedBody.length > 60 ? "..." : ""));
 
-  const validCat = COMMUNITY_CATEGORIES.some((c) => c.id === params.categoryId)
-    ? params.categoryId
-    : "geral";
+  // Garantir que categoryId seja um valor válido não-vazio.
+  // NÃO validamos contra o array estático local — o ID deve vir de fetchCategoriesFromDB()
+  // para garantir que existe no banco. Se vier vazio/undefined, lançamos erro descritivo.
+  const categoryId = params.categoryId?.trim();
+  if (!categoryId) {
+    throw new Error(
+      "Nenhuma categoria selecionada. Selecione uma categoria antes de publicar."
+    );
+  }
+
+  // Verificar se a categoria realmente existe no banco antes de inserir
+  const { data: catExists, error: catError } = await supabase
+    .from("community_categories")
+    .select("id")
+    .eq("id", categoryId)
+    .maybeSingle();
+
+  if (catError) {
+    console.warn("[createQuestion] Não foi possível validar a categoria no banco:", catError.message);
+    // Continua sem validação para não bloquear em caso de erro de permissão
+  } else if (!catExists) {
+    throw new Error(
+      `A categoria selecionada ("${categoryId}") não existe no banco de dados. ` +
+      "Por favor, selecione uma categoria válida."
+    );
+  }
 
   const { data, error } = await supabase
     .from("questions")
     .insert({
       user_id: params.userId,
-      category_id: validCat,
+      category_id: categoryId,
       title: sanitizedTitle || "Publicação na Comunidade",
       body: sanitizedBody,
       verse_reference: params.verseReference?.trim() ? sanitizeText(params.verseReference.trim()) : null,
@@ -808,7 +869,10 @@ export async function updateQuestion(
   if (updates.body !== undefined) {
     payload.body = sanitizeText(updates.body).trim();
   }
-  if (updates.categoryId) payload.category_id = updates.categoryId;
+  // Só inclui category_id se for um valor não-vazio (evita FK violation por string vazia)
+  if (updates.categoryId && updates.categoryId.trim()) {
+    payload.category_id = updates.categoryId.trim();
+  }
   if (updates.verseReference !== undefined) {
     payload.verse_reference = updates.verseReference.trim() ? sanitizeText(updates.verseReference.trim()) : null;
   }

@@ -456,11 +456,32 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
 
   // 2. Fallback to questions table
   try {
+    // Busca o ID real da categoria de oração no banco para não violar a FK
+    const { data: catRow } = await supabase
+      .from("community_categories")
+      .select("id")
+      .or("id.eq.oracao,id.eq.pedido-de-oracao")
+      .maybeSingle();
+
+    const prayerCategoryId = catRow?.id;
+
+    if (!prayerCategoryId) {
+      // Categoria de oração não existe no banco; não tenta inserir para não gerar FK violation
+      console.warn(
+        "[createPrayerRequest] Categoria de oração não encontrada na tabela community_categories. " +
+        "O fallback para a tabela questions foi ignorado para evitar violação de FK."
+      );
+      throw new Error(
+        "Não foi possível publicar seu pedido de oração pois nenhuma categoria de oração está cadastrada. " +
+        "Por favor, use o mural de pedidos de oração dedicado."
+      );
+    }
+
     const titleTag = isAnon ? `[ANÔNIMO] Pedido de Oração` : cleanContent.slice(0, 60);
     const { data: qData, error: qError } = await supabase
       .from("questions")
       .insert({
-        category_id: "oracao",
+        category_id: prayerCategoryId,
         user_id: input.userId,
         title: titleTag,
         body: cleanContent,
