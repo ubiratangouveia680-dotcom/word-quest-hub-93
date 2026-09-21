@@ -13,6 +13,9 @@ import {
   Users,
   Church,
   MapPin,
+  GraduationCap,
+  FileText,
+  Trophy,
 } from "lucide-react";
 import { SiteLayout } from "@/components/SiteLayout";
 import { AdBanner, AdDesktop, AdMobile } from "@/components/Ads";
@@ -23,25 +26,28 @@ import { ContinueReading } from "@/components/ContinueReading";
 import { DailyJourney } from "@/components/DailyJourney";
 import { STUDIES, DEVOTIONALS } from "@/lib/content";
 import { fetchQuestions, type Question } from "@/lib/community";
+import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Bíblia Online — Leia a Bíblia Sagrada" },
+      { title: "Bíblia Online — Bíblia Sagrada, Estudos e Versículos" },
       {
         name: "description",
         content:
-          "Leia a Bíblia Online, encontre versículos, orações, estudos bíblicos, devocionais e participe da comunidade.",
+          "Leia a Bíblia Sagrada online completa em português com capítulos e versículos. Acesse estudos bíblicos profundos, lições da Escola Dominical, apostilas em PDF, devocionais diários, orações, mural de pedidos de oração e teste seus conhecimentos com o quiz bíblico.",
       },
-      { property: "og:title", content: "Bíblia Online — Leia a Bíblia Sagrada" },
+      { property: "og:title", content: "Bíblia Online — Bíblia Sagrada, Estudos e Versículos" },
       {
         property: "og:description",
         content:
-          "Leia a Bíblia Online, encontre versículos, orações, estudos bíblicos, devocionais e participe da comunidade.",
+          "Leia a Bíblia Sagrada online completa em português com capítulos e versículos. Acesse estudos bíblicos profundos, lições da Escola Dominical, apostilas em PDF, devocionais diários, orações, mural de pedidos de oração e teste seus conhecimentos com o quiz bíblico.",
       },
-      { property: "og:url", content: "/" },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: url("/") },
+      { property: "og:image", content: url("/icon-512.png") },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [{ rel: "canonical", href: url("/") }],
   }),
   component: Index,
 });
@@ -49,10 +55,13 @@ export const Route = createFileRoute("/")({
 // 2. ACESSOS RÁPIDOS ("Explore a Bíblia")
 const QUICK_LINKS = [
   { label: "Bíblia", to: "/biblia", desc: "66 livros sagrados", icon: BookOpen },
+  { label: "Estudos Bíblicos", to: "/estudos", desc: "Aprofunde na Palavra", icon: Compass },
+  { label: "Escola Dominical", to: "/estudos/escola-dominical", desc: "Lições da EBD", icon: GraduationCap },
+  { label: "Apostilas", to: "/estudos/apostilas", desc: "Materiais em PDF", icon: FileText },
   { label: "Orações", to: "/oracoes", desc: "Para todos os momentos", icon: HeartHandshake },
+  { label: "Quiz Bíblico", to: "/estudos/prova-biblica", desc: "Teste seus conhecimentos", icon: Trophy },
+  { label: "Pedidos de Oração", to: "/comunidade/pedidos-de-oracao", desc: "Intercessão mútua", icon: Sparkles },
   { label: "Versículo do Dia", to: "/versiculo-do-dia", desc: "Reflexão diária", icon: Calendar },
-  { label: "Estudos Bíblicos", to: "/estudos", desc: "Aprofunde a leitura", icon: Compass },
-  { label: "Devocionais", to: "/devocionais", desc: "Edificação contínua", icon: Sparkles },
   { label: "Comunidade", to: "/comunidade", desc: "Comunhão na fé", icon: Users },
 ] as const;
 
@@ -526,6 +535,102 @@ function Index() {
                   <MessageSquare className="mr-1.5 size-4" /> Perguntar
                 </Link>
               </Button>
+            </div>
+          </section>
+
+          {/* SEÇÃO EDITORIAL E SEO: SOBRE O PORTAL BÍBLIA ONLINE */}
+          <section aria-labelledby="sobre-portal-heading" className="surface p-6 sm:p-8 rounded-2xl border border-border/80 space-y-5">
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gold">
+                Guia Completo da Plataforma
+              </span>
+              <h2 id="sobre-portal-heading" className="font-display text-xl sm:text-2xl font-bold text-foreground mt-1">
+                Bíblia Online — Sua Plataforma de Leitura Sagrada, Estudos e Oração
+              </h2>
+            </div>
+
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              O portal <strong className="text-foreground">Bíblia Online</strong> foi desenvolvido com o propósito de aproximar você da Palavra de Deus em qualquer lugar e a qualquer hora. Nossa plataforma reúne as Sagradas Escrituras em língua portuguesa com navegação rápida e moderna, proporcionando uma experiência rica e acessível tanto para quem está começando seus primeiros passos na fé quanto para líderes, professores e estudantes da teologia bíblica.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="rounded-xl border border-border/70 p-4 bg-card/50 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-foreground">
+                  <BookOpen className="size-4 text-gold" />
+                  <h3 className="font-semibold">Leitura da Bíblia Sagrada</h3>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Acesse gratuitamente todos os 66 livros da Bíblia, organizados entre o <Link to="/biblia/antigo-testamento" className="text-gold hover:underline font-medium">Antigo Testamento</Link> e o <Link to="/biblia/novo-testamento" className="text-gold hover:underline font-medium">Novo Testamento</Link>, com leitura versículo por versículo, referências cruzadas e busca inteligente de passagens.
+                </p>
+                <Link to="/biblia" className="inline-flex items-center text-xs font-semibold text-primary hover:underline gap-1">
+                  Explorar os 66 livros <ArrowRight className="size-3" />
+                </Link>
+              </div>
+
+              <div className="rounded-xl border border-border/70 p-4 bg-card/50 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-foreground">
+                  <Compass className="size-4 text-gold" />
+                  <h3 className="font-semibold">Estudos Bíblicos Profundos</h3>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Conteúdos temáticos originais abordando temas essenciais como fé, oração, família, perdão, esperança e vida cristã prática, com embasamento teológico e aplicação para o seu dia a dia.
+                </p>
+                <Link to="/estudos" className="inline-flex items-center text-xs font-semibold text-primary hover:underline gap-1">
+                  Ler estudos bíblicos <ArrowRight className="size-3" />
+                </Link>
+              </div>
+
+              <div className="rounded-xl border border-border/70 p-4 bg-card/50 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-foreground">
+                  <GraduationCap className="size-4 text-gold" />
+                  <h3 className="font-semibold">Escola Dominical (EBD)</h3>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Lições bíblicas estruturadas com leitura bíblica em classe, objetivos pedagógicos, esboço expositivo, aplicações práticas e subsídios para professores e alunos da Escola Bíblica Dominical.
+                </p>
+                <Link to="/estudos/escola-dominical" className="inline-flex items-center text-xs font-semibold text-primary hover:underline gap-1">
+                  Ver lições da EBD <ArrowRight className="size-3" />
+                </Link>
+              </div>
+
+              <div className="rounded-xl border border-border/70 p-4 bg-card/50 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-foreground">
+                  <FileText className="size-4 text-gold" />
+                  <h3 className="font-semibold">Apostilas Teológicas</h3>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Manuais completos de teologia, discipulado bíblico, história da Igreja e hermenêutica disponíveis para estudo online e download em formato digital, sem custos.
+                </p>
+                <Link to="/estudos/apostilas" className="inline-flex items-center text-xs font-semibold text-primary hover:underline gap-1">
+                  Acessar apostilas <ArrowRight className="size-3" />
+                </Link>
+              </div>
+
+              <div className="rounded-xl border border-border/70 p-4 bg-card/50 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-foreground">
+                  <Sparkles className="size-4 text-gold" />
+                  <h3 className="font-semibold">Mural de Pedidos de Oração</h3>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Espaço dedicado de intercessão mútua onde irmãos na fé compartilham seus clamores, agradecimentos e petições, recebendo orações e notificações em tempo real.
+                </p>
+                <Link to="/comunidade/pedidos-de-oracao" className="inline-flex items-center text-xs font-semibold text-primary hover:underline gap-1">
+                  Mural de orações <ArrowRight className="size-3" />
+                </Link>
+              </div>
+
+              <div className="rounded-xl border border-border/70 p-4 bg-card/50 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-foreground">
+                  <Trophy className="size-4 text-gold" />
+                  <h3 className="font-semibold">Quiz Bíblico (Prova Bíblica)</h3>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Avalie seus conhecimentos bíblicos com 10 questões interativas por teste, receba nota com gabarito comentado fundamentado nas Escrituras e participe do ranking de participantes.
+                </p>
+                <Link to="/estudos/prova-biblica" className="inline-flex items-center text-xs font-semibold text-primary hover:underline gap-1">
+                  Fazer o teste bíblico <ArrowRight className="size-3" />
+                </Link>
+              </div>
             </div>
           </section>
         </div>

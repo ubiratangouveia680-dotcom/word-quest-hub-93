@@ -59,7 +59,7 @@ export const Route = createFileRoute("/configuracoes")({
       { property: "og:title", content: "Configurações — Bíblia Online" },
       { property: "og:description", content: "Gerencie notificações, privacidade e preferências." },
       { property: "og:url", content: url("/configuracoes") },
-      { name: "robots", content: "noindex,follow" },
+      { name: "robots", content: "noindex,nofollow" },
     ],
     links: [{ rel: "canonical", href: url("/configuracoes") }],
   }),

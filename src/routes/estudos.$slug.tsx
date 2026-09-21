@@ -74,10 +74,41 @@ export const Route = createFileRoute("/estudos/$slug")({
             description: study.excerpt,
             articleSection: study.category,
             inLanguage: "pt-BR",
+            mainEntityOfPage: {
+              "@type": "WebPage",
+              "@id": url(path),
+            },
             author: {
               "@type": "Organization",
               name: "Bíblia Online",
             },
+          }),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Início",
+                item: url("/"),
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Estudos Bíblicos",
+                item: url("/estudos"),
+              },
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: study.title,
+                item: url(path),
+              },
+            ],
           }),
         },
       ],

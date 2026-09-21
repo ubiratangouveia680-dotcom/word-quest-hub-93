@@ -36,6 +36,41 @@ export const Route = createFileRoute("/biblia/$book/$chapter/")({
         { property: "og:url", content: url(path) },
       ],
       links: [{ rel: "canonical", href: url(path) }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Início",
+                item: url("/"),
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Bíblia",
+                item: url("/biblia"),
+              },
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: book.name,
+                item: url(`/biblia/${book.slug}`),
+              },
+              {
+                "@type": "ListItem",
+                position: 4,
+                name: `Capítulo ${chapter}`,
+                item: url(path),
+              },
+            ],
+          }),
+        },
+      ],
     };
   },
   component: ChapterPage,

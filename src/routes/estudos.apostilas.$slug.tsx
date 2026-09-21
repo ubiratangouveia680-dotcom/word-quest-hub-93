@@ -67,6 +67,33 @@ export const Route = createFileRoute("/estudos/apostilas/$slug")({
             },
           }),
         },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Início",
+                item: url("/"),
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Apostilas Teológicas",
+                item: url("/estudos/apostilas"),
+              },
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: booklet.title,
+                item: url(path),
+              },
+            ],
+          }),
+        },
       ],
     };
   },

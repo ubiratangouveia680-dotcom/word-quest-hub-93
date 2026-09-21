@@ -65,7 +65,7 @@ import {
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/comunidade/$id")({
-  head: () => ({
+  head: ({ params }) => ({
     meta: [
       { title: "Publicação — Comunidade Palavra Viva | Bíblia Online" },
       {
@@ -73,8 +73,9 @@ export const Route = createFileRoute("/comunidade/$id")({
         content: "Leia, comente e participe das reflexões e orações da Comunidade Palavra Viva.",
       },
       { property: "og:title", content: "Comunidade Palavra Viva — Bíblia Online" },
-      { property: "og:url", content: url("/comunidade") },
+      { property: "og:url", content: url(`/comunidade/${params.id}`) },
     ],
+    links: [{ rel: "canonical", href: url(`/comunidade/${params.id}`) }],
   }),
   component: QuestionDetailsPage,
 });

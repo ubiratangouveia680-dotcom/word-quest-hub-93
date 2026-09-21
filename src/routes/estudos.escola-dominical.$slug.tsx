@@ -77,6 +77,33 @@ export const Route = createFileRoute("/estudos/escola-dominical/$slug")({
             },
           }),
         },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Início",
+                item: url("/"),
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Escola Dominical",
+                item: url("/estudos/escola-dominical"),
+              },
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: lesson.title,
+                item: url(path),
+              },
+            ],
+          }),
+        },
       ],
     };
   },

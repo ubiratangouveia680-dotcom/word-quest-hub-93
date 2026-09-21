@@ -18,7 +18,7 @@ export const Route = createFileRoute("/favoritos")({
       { property: "og:title", content: "Meus Favoritos — Bíblia Online" },
       { property: "og:description", content: "Seus versículos e conteúdos salvos." },
       { property: "og:url", content: url("/favoritos") },
-      { name: "robots", content: "noindex,follow" },
+      { name: "robots", content: "noindex,nofollow" },
     ],
     links: [{ rel: "canonical", href: url("/favoritos") }],
   }),

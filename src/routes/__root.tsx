@@ -147,6 +147,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           },
         }),
       },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Bíblia Online",
+          url: SITE_URL,
+          logo: `${SITE_URL}/icon-512.png`,
+          description:
+            "Portal cristão dedicado à leitura da Bíblia Sagrada, estudos bíblicos, orações, lições da Escola Dominical, devocionais e edificação espiritual.",
+        }),
+      },
     ];
 
     if (loaderData?.adSettings.gaMeasurementId) {

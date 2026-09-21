@@ -28,7 +28,7 @@ export const Route = createFileRoute("/busca")({
       { property: "og:title", content: "Buscar na Bíblia — Bíblia Online" },
       { property: "og:description", content: "Pesquise versículos, temas, livros e conteúdos bíblicos." },
       { property: "og:url", content: url("/busca") },
-      { name: "robots", content: "noindex,follow" },
+      { name: "robots", content: "noindex,nofollow" },
     ],
     links: [{ rel: "canonical", href: url("/busca") }],
   }),
