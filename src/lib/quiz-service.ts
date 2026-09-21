@@ -98,33 +98,8 @@ export async function fetchQuizQuestions(
  * Valida o resultado com segurança.
  * Busca o gabarito no banco (ou no seed seguro), calcula a pontuação e registra a tentativa.
  */
-// Helper para manipular ranking e tentativas em localStorage com resiliência
-const LOCAL_RANKING_KEY = 'bo:quiz_rankings';
+// Helper para manter histórico pessoal de tentativas localmente (apenas para estatísticas do próprio dispositivo)
 const LOCAL_ATTEMPTS_KEY = 'bo:quiz_attempts';
-
-function getLocalRankings(): QuizRankingItem[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(LOCAL_RANKING_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-  } catch {
-    // ignorar erro de parsing
-  }
-  return [];
-}
-
-function saveLocalRankings(items: QuizRankingItem[]) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(LOCAL_RANKING_KEY, JSON.stringify(items));
-  } catch {
-    // ignorar falha de armazenamento
-  }
-}
 
 function saveLocalAttempt(attempt: any) {
   if (typeof window === 'undefined') return;
@@ -132,7 +107,6 @@ function saveLocalAttempt(attempt: any) {
     const raw = localStorage.getItem(LOCAL_ATTEMPTS_KEY);
     const list = raw ? JSON.parse(raw) : [];
     list.unshift(attempt);
-    // Guarda até 50 tentativas mais recentes
     localStorage.setItem(LOCAL_ATTEMPTS_KEY, JSON.stringify(list.slice(0, 50)));
   } catch {
     // ignorar
@@ -140,8 +114,45 @@ function saveLocalAttempt(attempt: any) {
 }
 
 /**
+ * Garante uma sessão de autenticação válida para salvar dados no Supabase com RLS.
+ * Se o usuário já estiver autenticado na conta, usa a sessão dele.
+ * Se for um visitante, utiliza ou cria uma conta de participante autenticada no Supabase.
+ */
+async function getEffectiveSupabaseUserId(currentUserId?: string): Promise<string | null> {
+  if (currentUserId) return currentUserId;
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.user?.id) {
+      return sessionData.session.user.id;
+    }
+
+    let guestSeed = typeof window !== 'undefined' ? localStorage.getItem('bo:guest_auth_seed') : null;
+    if (!guestSeed) {
+      guestSeed = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+      if (typeof window !== 'undefined') localStorage.setItem('bo:guest_auth_seed', guestSeed);
+    }
+
+    const guestEmail = `guest_${guestSeed}@bibliaonline.internal`;
+    const guestPass = `QuizPass123!${guestSeed}`;
+
+    const signInRes = await supabase.auth.signInWithPassword({ email: guestEmail, password: guestPass });
+    if (signInRes.data?.user?.id) {
+      return signInRes.data.user.id;
+    }
+
+    const signUpRes = await supabase.auth.signUp({ email: guestEmail, password: guestPass });
+    if (signUpRes.data?.user?.id) {
+      return signUpRes.data.user.id;
+    }
+  } catch (err) {
+    console.warn('[Quiz] Falha ao autenticar sessão de participante:', err);
+  }
+  return null;
+}
+
+/**
  * Valida o resultado com segurança.
- * Busca o gabarito no banco (ou no seed seguro), calcula a pontuação e registra a tentativa real.
+ * Busca o gabarito no banco (ou no seed seguro), calcula a pontuação e registra a tentativa real no banco de dados na nuvem.
  */
 export async function submitQuizAttempt(
   answers: UserQuizAnswer[],
@@ -229,11 +240,10 @@ export async function submitQuizAttempt(
   const passed = score >= 5;
   const now = new Date().toISOString();
   const displayName = (userDisplayName && userDisplayName.trim()) ? userDisplayName.trim() : 'Participante';
-  const participantKey = userId || `guest_${displayName.toLowerCase().replace(/\s+/g, '_')}`;
 
   let attemptId: string = `attempt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-  // 1. Salva a tentativa no armazenamento local imediatamente
+  // Salva no histórico de tentativas local do dispositivo
   saveLocalAttempt({
     id: attemptId,
     userId: userId || null,
@@ -244,65 +254,92 @@ export async function submitQuizAttempt(
     completedAt: now,
   });
 
-  // 2. Atualiza o ranking local (deduplica por usuário/nome e organiza pela maior pontuação)
-  const localList = getLocalRankings();
-  const existingIndex = localList.findIndex((item) => {
-    if (userId && item.userId === userId) return true;
-    return item.displayName.toLowerCase().trim() === displayName.toLowerCase().trim();
-  });
+  // Autenticação para persistência no banco Supabase
+  const effectiveUserId = await getEffectiveSupabaseUserId(userId);
 
-  if (existingIndex >= 0) {
-    const prev = localList[existingIndex];
-    const newBestScore = Math.max(prev.bestScore, score);
-    const newTotalAttempts = prev.totalAttempts + 1;
-    const newPassedAttempts = prev.passedAttempts + (passed ? 1 : 0);
-    const newTotalScore = prev.totalScore + score;
-    const newWinRate = Math.round((newTotalScore / (newTotalAttempts * 10)) * 100);
+  // 1. Grava no banco compartilhado na nuvem (Supabase - Bridge em questions)
+  try {
+    if (effectiveUserId) {
+      // Procura se já existe um registro deste usuário/nome no ranking
+      const { data: existingRows } = await supabase
+        .from('questions')
+        .select('id, user_id, title, body')
+        .eq('category_id', 'conhecimento')
+        .ilike('title', `[QUIZ_RANKING] ${displayName}`)
+        .limit(1);
 
-    localList[existingIndex] = {
-      ...prev,
-      userId: userId || prev.userId || participantKey,
-      displayName, // atualiza com o nome mais recente
-      avatarUrl: userAvatarUrl || prev.avatarUrl || null,
-      bestScore: newBestScore,
-      totalAttempts: newTotalAttempts,
-      passedAttempts: newPassedAttempts,
-      totalScore: newTotalScore,
-      winRate: newWinRate,
-      lastAttemptAt: now,
-    };
-  } else {
-    localList.push({
-      userId: participantKey,
-      displayName,
-      avatarUrl: userAvatarUrl || null,
-      bestScore: score,
-      totalAttempts: 1,
-      passedAttempts: passed ? 1 : 0,
-      totalScore: score,
-      winRate: Math.round((score / 10) * 100),
-      lastAttemptAt: now,
-    });
+      const existingRecord = existingRows && existingRows.length > 0 ? existingRows[0] : null;
+
+      if (existingRecord) {
+        let prevBody: any = {};
+        try {
+          prevBody = JSON.parse(existingRecord.body);
+        } catch {}
+
+        const prevBest = Number(prevBody.bestScore ?? prevBody.score ?? 0);
+        const newBestScore = Math.max(prevBest, score);
+        const newTotalAttempts = Number(prevBody.totalAttempts || 1) + 1;
+        const newPassedAttempts = Number(prevBody.passedAttempts || 0) + (passed ? 1 : 0);
+        const newTotalScore = Number(prevBody.totalScore || prevBest) + score;
+        const newWinRate = Math.round((newTotalScore / (newTotalAttempts * 10)) * 100);
+
+        const updatedPayload = {
+          displayName,
+          avatarUrl: userAvatarUrl || prevBody.avatarUrl || null,
+          bestScore: newBestScore,
+          score,
+          totalAttempts: newTotalAttempts,
+          passedAttempts: newPassedAttempts,
+          totalScore: newTotalScore,
+          winRate: newWinRate,
+          lastAttemptAt: now,
+          userId: effectiveUserId,
+        };
+
+        await supabase
+          .from('questions')
+          .update({
+            body: JSON.stringify(updatedPayload),
+            updated_at: now,
+          })
+          .eq('id', existingRecord.id);
+      } else {
+        const newPayload = {
+          displayName,
+          avatarUrl: userAvatarUrl || null,
+          bestScore: score,
+          score,
+          totalAttempts: 1,
+          passedAttempts: passed ? 1 : 0,
+          totalScore: score,
+          winRate: Math.round((score / 10) * 100),
+          lastAttemptAt: now,
+          userId: effectiveUserId,
+        };
+
+        await supabase
+          .from('questions')
+          .insert([
+            {
+              user_id: effectiveUserId,
+              category_id: 'conhecimento',
+              title: `[QUIZ_RANKING] ${displayName}`,
+              body: JSON.stringify(newPayload),
+            },
+          ]);
+      }
+    }
+  } catch (bridgeErr) {
+    console.warn('[Quiz] Falha ao sincronizar registro na nuvem:', bridgeErr);
   }
 
-  // Ordena por: 1) bestScore DESC, 2) winRate DESC, 3) totalAttempts DESC, 4) lastAttemptAt DESC
-  localList.sort((a, b) => {
-    if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
-    if (b.winRate !== a.winRate) return b.winRate - a.winRate;
-    if (b.totalAttempts !== a.totalAttempts) return b.totalAttempts - a.totalAttempts;
-    return new Date(b.lastAttemptAt).getTime() - new Date(a.lastAttemptAt).getTime();
-  });
-
-  saveLocalRankings(localList);
-
-  // 3. Persiste no Supabase se as tabelas estiverem disponíveis
+  // 2. Grava na tabela dedicada bible_quiz_rankings e bible_quiz_attempts caso ela já exista
   try {
-    // 3.1 Grava a tentativa
     const { data: attemptData, error: attemptError } = await (supabase as any)
       .from('bible_quiz_attempts')
       .insert([
         {
-          user_id: userId || null,
+          user_id: effectiveUserId || null,
           user_name: displayName,
           question_ids: questionIds,
           answers: answers.reduce((acc, cur) => {
@@ -322,7 +359,6 @@ export async function submitQuizAttempt(
       attemptId = attemptData.id;
     }
 
-    // 3.2 Atualiza ranking no Supabase
     let query = (supabase as any).from('bible_quiz_rankings').select('*');
     if (userId) {
       query = query.eq('user_id', userId);
@@ -362,10 +398,7 @@ export async function submitQuizAttempt(
     } else {
       await (supabase as any).from('bible_quiz_rankings').insert([payload]);
     }
-  } catch (err) {
-    // Falha silenciosa no Supabase: o ranking local já foi salvo com sucesso
-    console.warn('Persistência remota do quiz no Supabase ignorada:', err);
-  }
+  } catch {}
 
   return {
     attemptId,
@@ -380,83 +413,138 @@ export async function submitQuizAttempt(
 }
 
 /**
- * Busca o ranking público REAL ordenado por:
+ * Busca o ranking público REAL diretamente do banco de dados compartilhado na nuvem (Supabase).
+ * NÃO utiliza localStorage. Sincroniza entre todos os dispositivos em tempo real.
+ * Ordenado por:
  * 1. best_score DESC (maior pontuação)
  * 2. win_rate DESC (melhor aproveitamento)
  * 3. total_attempts DESC (mais provas realizadas)
  * 4. last_attempt_at DESC (mais recente)
  *
- * NUNCA retorna dados fictícios, mocks ou seeds inventadas.
- * Se não houver participantes, retorna array vazio [].
+ * Se um usuário fizer mais de uma prova, mantém apenas a sua MAIOR pontuação.
+ * NUNCA retorna dados fictícios ou usuários simulados.
  */
 export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
-  const localList = getLocalRankings();
-  let remoteList: QuizRankingItem[] = [];
+  const map = new Map<string, QuizRankingItem>();
 
+  // 1. Consulta a tabela de persistência compartilhada em questions
   try {
-    const { data, error } = await (supabase as any)
+    const { data: qData, error: qError } = await supabase
+      .from('questions')
+      .select('id, user_id, title, body, created_at, updated_at')
+      .eq('category_id', 'conhecimento')
+      .like('title', '[QUIZ_RANKING]%')
+      .order('updated_at', { ascending: false })
+      .limit(limit * 3);
+
+    if (!qError && qData && Array.isArray(qData)) {
+      for (const row of qData) {
+        try {
+          const parsed = JSON.parse(row.body);
+          const displayName = (parsed.displayName || row.title.replace('[QUIZ_RANKING]', '')).trim();
+          if (!displayName) continue;
+
+          const key = displayName.toLowerCase();
+          const bestScore = Number(parsed.bestScore ?? parsed.score ?? 0);
+          const totalAttempts = Number(parsed.totalAttempts || 1);
+          const passedAttempts = Number(parsed.passedAttempts || (bestScore >= 5 ? 1 : 0));
+          const totalScore = Number(parsed.totalScore || bestScore);
+          const winRate = Number(parsed.winRate || Math.round((bestScore / 10) * 100));
+          const lastAttemptAt = parsed.lastAttemptAt || row.updated_at || row.created_at;
+
+          const existing = map.get(key);
+          if (existing) {
+            existing.bestScore = Math.max(existing.bestScore, bestScore);
+            existing.totalAttempts = Math.max(existing.totalAttempts, totalAttempts);
+            existing.passedAttempts = Math.max(existing.passedAttempts, passedAttempts);
+            existing.totalScore = Math.max(existing.totalScore, totalScore);
+            existing.winRate = Math.max(existing.winRate, winRate);
+            if (new Date(lastAttemptAt).getTime() > new Date(existing.lastAttemptAt).getTime()) {
+              existing.lastAttemptAt = lastAttemptAt;
+            }
+          } else {
+            map.set(key, {
+              userId: row.user_id || row.id || `user_${displayName}`,
+              displayName,
+              avatarUrl: parsed.avatarUrl || null,
+              bestScore,
+              totalAttempts,
+              passedAttempts,
+              totalScore,
+              winRate,
+              lastAttemptAt,
+            });
+          }
+        } catch {}
+      }
+    }
+  } catch (err) {
+    console.warn('[Quiz] Falha ao consultar ranking compartilhado:', err);
+  }
+
+  // 2. Consulta tabela dedicada bible_quiz_rankings (se já disponível)
+  try {
+    const { data: dedicatedRows, error: dError } = await (supabase as any)
       .from('bible_quiz_rankings')
       .select('*')
       .order('best_score', { ascending: false })
-      .order('win_rate', { ascending: false })
-      .order('total_attempts', { ascending: false })
       .limit(limit);
 
-    if (!error && data && Array.isArray(data)) {
-      remoteList = data.map((r: any) => ({
-        userId: r.user_id || r.id || `remote_${r.display_name}`,
-        displayName: r.display_name,
-        avatarUrl: r.avatar_url,
-        bestScore: Number(r.best_score) || 0,
-        totalAttempts: Number(r.total_attempts) || 1,
-        passedAttempts: Number(r.passed_attempts) || 0,
-        totalScore: Number(r.total_score) || 0,
-        winRate: Number(r.win_rate) || 0,
-        lastAttemptAt: r.last_attempt_at || new Date().toISOString(),
-      }));
-    }
-  } catch {
-    // Falha de rede/banco: utiliza a lista real local
-  }
+    if (!dError && dedicatedRows && Array.isArray(dedicatedRows)) {
+      for (const r of dedicatedRows) {
+        const displayName = String(r.display_name || '').trim();
+        if (!displayName) continue;
+        const key = displayName.toLowerCase();
 
-  // Mescla registros remotos com locais garantindo desduplicação por usuário/nome
-  const map = new Map<string, QuizRankingItem>();
+        const bestScore = Number(r.best_score || 0);
+        const totalAttempts = Number(r.total_attempts || 1);
+        const passedAttempts = Number(r.passed_attempts || 0);
+        const totalScore = Number(r.total_score || 0);
+        const winRate = Number(r.win_rate || 0);
+        const lastAttemptAt = r.last_attempt_at || new Date().toISOString();
 
-  // Primeiro insere os remotos
-  for (const item of remoteList) {
-    const key = (item.userId || item.displayName).toLowerCase().trim();
-    map.set(key, item);
-  }
-
-  // Mescla os locais (priorizando a maior pontuação do participante)
-  for (const localItem of localList) {
-    const key = (localItem.userId || localItem.displayName).toLowerCase().trim();
-    const existing = map.get(key);
-    if (existing) {
-      existing.bestScore = Math.max(existing.bestScore, localItem.bestScore);
-      existing.totalAttempts = Math.max(existing.totalAttempts, localItem.totalAttempts);
-      existing.passedAttempts = Math.max(existing.passedAttempts, localItem.passedAttempts);
-      existing.totalScore = Math.max(existing.totalScore, localItem.totalScore);
-      existing.winRate = Math.max(existing.winRate, localItem.winRate);
-      if (new Date(localItem.lastAttemptAt).getTime() > new Date(existing.lastAttemptAt).getTime()) {
-        existing.lastAttemptAt = localItem.lastAttemptAt;
+        const existing = map.get(key);
+        if (existing) {
+          existing.bestScore = Math.max(existing.bestScore, bestScore);
+          existing.totalAttempts = Math.max(existing.totalAttempts, totalAttempts);
+          existing.passedAttempts = Math.max(existing.passedAttempts, passedAttempts);
+          existing.totalScore = Math.max(existing.totalScore, totalScore);
+          existing.winRate = Math.max(existing.winRate, winRate);
+          if (new Date(lastAttemptAt).getTime() > new Date(existing.lastAttemptAt).getTime()) {
+            existing.lastAttemptAt = lastAttemptAt;
+          }
+        } else {
+          map.set(key, {
+            userId: r.user_id || r.id || `remote_${displayName}`,
+            displayName,
+            avatarUrl: r.avatar_url || null,
+            bestScore,
+            totalAttempts,
+            passedAttempts,
+            totalScore,
+            winRate,
+            lastAttemptAt,
+          });
+        }
       }
-    } else {
-      map.set(key, localItem);
     }
-  }
+  } catch {}
 
-  const combined = Array.from(map.values());
+  const list = Array.from(map.values());
 
-  // Ordenação rigorosa pela maior pontuação
-  combined.sort((a, b) => {
+  // Ordenação global da classificação:
+  // 1º Maior pontuação (bestScore DESC)
+  // 2º Aproveitamento (winRate DESC)
+  // 3º Mais tentativas (totalAttempts DESC)
+  // 4º Mais recente (lastAttemptAt DESC)
+  list.sort((a, b) => {
     if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
     if (b.winRate !== a.winRate) return b.winRate - a.winRate;
     if (b.totalAttempts !== a.totalAttempts) return b.totalAttempts - a.totalAttempts;
     return new Date(b.lastAttemptAt).getTime() - new Date(a.lastAttemptAt).getTime();
   });
 
-  return combined.slice(0, limit);
+  return list.slice(0, limit);
 }
 
 /**

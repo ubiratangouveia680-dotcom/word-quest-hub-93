@@ -106,11 +106,18 @@ function BibleQuizPage() {
   // Resultado final retornado pelo servidor
   const [finalResult, setFinalResult] = useState<QuizFinalResult | null>(null);
 
-  // Consulta do Ranking
-  const { data: rankings = [], isLoading: isLoadingRanking } = useQuery({
+  // Consulta do Ranking com sincronização global em tempo real
+  const {
+    data: rankings = [],
+    isLoading: isLoadingRanking,
+    isFetching: isFetchingRanking,
+    refetch: refetchRankings,
+  } = useQuery({
     queryKey: ["quiz-rankings"],
     queryFn: () => fetchQuizRanking(50),
-    enabled: activeTab === "ranking",
+    refetchInterval: activeTab === "ranking" ? 5000 : false, // Atualização automática a cada 5 segundos
+    refetchOnWindowFocus: true, // Sincroniza imediatamente ao alternar de janela ou dispositivo
+    staleTime: 0, // Garante que nunca use dados defasados em cache
   });
 
   // Mutação para iniciar nova prova (busca 10 questões)
@@ -166,6 +173,7 @@ function BibleQuizPage() {
       setFinalResult(result);
       setStep("finished");
       queryClient.invalidateQueries({ queryKey: ["quiz-rankings"] });
+      queryClient.refetchQueries({ queryKey: ["quiz-rankings"] });
       queryClient.invalidateQueries({ queryKey: ["user-quiz-stats"] });
     },
     onError: () => {
@@ -680,18 +688,34 @@ function BibleQuizPage() {
                     Classificação oficial dos participantes pelo número máximo de acertos e aproveitamento.
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setActiveTab("prova");
-                    if (step === "idle") {
-                      startQuizMutation.mutate();
-                    }
-                  }}
-                  className="text-xs font-bold"
-                >
-                  Fazer Prova Agora
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      refetchRankings();
+                      toast.info("Ranking atualizado com o banco de dados na nuvem.");
+                    }}
+                    disabled={isFetchingRanking}
+                    className="text-xs gap-1.5"
+                    title="Buscar pontuações mais recentes do banco compartilhado"
+                  >
+                    <RotateCcw className={`size-3.5 ${isFetchingRanking ? "animate-spin text-primary" : ""}`} />
+                    Atualizar
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setActiveTab("prova");
+                      if (step === "idle") {
+                        startQuizMutation.mutate();
+                      }
+                    }}
+                    className="text-xs font-bold"
+                  >
+                    Fazer Prova Agora
+                  </Button>
+                </div>
               </div>
 
               {/* TABELA DO RANKING */}
