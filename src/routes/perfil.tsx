@@ -29,7 +29,10 @@ import {
   Type,
   AlertTriangle,
   RotateCcw,
+  Trophy,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchUserQuizStats } from "@/lib/quiz-service";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
 import { FontSizeControls } from "@/components/ChapterReader";
@@ -91,6 +94,7 @@ export type TabType =
   | "salvos"
   | "publicacoes"
   | "pedidos_oracao"
+  | "desempenho"
   | "configuracoes";
 
 export const Route = createFileRoute("/perfil")({
@@ -102,6 +106,7 @@ export const Route = createFileRoute("/perfil")({
       "salvos",
       "publicacoes",
       "pedidos_oracao",
+      "desempenho",
       "configuracoes",
     ];
     const rawTab = search["tab"];
@@ -190,6 +195,13 @@ function ProfilePage() {
   // Preferências de Notificação de Oração
   const [prayerPushPrefs, setPrayerPushPrefs] = useState<PrayerPushPreferences>(DEFAULT_PRAYER_PUSH_PREFS);
   const [isSavingPrayerPrefs, setIsSavingPrayerPrefs] = useState(false);
+
+  // Estatísticas de desempenho na Prova Bíblica
+  const { data: quizStats } = useQuery({
+    queryKey: ["user-quiz-stats", user?.id],
+    queryFn: () => (user?.id ? fetchUserQuizStats(user.id) : null),
+    enabled: Boolean(user?.id),
+  });
 
   // Carregar notificações e pedidos do usuário
   useEffect(() => {
@@ -748,6 +760,24 @@ function ProfilePage() {
 
             <button
               type="button"
+              onClick={() => handleTabChange("desempenho")}
+              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all touch-manipulation ${
+                activeTab === "desempenho"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              }`}
+            >
+              <Trophy className="size-3.5 text-amber-500" />
+              <span>Meu Desempenho</span>
+              {quizStats && quizStats.totalAttempts > 0 && (
+                <span className="rounded-full bg-background/20 px-1.5 py-0.2 text-[10px] font-mono">
+                  {quizStats.totalAttempts}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
               onClick={() => handleTabChange("configuracoes")}
               className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all touch-manipulation ${
                 activeTab === "configuracoes"
@@ -1271,6 +1301,142 @@ function ProfilePage() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ABA: MEU DESEMPENHO NA PROVA BÍBLICA */}
+          {activeTab === "desempenho" && (
+            <div className="space-y-6">
+              <div className="surface p-5 sm:p-6 rounded-2xl border border-border/80 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+                      <Trophy className="size-5 text-amber-500" />
+                      Meu Desempenho na Prova Bíblica
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Acompanhe seu progresso de aprendizagem bíblica, taxa de aprovação e tentativas.
+                    </p>
+                  </div>
+                  <Button asChild size="sm" className="gap-1.5 font-semibold text-xs">
+                    <Link to="/estudos/prova-biblica">
+                      <Trophy className="size-3.5" /> Fazer Prova Bíblica
+                    </Link>
+                  </Button>
+                </div>
+
+                {/* 5 CARDS DE MÉTRICAS */}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+                  <div className="rounded-xl border border-border bg-card/60 p-3 text-center">
+                    <span className="block text-2xl font-bold text-foreground">
+                      {quizStats?.totalAttempts || 0}
+                    </span>
+                    <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                      Provas Feitas
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card/60 p-3 text-center">
+                    <span className="block text-2xl font-bold text-primary">
+                      {quizStats?.bestScore || 0} / 10
+                    </span>
+                    <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                      Maior Pontuação
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card/60 p-3 text-center">
+                    <span className="block text-2xl font-bold text-blue-500">
+                      {quizStats?.averageScore || 0}
+                    </span>
+                    <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                      Média de Acertos
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card/60 p-3 text-center">
+                    <span className="block text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {quizStats?.passedAttempts || 0}
+                    </span>
+                    <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                      Aprovações
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card/60 p-3 text-center">
+                    <span className="block text-2xl font-bold text-amber-500">
+                      {quizStats?.failedAttempts || 0}
+                    </span>
+                    <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                      Reprovações
+                    </span>
+                  </div>
+                </div>
+
+                {/* HISTÓRICO DAS ÚLTIMAS TENTATIVAS */}
+                <div className="pt-4 border-t border-border/60">
+                  <h4 className="font-display text-sm font-bold text-foreground mb-3">
+                    Histórico Recente de Provas
+                  </h4>
+
+                  {!quizStats || quizStats.recentAttempts.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-border p-6 text-center">
+                      <Trophy className="mx-auto size-8 text-muted-foreground/50 mb-2" />
+                      <p className="text-xs text-muted-foreground">
+                        Você ainda não realizou nenhuma Prova Bíblica nesta conta.
+                      </p>
+                      <Button asChild size="sm" variant="outline" className="mt-3 text-xs">
+                        <Link to="/estudos/prova-biblica">Fazer minha primeira prova →</Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {quizStats.recentAttempts.map((attempt) => (
+                        <div
+                          key={attempt.id}
+                          className="flex items-center justify-between rounded-xl border border-border bg-card p-3 text-xs"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span
+                              className={`flex size-6 items-center justify-center rounded-full text-[11px] font-bold ${
+                                attempt.passed
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                              }`}
+                            >
+                              {attempt.passed ? "✓" : "✗"}
+                            </span>
+                            <div>
+                              <span className="font-semibold text-foreground">
+                                Nota: {attempt.score} de 10 acertos ({attempt.score * 10}%)
+                              </span>
+                              <span className="block text-[11px] text-muted-foreground">
+                                {new Date(attempt.completedAt).toLocaleString("pt-BR", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                          </div>
+
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
+                              attempt.passed
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                            }`}
+                          >
+                            {attempt.passed ? "Aprovado" : "Reprovado"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

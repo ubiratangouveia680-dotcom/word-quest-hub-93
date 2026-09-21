@@ -25,6 +25,7 @@ import {
   Layers,
   Clock,
   X,
+  Trophy,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -155,8 +156,8 @@ function StudiesIndexPage() {
             </div>
           </div>
 
-          {/* 4 MÓDULOS PRINCIPAIS DE ACESSO RÁPIDO */}
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* MÓDULOS PRINCIPAIS DE ACESSO RÁPIDO */}
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
             <Link
               to="/estudos"
               onClick={() => {
@@ -172,7 +173,7 @@ function StudiesIndexPage() {
                 Estudos Bíblicos
               </h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                {counts.estudos} estudos teológicos e temáticos
+                {counts.estudos} estudos teológicos
               </p>
             </Link>
 
@@ -187,7 +188,7 @@ function StudiesIndexPage() {
                 Escola Dominical
               </h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                {counts.ebd} lições completas com objetivos
+                {counts.ebd} lições com objetivos
               </p>
             </Link>
 
@@ -202,7 +203,22 @@ function StudiesIndexPage() {
                 Apostilas
               </h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                {counts.apostilas} manuais para ler e imprimir
+                {counts.apostilas} manuais para ler/imprimir
+              </p>
+            </Link>
+
+            <Link
+              to="/estudos/prova-biblica"
+              className="group flex flex-col rounded-xl border border-primary/40 bg-gradient-to-b from-primary/5 to-card p-4 transition-all hover:border-primary hover:shadow-md"
+            >
+              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/20 text-primary">
+                <Trophy className="size-5" />
+              </div>
+              <h2 className="mt-3 font-display font-semibold text-foreground group-hover:text-primary">
+                Prova Bíblica
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                10 questões com ranking
               </p>
             </Link>
 
@@ -217,7 +233,7 @@ function StudiesIndexPage() {
                 Devocionais
               </h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                Meditações diárias com versículo e oração
+                Meditações diárias e oração
               </p>
             </Link>
           </div>
@@ -434,6 +450,15 @@ function StudiesIndexPage() {
               Mais Recursos de Estudo
             </h4>
             <div className="mt-3 space-y-2 text-sm">
+              <Link
+                to="/estudos/prova-biblica"
+                className="flex items-center justify-between rounded-lg p-2 font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Trophy className="size-4" /> Prova Bíblica (Quiz)
+                </span>
+                <ArrowRight className="size-3.5" />
+              </Link>
               <Link
                 to="/biblia"
                 className="flex items-center justify-between rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
