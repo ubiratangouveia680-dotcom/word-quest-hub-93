@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeText, formatRelativeDate } from "@/lib/community";
+import { dispatchPrayerNotificationFallback } from "@/lib/user-notifications";
 
 export interface PrayerRequest {
   id: string;
@@ -431,6 +432,7 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
       if (!error && data) {
         hasDedicatedTable = true;
         recordPrayerTimestamp(input.userId);
+        dispatchPrayerNotificationFallback(data.id, input.userId).catch(() => {});
         return {
           id: data.id,
           user_id: data.user_id,
@@ -475,6 +477,7 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
 
     if (!qError && qData) {
       recordPrayerTimestamp(input.userId);
+      dispatchPrayerNotificationFallback(qData.id, input.userId).catch(() => {});
       return {
         id: qData.id,
         user_id: qData.user_id,

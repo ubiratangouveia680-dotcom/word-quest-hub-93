@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/sheet";
 import { OnlineCounter } from "@/components/OnlineCounter";
 import { InstallPwaButton } from "@/components/InstallPwaButton";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const DESKTOP_NAV = [
   { to: "/", label: "Início" },
@@ -146,6 +147,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
           {/* 3. Ações no Cabeçalho */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            {/* Sino de Notificações (visível para usuários autenticados no desktop e mobile) */}
+            {isAuthenticated && <NotificationBell />}
+
             {/* Botão de Pesquisa (visível no desktop e mobile) */}
             <Button asChild variant="ghost" size="icon" className="size-11 shrink-0 sm:size-9" aria-label="Buscar na Bíblia">
               <Link to="/busca" search={{ q: "" }}>

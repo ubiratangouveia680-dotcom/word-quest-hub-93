@@ -131,6 +131,9 @@ function PrayerWallPage() {
   const [reportReason, setReportReason] = useState<PrayerReportReason>("Spam");
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
+  // Destacar pedido de oração via link direto de notificação (#prayer-ID)
+  const [highlightedPrayerId, setHighlightedPrayerId] = useState<string | null>(null);
+
   // Load push permission status on mount
   useEffect(() => {
     setHasPushSupport(isPushNotificationSupported());
@@ -174,6 +177,32 @@ function PrayerWallPage() {
   useEffect(() => {
     loadPrayers(true);
   }, [filter, activeSearch, user?.id]);
+
+  // Trata hash navigation (#prayer-ID) para rolar até o pedido referenciado pela notificação
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith("#prayer-")) {
+        const targetId = hash.replace("#prayer-", "");
+        setHighlightedPrayerId(targetId);
+        setTimeout(() => {
+          const el = document.getElementById(`prayer-${targetId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 150);
+      }
+    };
+
+    if (!isLoading && prayers.length > 0) {
+      handleHash();
+    }
+
+    window.addEventListener("hashchange", handleHash);
+    return () => {
+      window.removeEventListener("hashchange", handleHash);
+    };
+  }, [isLoading, prayers]);
 
   // Handle Search Submit
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -586,11 +615,17 @@ function PrayerWallPage() {
           ) : (
             prayers.map((prayer) => {
               const isAuthor = user?.id === prayer.user_id;
+              const isHighlighted = highlightedPrayerId === prayer.id;
 
               return (
                 <article
                   key={prayer.id}
-                  className="w-full rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs transition-all hover:border-gold/30 hover:shadow-sm"
+                  id={`prayer-${prayer.id}`}
+                  className={`w-full rounded-2xl border bg-card p-4 sm:p-5 shadow-xs transition-all ${
+                    isHighlighted
+                      ? "border-gold ring-2 ring-gold/40 shadow-lg bg-gold/5 dark:bg-gold/10"
+                      : "border-border/80 hover:border-gold/30 hover:shadow-sm"
+                  }`}
                   style={{ height: "auto" }}
                 >
                   {/* Cabeçalho do Card: Autor / Anônimo + Data + Menu ⋮ */}
