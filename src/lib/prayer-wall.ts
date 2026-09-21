@@ -1,35 +1,12 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeText, formatRelativeDate } from "@/lib/community";
 
-export interface PrayerCategory {
-  id: string;
-  name: string;
-  description: string | null;
-  icon: string;
-  order_index: number;
-}
-
-export const DEFAULT_PRAYER_CATEGORIES: PrayerCategory[] = [
-  { id: "saude", name: "Saúde", description: "Pedidos de oração por cura, saúde física e emocional", icon: "🏥", order_index: 1 },
-  { id: "familia", name: "Família", description: "Pedidos pelo lar, casamento, filhos e parentes", icon: "👨‍👩‍👧", order_index: 2 },
-  { id: "vida-financeira", name: "Vida financeira", description: "Pedidos por provisão, finanças e bênçãos materiais", icon: "💰", order_index: 3 },
-  { id: "trabalho", name: "Trabalho", description: "Pedidos por emprego, negócios, carreira e vocação", icon: "💼", order_index: 4 },
-  { id: "relacionamentos", name: "Relacionamentos", description: "Pedidos por reconciliação, amizades e relacionamentos", icon: "🤝", order_index: 5 },
-  { id: "vida-espiritual", name: "Vida espiritual", description: "Pedidos por crescimento na fé, comunhão e firmeza", icon: "🕊️", order_index: 6 },
-  { id: "agradecimento", name: "Agradecimento", description: "Louvor e ações de graças pelas bênçãos e vitórias recebidas", icon: "🙌", order_index: 7 },
-  { id: "outros", name: "Outros", description: "Outros pedidos de oração e intercessão cristã", icon: "🙏", order_index: 8 },
-  { id: "oracao", name: "Oração", description: "Pedidos de oração em geral e intercessão comunitária", icon: "🙏", order_index: 9 },
-];
-
 export interface PrayerRequest {
   id: string;
   user_id: string;
   content: string;
   title: string | null;
   verse_reference: string | null;
-  category_id?: string | null;
-  category_name?: string | null;
-  category_icon?: string | null;
   is_anonymous: boolean;
   status: string;
   prayed_count: number;
@@ -91,72 +68,6 @@ export function recordPrayerTimestamp(userId?: string) {
 let hasDedicatedTable: boolean | null = null;
 
 // ---------------------------------------------------------------------------
-// Helper: Garantir e Buscar Categorias de Oração no Supabase
-// ---------------------------------------------------------------------------
-
-/**
- * Garante que existam categorias válidas no Supabase sem duplicar.
- * Se a tabela estiver vazia, tenta executar a RPC ensure_default_community_categories()
- * ou insere via cliente, retornando a lista de categorias disponíveis no banco.
- */
-export async function ensurePrayerCategories(): Promise<PrayerCategory[]> {
-  try {
-    // 1. Tenta buscar categorias existentes diretamente do Supabase
-    const { data: existing, error: fetchErr } = await supabase
-      .from("community_categories")
-      .select("id, name, description, icon, order_index")
-      .order("order_index", { ascending: true });
-
-    if (!fetchErr && existing && existing.length > 0) {
-      return existing as PrayerCategory[];
-    }
-
-    // 2. Se a tabela estiver vazia, tenta executar RPC de auto-seeding caso exista
-    try {
-      const { data: rpcData, error: rpcErr } = await (supabase as any)
-        .rpc("ensure_default_community_categories");
-      if (!rpcErr && Array.isArray(rpcData) && rpcData.length > 0) {
-        return rpcData as PrayerCategory[];
-      }
-    } catch {}
-
-    // 3. Se ainda vazio, tenta inserir as categorias padrão
-    try {
-      const { data: inserted, error: insertErr } = await supabase
-        .from("community_categories")
-        .upsert(DEFAULT_PRAYER_CATEGORIES, { onConflict: "id", ignoreDuplicates: true })
-        .select();
-
-      if (!insertErr && inserted && inserted.length > 0) {
-        return inserted as PrayerCategory[];
-      }
-    } catch {}
-
-    return (existing || []) as PrayerCategory[];
-  } catch (err) {
-    console.warn("[ensurePrayerCategories] Erro ao assegurar categorias no Supabase:", err);
-    return [];
-  }
-}
-
-/**
- * Busca as categorias de oração diretamente da tabela community_categories no Supabase.
- * Se o banco estiver vazio, aciona ensurePrayerCategories() para auto-popular de forma segura.
- */
-export async function fetchPrayerCategories(): Promise<PrayerCategory[]> {
-  const categories = await ensurePrayerCategories();
-  if (categories.length > 0) {
-    return categories;
-  }
-  const { data } = await supabase
-    .from("community_categories")
-    .select("id, name, description, icon, order_index")
-    .order("order_index", { ascending: true });
-
-  return (data || []) as PrayerCategory[];
-}
-
-// ---------------------------------------------------------------------------
 // Helper: Check 24h Quota (max 5 requests per 24 hours)
 // ---------------------------------------------------------------------------
 export async function checkPrayerDailyQuota(userId: string): Promise<{
@@ -183,28 +94,18 @@ export async function checkPrayerDailyQuota(userId: string): Promise<{
           remaining: Math.max(0, MAX_REQUESTS_PER_24H - count),
         };
       }
-      if (error && (error.code === "42P01" || error.code === "PGRST204" || (error as any).status === 404)) {
+      if (error && (error.code === "42P01" || error.code === "PGRST204" || error.code === "PGRST205" || (error as any).status === 404)) {
         hasDedicatedTable = false;
       }
     }
 
-    // 2. Fallback to questions table (verificando categorias de oração)
-    const prayerCats = await fetchPrayerCategories();
-    const prayerCategoryIds = prayerCats.map((c) => c.id);
-    if (!prayerCategoryIds.includes("oracao")) prayerCategoryIds.push("oracao");
-    if (!prayerCategoryIds.includes("pedido-de-oracao")) prayerCategoryIds.push("pedido-de-oracao");
-
-    let qQuery = supabase
+    // 2. Fallback to questions table
+    const { count: qCount, error: qError } = await supabase
       .from("questions")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
+      .or("category_id.eq.oracao,title.ilike.%Pedido de Oração%")
       .gte("created_at", since);
-
-    if (prayerCategoryIds.length > 0) {
-      qQuery = qQuery.in("category_id", prayerCategoryIds);
-    }
-
-    const { count: qCount, error: qError } = await qQuery;
 
     if (!qError && qCount !== null) {
       return {
@@ -369,19 +270,10 @@ async function fetchPrayerRequestsFromQuestionsFallback({
   offset = 0,
 }: FetchPrayerParams): Promise<PrayerRequest[]> {
   try {
-    // Carrega IDs reais de categorias de oração para listar todos os pedidos correspondentes
-    const prayerCats = await fetchPrayerCategories();
-    const prayerCategoryIds = prayerCats.map((c) => c.id);
-    if (!prayerCategoryIds.includes("oracao")) prayerCategoryIds.push("oracao");
-    if (!prayerCategoryIds.includes("pedido-de-oracao")) prayerCategoryIds.push("pedido-de-oracao");
-
     let query = supabase
       .from("questions")
-      .select("*, category:community_categories(*)");
-
-    if (prayerCategoryIds.length > 0) {
-      query = query.in("category_id", prayerCategoryIds);
-    }
+      .select("*")
+      .or("category_id.eq.oracao,title.ilike.%Pedido de Oração%");
 
     if (search && search.trim()) {
       query = query.or(`body.ilike.%${search.trim()}%,title.ilike.%${search.trim()}%`);
@@ -458,17 +350,12 @@ async function fetchPrayerRequestsFromQuestionsFallback({
         displayTitle = null;
       }
 
-      const catObj = Array.isArray(q.category) ? q.category[0] : q.category;
-
       return {
         id: q.id,
         user_id: q.user_id,
         content: q.body,
         title: displayTitle,
         verse_reference: q.verse_reference || null,
-        category_id: q.category_id || null,
-        category_name: catObj?.name || null,
-        category_icon: catObj?.icon || null,
         is_anonymous: isAnon,
         status: "active",
         prayed_count: prayedCount,
@@ -499,7 +386,6 @@ export interface CreatePrayerInput {
   content: string;
   verseReference?: string | undefined;
   isAnonymous?: boolean | undefined;
-  categoryId?: string | undefined;
 }
 
 export async function createPrayerRequest(input: CreatePrayerInput): Promise<PrayerRequest | null> {
@@ -568,67 +454,13 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
     }
   }
 
-  // 2. Fallback to questions table
+  // 2. Fallback de transição segura para questions
   try {
-    // 2.1 Garantir que temos categorias reais no banco
-    const dbCategories = await fetchPrayerCategories();
-
-    // 2.2 Resolver o category_id real e existente no banco
-    let prayerCategoryId: string | null = null;
-
-    if (input.categoryId && input.categoryId.trim()) {
-      const candidateId = input.categoryId.trim();
-      const matched = dbCategories.find((c) => c.id === candidateId);
-      if (matched) {
-        prayerCategoryId = matched.id;
-      } else {
-        // Checagem direta caso a categoria tenha sido criada recentemente
-        const { data: directCheck } = await supabase
-          .from("community_categories")
-          .select("id")
-          .eq("id", candidateId)
-          .maybeSingle();
-
-        if (directCheck?.id) {
-          prayerCategoryId = directCheck.id;
-        }
-      }
-    }
-
-    // 2.3 Se o usuário não selecionou uma categoria válida:
-    // Seleciona "Outros" automaticamente se existir, ou "Oração", ou a primeira categoria real existente
-    if (!prayerCategoryId) {
-      const outrosCat = dbCategories.find((c) => c.id === "outros");
-      const oracaoCat = dbCategories.find((c) => c.id === "oracao" || c.id === "pedido-de-oracao");
-      prayerCategoryId = outrosCat?.id || oracaoCat?.id || dbCategories[0]?.id || null;
-    }
-
-    // 2.4 Se ainda assim não encontrou nenhuma categoria no array, faz uma busca direta na tabela
-    if (!prayerCategoryId) {
-      const { data: anyCat } = await supabase
-        .from("community_categories")
-        .select("id")
-        .limit(1)
-        .maybeSingle();
-
-      if (anyCat?.id) {
-        prayerCategoryId = anyCat.id;
-      }
-    }
-
-    if (!prayerCategoryId) {
-      console.warn("[createPrayerRequest] Nenhuma categoria cadastrada na tabela community_categories.");
-      throw new Error(
-        "Não foi possível publicar seu pedido de oração pois nenhuma categoria está cadastrada no momento. " +
-        "Por favor, tente novamente em alguns instantes."
-      );
-    }
-
     const titleTag = isAnon ? `[ANÔNIMO] Pedido de Oração` : cleanContent.slice(0, 60);
     const { data: qData, error: qError } = await supabase
       .from("questions")
       .insert({
-        category_id: prayerCategoryId,
+        category_id: "oracao",
         user_id: input.userId,
         title: titleTag,
         body: cleanContent,
@@ -638,21 +470,17 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
         views_count: 0,
         is_answered: false,
       })
-      .select(`*, category:community_categories(*)`)
+      .select()
       .single();
 
     if (!qError && qData) {
       recordPrayerTimestamp(input.userId);
-      const catObj = Array.isArray(qData.category) ? qData.category[0] : qData.category;
       return {
         id: qData.id,
         user_id: qData.user_id,
         content: qData.body,
         title: isAnon ? null : qData.title,
         verse_reference: qData.verse_reference,
-        category_id: qData.category_id,
-        category_name: catObj?.name || null,
-        category_icon: catObj?.icon || null,
         is_anonymous: isAnon,
         status: "active",
         prayed_count: 0,
@@ -664,12 +492,12 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
     }
 
     if (qError) {
-      console.error("createPrayerRequest questions insert error:", qError);
-      throw new Error(qError.message || "Não foi possível publicar seu pedido. Tente novamente.");
+      console.error("createPrayerRequest fallback error:", qError);
+      throw new Error("Não foi possível publicar seu pedido de oração. Tente novamente.");
     }
   } catch (err: any) {
     console.error("createPrayerRequest error:", err);
-    throw new Error(err.message || "Não foi possível publicar seu pedido. Tente novamente.");
+    throw new Error(err.message || "Não foi possível publicar seu pedido de oração. Tente novamente.");
   }
 
   throw new Error("Não foi possível publicar seu pedido. Tente novamente.");

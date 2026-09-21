@@ -12,10 +12,8 @@ import {
   formatRelativeDate,
   checkPrayerCooldown,
   checkPrayerDailyQuota,
-  fetchPrayerCategories,
   PRAYER_REPORT_REASONS,
   type PrayerRequest,
-  type PrayerCategory,
   type PrayerReportReason,
 } from "@/lib/prayer-wall";
 import {
@@ -120,11 +118,6 @@ function PrayerWallPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  // Categories State
-  const [categories, setCategories] = useState<PrayerCategory[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
-
   // Modal: Visitor Prompt (Login required)
   const [isVisitorModalOpen, setIsVisitorModalOpen] = useState(false);
   const [visitorModalMessage, setVisitorModalMessage] = useState("");
@@ -142,32 +135,6 @@ function PrayerWallPage() {
   useEffect(() => {
     setHasPushSupport(isPushNotificationSupported());
     setPermissionStatus(getNotificationPermission());
-  }, []);
-
-  // Load prayer categories on mount
-  useEffect(() => {
-    let isMounted = true;
-    async function loadCategories() {
-      setIsLoadingCategories(true);
-      try {
-        const data = await fetchPrayerCategories();
-        if (isMounted) {
-          setCategories(data);
-          const defaultCat = data.find((c) => c.id === "outros") || data.find((c) => c.id === "oracao") || data[0];
-          if (defaultCat) {
-            setSelectedCategoryId(defaultCat.id);
-          }
-        }
-      } catch (err) {
-        console.error("Erro ao carregar categorias de oração:", err);
-      } finally {
-        if (isMounted) setIsLoadingCategories(false);
-      }
-    }
-    loadCategories();
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   // Load prayer requests feed
@@ -222,10 +189,6 @@ function PrayerWallPage() {
       return;
     }
     setFormError("");
-    if (!selectedCategoryId && categories.length > 0) {
-      const defaultCat = categories.find((c) => c.id === "outros") || categories.find((c) => c.id === "oracao") || categories[0];
-      if (defaultCat) setSelectedCategoryId(defaultCat.id);
-    }
     setIsCreateModalOpen(true);
   };
 
@@ -271,16 +234,13 @@ function PrayerWallPage() {
         content: cleanContent,
         verseReference: verseReference.trim() || undefined,
         isAnonymous,
-        categoryId: selectedCategoryId || undefined,
       });
 
       if (created) {
-        toast.success("Seu pedido de oração foi publicado com sucesso na comunidade!");
+        toast.success("Seu pedido de oração foi publicado com sucesso no mural!");
         setContent("");
         setVerseReference("");
         setIsAnonymous(false);
-        const defaultCat = categories.find((c) => c.id === "outros") || categories.find((c) => c.id === "oracao") || categories[0];
-        if (defaultCat) setSelectedCategoryId(defaultCat.id);
         setIsCreateModalOpen(false);
         loadPrayers(true);
       }
@@ -664,12 +624,6 @@ function PrayerWallPage() {
                           <span className="font-bold text-sm text-foreground truncate">
                             {prayer.author_name}
                           </span>
-                          {prayer.category_name && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                              {prayer.category_icon && <span>{prayer.category_icon}</span>}
-                              <span>{prayer.category_name}</span>
-                            </span>
-                          )}
                           {prayer.is_anonymous && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-muted/80 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                               <Lock className="size-2.5" />
@@ -845,36 +799,6 @@ function PrayerWallPage() {
                   required
                   className="resize-none text-sm leading-relaxed"
                 />
-              </div>
-
-              {/* Seleção de Categoria */}
-              <div className="space-y-1.5">
-                <Label htmlFor="prayer-category" className="text-xs font-semibold text-foreground">
-                  Categoria do pedido
-                </Label>
-                {isLoadingCategories ? (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground py-1.5">
-                    <Loader2 className="size-3.5 animate-spin" />
-                    <span>Carregando categorias...</span>
-                  </div>
-                ) : categories.length === 0 ? (
-                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2.5 text-xs text-amber-600 dark:text-amber-400">
-                    Carregando categorias do banco de dados...
-                  </div>
-                ) : (
-                  <select
-                    id="prayer-category"
-                    value={selectedCategoryId}
-                    onChange={(e) => setSelectedCategoryId(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring text-foreground"
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.icon ? `${cat.icon} ` : ""}{cat.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
               </div>
 
               {/* Referência Bíblica Opcional */}
