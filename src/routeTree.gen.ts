@@ -52,7 +52,11 @@ import { Route as VersiculosPorTemaSlugRouteImport } from './routes/versiculos-p
 import { Route as VersiculosIndexRouteImport } from './routes/versiculos.index'
 import { Route as VersiculosSlugRouteImport } from './routes/versiculos.$slug'
 import { Route as BibliaBookIndexRouteImport } from './routes/biblia.$book.index'
+import { Route as EstudosApostilasIndexRouteImport } from './routes/estudos.apostilas.index'
+import { Route as EstudosApostilasSlugRouteImport } from './routes/estudos.apostilas.$slug'
 import { Route as EstudosCategoriaSlugRouteImport } from './routes/estudos.categoria.$slug'
+import { Route as EstudosEscolaDominicalIndexRouteImport } from './routes/estudos.escola-dominical.index'
+import { Route as EstudosEscolaDominicalSlugRouteImport } from './routes/estudos.escola-dominical.$slug'
 import { Route as BibliaBookChapterIndexRouteImport } from './routes/biblia.$book.$chapter.index'
 import { Route as BibliaBookChapterVerseRouteImport } from './routes/biblia.$book.$chapter.$verse'
 
@@ -272,11 +276,33 @@ const BibliaBookIndexRoute = BibliaBookIndexRouteImport.update({
   path: '/biblia/$book/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EstudosApostilasIndexRoute = EstudosApostilasIndexRouteImport.update({
+  id: '/estudos/apostilas/',
+  path: '/estudos/apostilas/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstudosApostilasSlugRoute = EstudosApostilasSlugRouteImport.update({
+  id: '/estudos/apostilas/$slug',
+  path: '/estudos/apostilas/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EstudosCategoriaSlugRoute = EstudosCategoriaSlugRouteImport.update({
   id: '/estudos/categoria/$slug',
   path: '/estudos/categoria/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EstudosEscolaDominicalIndexRoute =
+  EstudosEscolaDominicalIndexRouteImport.update({
+    id: '/estudos/escola-dominical/',
+    path: '/estudos/escola-dominical/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const EstudosEscolaDominicalSlugRoute =
+  EstudosEscolaDominicalSlugRouteImport.update({
+    id: '/estudos/escola-dominical/$slug',
+    path: '/estudos/escola-dominical/$slug',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const BibliaBookChapterIndexRoute = BibliaBookChapterIndexRouteImport.update({
   id: '/biblia/$book/$chapter/',
   path: '/biblia/$book/$chapter/',
@@ -331,8 +357,12 @@ export interface FileRoutesByFullPath {
   '/temas/': typeof TemasIndexRoute
   '/versiculos-por-tema/': typeof VersiculosPorTemaIndexRoute
   '/versiculos/': typeof VersiculosIndexRoute
+  '/estudos/apostilas/$slug': typeof EstudosApostilasSlugRoute
   '/estudos/categoria/$slug': typeof EstudosCategoriaSlugRoute
+  '/estudos/escola-dominical/$slug': typeof EstudosEscolaDominicalSlugRoute
   '/biblia/$book/': typeof BibliaBookIndexRoute
+  '/estudos/apostilas/': typeof EstudosApostilasIndexRoute
+  '/estudos/escola-dominical/': typeof EstudosEscolaDominicalIndexRoute
   '/biblia/$book/$chapter/$verse': typeof BibliaBookChapterVerseRoute
   '/biblia/$book/$chapter/': typeof BibliaBookChapterIndexRoute
 }
@@ -375,8 +405,12 @@ export interface FileRoutesByTo {
   '/temas': typeof TemasIndexRoute
   '/versiculos-por-tema': typeof VersiculosPorTemaIndexRoute
   '/versiculos': typeof VersiculosIndexRoute
+  '/estudos/apostilas/$slug': typeof EstudosApostilasSlugRoute
   '/estudos/categoria/$slug': typeof EstudosCategoriaSlugRoute
+  '/estudos/escola-dominical/$slug': typeof EstudosEscolaDominicalSlugRoute
   '/biblia/$book': typeof BibliaBookIndexRoute
+  '/estudos/apostilas': typeof EstudosApostilasIndexRoute
+  '/estudos/escola-dominical': typeof EstudosEscolaDominicalIndexRoute
   '/biblia/$book/$chapter/$verse': typeof BibliaBookChapterVerseRoute
   '/biblia/$book/$chapter': typeof BibliaBookChapterIndexRoute
 }
@@ -424,8 +458,12 @@ export interface FileRoutesById {
   '/temas/': typeof TemasIndexRoute
   '/versiculos-por-tema/': typeof VersiculosPorTemaIndexRoute
   '/versiculos/': typeof VersiculosIndexRoute
+  '/estudos/apostilas/$slug': typeof EstudosApostilasSlugRoute
   '/estudos/categoria/$slug': typeof EstudosCategoriaSlugRoute
+  '/estudos/escola-dominical/$slug': typeof EstudosEscolaDominicalSlugRoute
   '/biblia/$book/': typeof BibliaBookIndexRoute
+  '/estudos/apostilas/': typeof EstudosApostilasIndexRoute
+  '/estudos/escola-dominical/': typeof EstudosEscolaDominicalIndexRoute
   '/biblia/$book/$chapter/$verse': typeof BibliaBookChapterVerseRoute
   '/biblia/$book/$chapter/': typeof BibliaBookChapterIndexRoute
 }
@@ -474,8 +512,12 @@ export interface FileRouteTypes {
     | '/temas/'
     | '/versiculos-por-tema/'
     | '/versiculos/'
+    | '/estudos/apostilas/$slug'
     | '/estudos/categoria/$slug'
+    | '/estudos/escola-dominical/$slug'
     | '/biblia/$book/'
+    | '/estudos/apostilas/'
+    | '/estudos/escola-dominical/'
     | '/biblia/$book/$chapter/$verse'
     | '/biblia/$book/$chapter/'
   fileRoutesByTo: FileRoutesByTo
@@ -518,8 +560,12 @@ export interface FileRouteTypes {
     | '/temas'
     | '/versiculos-por-tema'
     | '/versiculos'
+    | '/estudos/apostilas/$slug'
     | '/estudos/categoria/$slug'
+    | '/estudos/escola-dominical/$slug'
     | '/biblia/$book'
+    | '/estudos/apostilas'
+    | '/estudos/escola-dominical'
     | '/biblia/$book/$chapter/$verse'
     | '/biblia/$book/$chapter'
   id:
@@ -566,8 +612,12 @@ export interface FileRouteTypes {
     | '/temas/'
     | '/versiculos-por-tema/'
     | '/versiculos/'
+    | '/estudos/apostilas/$slug'
     | '/estudos/categoria/$slug'
+    | '/estudos/escola-dominical/$slug'
     | '/biblia/$book/'
+    | '/estudos/apostilas/'
+    | '/estudos/escola-dominical/'
     | '/biblia/$book/$chapter/$verse'
     | '/biblia/$book/$chapter/'
   fileRoutesById: FileRoutesById
@@ -607,8 +657,12 @@ export interface RootRouteChildren {
   ComunidadeIndexRoute: typeof ComunidadeIndexRoute
   DevocionaisIndexRoute: typeof DevocionaisIndexRoute
   EstudosIndexRoute: typeof EstudosIndexRoute
+  EstudosApostilasSlugRoute: typeof EstudosApostilasSlugRoute
   EstudosCategoriaSlugRoute: typeof EstudosCategoriaSlugRoute
+  EstudosEscolaDominicalSlugRoute: typeof EstudosEscolaDominicalSlugRoute
   BibliaBookIndexRoute: typeof BibliaBookIndexRoute
+  EstudosApostilasIndexRoute: typeof EstudosApostilasIndexRoute
+  EstudosEscolaDominicalIndexRoute: typeof EstudosEscolaDominicalIndexRoute
   BibliaBookChapterVerseRoute: typeof BibliaBookChapterVerseRoute
   BibliaBookChapterIndexRoute: typeof BibliaBookChapterIndexRoute
 }
@@ -916,11 +970,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BibliaBookIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/estudos/apostilas/': {
+      id: '/estudos/apostilas/'
+      path: '/estudos/apostilas'
+      fullPath: '/estudos/apostilas/'
+      preLoaderRoute: typeof EstudosApostilasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estudos/apostilas/$slug': {
+      id: '/estudos/apostilas/$slug'
+      path: '/estudos/apostilas/$slug'
+      fullPath: '/estudos/apostilas/$slug'
+      preLoaderRoute: typeof EstudosApostilasSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/estudos/categoria/$slug': {
       id: '/estudos/categoria/$slug'
       path: '/estudos/categoria/$slug'
       fullPath: '/estudos/categoria/$slug'
       preLoaderRoute: typeof EstudosCategoriaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estudos/escola-dominical/': {
+      id: '/estudos/escola-dominical/'
+      path: '/estudos/escola-dominical'
+      fullPath: '/estudos/escola-dominical/'
+      preLoaderRoute: typeof EstudosEscolaDominicalIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estudos/escola-dominical/$slug': {
+      id: '/estudos/escola-dominical/$slug'
+      path: '/estudos/escola-dominical/$slug'
+      fullPath: '/estudos/escola-dominical/$slug'
+      preLoaderRoute: typeof EstudosEscolaDominicalSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/biblia/$book/$chapter/': {
@@ -1027,8 +1109,12 @@ const rootRouteChildren: RootRouteChildren = {
   ComunidadeIndexRoute: ComunidadeIndexRoute,
   DevocionaisIndexRoute: DevocionaisIndexRoute,
   EstudosIndexRoute: EstudosIndexRoute,
+  EstudosApostilasSlugRoute: EstudosApostilasSlugRoute,
   EstudosCategoriaSlugRoute: EstudosCategoriaSlugRoute,
+  EstudosEscolaDominicalSlugRoute: EstudosEscolaDominicalSlugRoute,
   BibliaBookIndexRoute: BibliaBookIndexRoute,
+  EstudosApostilasIndexRoute: EstudosApostilasIndexRoute,
+  EstudosEscolaDominicalIndexRoute: EstudosEscolaDominicalIndexRoute,
   BibliaBookChapterVerseRoute: BibliaBookChapterVerseRoute,
   BibliaBookChapterIndexRoute: BibliaBookChapterIndexRoute,
 }

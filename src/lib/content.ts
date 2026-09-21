@@ -888,7 +888,32 @@ export const PRAYERS: Prayer[] = [
   },
 ];
 
-export const getStudy = (slug: string) => STUDIES.find((s) => s.slug === slug);
+import { INITIAL_MATERIALS } from "./studies-seed";
+
+export const getStudy = (slug: string): Study | undefined => {
+  const existing = STUDIES.find((s) => s.slug === slug);
+  if (existing) return existing;
+
+  const mat = INITIAL_MATERIALS.find((m) => m.slug === slug);
+  if (!mat) return undefined;
+
+  return {
+    slug: mat.slug,
+    category: mat.category,
+    categorySlug: mat.categorySlug,
+    title: mat.title,
+    excerpt: mat.excerpt,
+    intro: mat.content.split("\n\n")[0] || mat.excerpt,
+    verses: mat.referenceVerses.length > 0 
+      ? mat.referenceVerses 
+      : (mat.mainVerse && mat.mainVerseRef ? [{ ref: mat.mainVerseRef, link: `/biblia/${mat.bibleBook?.toLowerCase() || "salmos"}/1`, text: mat.mainVerse }] : []),
+    explanation: mat.topics.map((t) => `${t.title}: ${t.content}`),
+    conclusion: mat.conclusion || "Conclua sua leitura aplicando esses princípios na sua vida.",
+    questions: mat.questions || [],
+  };
+};
+
 export const getDevotional = (slug: string) => DEVOTIONALS.find((d) => d.slug === slug);
 export const getPrayer = (slug: string) => PRAYERS.find((p) => p.slug === slug);
+
 

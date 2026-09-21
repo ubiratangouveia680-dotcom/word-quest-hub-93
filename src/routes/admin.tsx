@@ -14,6 +14,7 @@ import { useAdSettings } from "@/lib/ads-context";
 import { getIsAdmin, updateAdSettings } from "@/lib/ads.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { DEVOTIONALS, PRAYERS, STUDIES } from "@/lib/content";
+import { INITIAL_MATERIALS } from "@/lib/studies-seed";
 import { BIBLE_BOOKS } from "@/lib/bible-books";
 import { useGlobalOnlinePresence } from "@/lib/presence";
 import {
@@ -24,6 +25,7 @@ import {
   formatRelativeDate,
 } from "@/lib/community";
 import { Flag, Trash2, CheckCircle2, ShieldAlert, Loader2, ExternalLink } from "lucide-react";
+import { BibleMaterialsAdminSection } from "@/components/admin/BibleMaterialsAdminSection";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -403,6 +405,7 @@ function AdminPage() {
               </button>
             </p>
             <CommunityModerationSection />
+            <BibleMaterialsAdminSection />
             <AdsForm />
           </>
         )}
@@ -454,7 +457,9 @@ function AdminPage() {
           <h2 className="font-display text-xl font-semibold">Conteúdo publicado</h2>
           <div className="mt-3">
             <Row label="Livros da Bíblia" value={String(BIBLE_BOOKS.length)} />
-            <Row label="Estudos" value={String(STUDIES.length)} />
+            <Row label="Estudos Bíblicos" value={String(STUDIES.length + INITIAL_MATERIALS.filter((m) => m.type === "estudo").length)} />
+            <Row label="Escola Dominical (EBD)" value={String(INITIAL_MATERIALS.filter((m) => m.type === "escola-dominical").length)} />
+            <Row label="Apostilas & Cursos" value={String(INITIAL_MATERIALS.filter((m) => m.type === "apostila").length)} />
             <Row label="Devocionais" value={String(DEVOTIONALS.length)} />
             <Row label="Orações" value={String(PRAYERS.length)} />
           </div>
