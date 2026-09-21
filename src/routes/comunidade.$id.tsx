@@ -65,18 +65,21 @@ import {
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/comunidade/$id")({
-  head: ({ params }) => ({
-    meta: [
-      { title: "Publicação — Comunidade Palavra Viva | Bíblia Online" },
-      {
-        name: "description",
-        content: "Leia, comente e participe das reflexões e orações da Comunidade Palavra Viva.",
-      },
-      { property: "og:title", content: "Comunidade Palavra Viva — Bíblia Online" },
-      { property: "og:url", content: url(`/comunidade/${params.id}`) },
-    ],
-    links: [{ rel: "canonical", href: url(`/comunidade/${params.id}`) }],
-  }),
+  head: ({ params }) => {
+    const pageUrl = params?.id ? url(`/comunidade/${params.id}`) : url("/comunidade");
+    return {
+      meta: [
+        { title: "Publicação — Comunidade Palavra Viva | Bíblia Online" },
+        {
+          name: "description",
+          content: "Leia, comente e participe das reflexões e orações da Comunidade Palavra Viva.",
+        },
+        { property: "og:title", content: "Comunidade Palavra Viva — Bíblia Online" },
+        { property: "og:url", content: pageUrl },
+      ],
+      links: [{ rel: "canonical", href: pageUrl }],
+    };
+  },
   component: QuestionDetailsPage,
 });
 
