@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Bell, Check, CheckCheck, Trash2, HeartHandshake } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -21,9 +21,36 @@ interface NotificationBellProps {
   className?: string;
 }
 
+function parseNotificationRow(row: any): UserNotification {
+  const rawMsg = row?.message || "Alguém publicou um novo pedido de oração. Ore por essa pessoa.";
+  let title = "🙏 Notificação de Oração";
+  if (rawMsg.includes("publicou um novo pedido")) {
+    title = "🙏 Novo pedido de oração";
+  } else if (rawMsg.includes("começou a orar")) {
+    title = "🙏 Irmão em oração";
+  }
+
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    actor_id: row.actor_id,
+    type: row.type || "reaction",
+    title,
+    message: rawMsg,
+    question_id: row.question_id || null,
+    reference_id: row.question_id || null,
+    read: Boolean(row.read),
+    created_at: row.created_at || new Date().toISOString(),
+    actor_name: "Irmão(ã) da comunidade",
+  };
+}
+
 export function NotificationBell({ className }: NotificationBellProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
+
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -51,35 +78,96 @@ export function NotificationBell({ className }: NotificationBellProps) {
       return;
     }
 
+    // 1. Carga inicial dos dados no carregamento/reload
     loadData();
 
-    // Inscrição Supabase Realtime
+    // 2. Inscrição Supabase Realtime
     const subscription = subscribeToUserNotifications(user.id, (payload) => {
-      // Quando chegar nova notificação ou atualização
-      loadData();
-      if (payload.eventType === "INSERT") {
-        setHasNewAlert(true);
-        const refId = payload.new?.question_id || payload.new?.reference_id;
-        const rawMsg = payload.new?.message || "Alguém publicou um novo pedido de oração. Ore por essa pessoa.";
-        const cleanMsg = rawMsg.replace(/\s+/g, " ").trim();
-        const shortDesc = cleanMsg.length > 90 ? cleanMsg.slice(0, 90) + "..." : cleanMsg;
+      if (payload.eventType === "INSERT" && payload.new) {
+        const newRow = payload.new;
 
-        // Exibe toast com link direto para o pedido
-        toast("🙏 Novo pedido de oração", {
-          description: shortDesc,
-          action: {
-            label: "Ver pedido",
-            onClick: () => {
-              if (refId) {
-                navigate({
-                  to: "/comunidade/pedidos-de-oracao",
-                  hash: `prayer-${refId}`,
-                });
-              } else {
-                navigate({ to: "/comunidade/pedidos-de-oracao" });
-              }
+        setNotifications((prev) => {
+          // Idempotência: não duplica se o ID já estiver no estado
+          if (prev.some((n) => n.id === newRow.id)) {
+            return prev;
+          }
+
+          const parsed = parseNotificationRow(newRow);
+
+          // Atualiza imediatamente o contador se for não lida
+          if (!parsed.read) {
+            setUnreadCount((c) => {
+              const next = c + 1;
+              console.log(`[NOTIFICATION REALTIME] contador atualizado: ${next}`);
+              return next;
+            });
+          }
+
+          setHasNewAlert(true);
+
+          // Dispara toast com link direto para o pedido
+          const refId = parsed.question_id || parsed.reference_id;
+          const cleanMsg = parsed.message.replace(/\s+/g, " ").trim();
+          const shortDesc = cleanMsg.length > 90 ? cleanMsg.slice(0, 90) + "..." : cleanMsg;
+
+          toast(parsed.title, {
+            description: shortDesc,
+            action: {
+              label: "Ver pedido",
+              onClick: () => {
+                if (refId) {
+                  navigateRef.current({
+                    to: "/comunidade/pedidos-de-oracao",
+                    hash: `prayer-${refId}`,
+                  });
+                } else {
+                  navigateRef.current({ to: "/comunidade/pedidos-de-oracao" });
+                }
+              },
             },
-          },
+          });
+
+          return [parsed, ...prev];
+        });
+
+        // Sincroniza perfis e dados completos em segundo plano
+        loadData();
+      } else if (payload.eventType === "UPDATE" && payload.new) {
+        const updatedRow = payload.new;
+        setNotifications((prev) => {
+          const item = prev.find((n) => n.id === updatedRow.id);
+          if (item) {
+            const wasUnread = !item.read;
+            const isNowRead = Boolean(updatedRow.read);
+            if (wasUnread && isNowRead) {
+              setUnreadCount((c) => {
+                const next = Math.max(0, c - 1);
+                console.log(`[NOTIFICATION REALTIME] contador atualizado: ${next}`);
+                return next;
+              });
+            } else if (!wasUnread && !isNowRead) {
+              setUnreadCount((c) => {
+                const next = c + 1;
+                console.log(`[NOTIFICATION REALTIME] contador atualizado: ${next}`);
+                return next;
+              });
+            }
+            return prev.map((n) => (n.id === updatedRow.id ? { ...n, read: isNowRead } : n));
+          }
+          return prev;
+        });
+      } else if (payload.eventType === "DELETE" && payload.old) {
+        const delId = payload.old.id;
+        setNotifications((prev) => {
+          const item = prev.find((n) => n.id === delId);
+          if (item && !item.read) {
+            setUnreadCount((c) => {
+              const next = Math.max(0, c - 1);
+              console.log(`[NOTIFICATION REALTIME] contador atualizado: ${next}`);
+              return next;
+            });
+          }
+          return prev.filter((n) => n.id !== delId);
         });
       }
     });
@@ -87,7 +175,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [user?.id, loadData, navigate]);
+  }, [user?.id, loadData]);
 
   // Carrega ao abrir o popover
   const handleOpenChange = (open: boolean) => {
@@ -103,11 +191,15 @@ export function NotificationBell({ className }: NotificationBellProps) {
     e.stopPropagation();
     if (item.read) return;
 
-    // Atualização otimista
+    // Atualização otimista imediata
     setNotifications((prev) =>
       prev.map((n) => (n.id === item.id ? { ...n, read: true } : n))
     );
-    setUnreadCount((c) => Math.max(0, c - 1));
+    setUnreadCount((c) => {
+      const next = Math.max(0, c - 1);
+      console.log(`[NOTIFICATION REALTIME] contador atualizado: ${next}`);
+      return next;
+    });
 
     await markNotificationAsRead(item.id);
   };
@@ -115,9 +207,10 @@ export function NotificationBell({ className }: NotificationBellProps) {
   const handleMarkAllAsRead = async () => {
     if (!user?.id || unreadCount === 0) return;
 
-    // Atualização otimista
+    // Atualização otimista imediata
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
+    console.log("[NOTIFICATION REALTIME] contador atualizado: 0");
 
     const ok = await markAllNotificationsAsRead(user.id);
     if (ok) {
@@ -130,7 +223,11 @@ export function NotificationBell({ className }: NotificationBellProps) {
     const target = notifications.find((n) => n.id === notificationId);
     setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
     if (target && !target.read) {
-      setUnreadCount((c) => Math.max(0, c - 1));
+      setUnreadCount((c) => {
+        const next = Math.max(0, c - 1);
+        console.log(`[NOTIFICATION REALTIME] contador atualizado: ${next}`);
+        return next;
+      });
     }
     await deleteNotification(notificationId);
   };
@@ -141,7 +238,11 @@ export function NotificationBell({ className }: NotificationBellProps) {
       setNotifications((prev) =>
         prev.map((n) => (n.id === item.id ? { ...n, read: true } : n))
       );
-      setUnreadCount((c) => Math.max(0, c - 1));
+      setUnreadCount((c) => {
+        const next = Math.max(0, c - 1);
+        console.log(`[NOTIFICATION REALTIME] contador atualizado: ${next}`);
+        return next;
+      });
       markNotificationAsRead(item.id).catch(() => {});
     }
 
@@ -149,13 +250,14 @@ export function NotificationBell({ className }: NotificationBellProps) {
     setIsOpen(false);
 
     // 3. Navega diretamente ao pedido de oração correspondente
-    if (item.reference_id) {
-      navigate({
+    const targetId = item.question_id || item.reference_id;
+    if (targetId) {
+      navigateRef.current({
         to: "/comunidade/pedidos-de-oracao",
-        hash: `prayer-${item.reference_id}`,
+        hash: `prayer-${targetId}`,
       });
     } else {
-      navigate({ to: "/comunidade/pedidos-de-oracao" });
+      navigateRef.current({ to: "/comunidade/pedidos-de-oracao" });
     }
   };
 

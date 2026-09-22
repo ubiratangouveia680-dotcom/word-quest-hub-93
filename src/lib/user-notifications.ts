@@ -178,8 +178,22 @@ export function subscribeToUserNotifications(
 ) {
   if (!userId) return { unsubscribe: () => {} };
 
+  console.log("[NOTIFICATION REALTIME] iniciando");
+  console.log(`[NOTIFICATION REALTIME] usuário: ${userId.slice(0, 8)}...`);
+
+  const channelName = `bell_notifications_${userId}`;
+
+  // Se já existe um canal com esse nome, remove para evitar ouvintes duplicados
+  try {
+    const existingChannels = supabase.getChannels();
+    const duplicate = existingChannels.find((c) => c.topic === `realtime:${channelName}`);
+    if (duplicate) {
+      supabase.removeChannel(duplicate);
+    }
+  } catch {}
+
   const channel = supabase
-    .channel(`bell_notifications_${userId}_${Date.now()}`)
+    .channel(channelName)
     .on(
       "postgres_changes",
       {
@@ -189,14 +203,30 @@ export function subscribeToUserNotifications(
         filter: `user_id=eq.${userId}`,
       },
       (payload) => {
+        if (payload.eventType === "INSERT") {
+          console.log(`[NOTIFICATION REALTIME] INSERT recebido: ${payload.new?.id || "desconhecido"}`);
+        }
         onNotificationChange(payload);
       }
     )
-    .subscribe();
+    .subscribe((status, err) => {
+      if (status === "SUBSCRIBED") {
+        console.log("[NOTIFICATION REALTIME] conectado");
+      } else if (status === "CHANNEL_ERROR") {
+        console.warn("[NOTIFICATION REALTIME] canal apresentou erro:", err?.message || err);
+      } else if (status === "TIMED_OUT") {
+        console.warn("[NOTIFICATION REALTIME] timeout na conexão com canal");
+      }
+    });
 
   return {
     unsubscribe: () => {
-      supabase.removeChannel(channel);
+      console.log("[NOTIFICATION REALTIME] subscription encerrada");
+      try {
+        supabase.removeChannel(channel);
+      } catch (err) {
+        console.warn("[NOTIFICATION REALTIME] erro ao remover canal:", err);
+      }
     },
   };
 }

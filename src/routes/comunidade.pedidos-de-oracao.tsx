@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
 import { AuthPromptModal } from "@/components/AuthPromptModal";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 import {
   fetchPrayerRequests,
   createPrayerRequest,
