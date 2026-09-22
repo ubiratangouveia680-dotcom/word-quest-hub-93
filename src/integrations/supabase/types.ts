@@ -181,6 +181,174 @@ export type Database = {
           },
         ]
       }
+      bible_materials: {
+        Row: {
+          audience: string
+          author: string
+          bible_book: string | null
+          category: string
+          category_slug: string
+          conclusion: string | null
+          content: string
+          cover_url: string | null
+          created_at: string
+          excerpt: string
+          id: string
+          is_downloadable: boolean
+          lesson_number: number | null
+          level: string
+          main_verse: string | null
+          main_verse_ref: string | null
+          objectives: string[] | null
+          practical_application: string | null
+          questions: string[] | null
+          reference_verses: Json | null
+          series: string | null
+          slug: string
+          status: string
+          table_of_contents: Json | null
+          title: string
+          topics: Json | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: string
+          author?: string
+          bible_book?: string | null
+          category: string
+          category_slug: string
+          conclusion?: string | null
+          content: string
+          cover_url?: string | null
+          created_at?: string
+          excerpt: string
+          id?: string
+          is_downloadable?: boolean
+          lesson_number?: number | null
+          level?: string
+          main_verse?: string | null
+          main_verse_ref?: string | null
+          objectives?: string[] | null
+          practical_application?: string | null
+          questions?: string[] | null
+          reference_verses?: Json | null
+          series?: string | null
+          slug: string
+          status?: string
+          table_of_contents?: Json | null
+          title: string
+          topics?: Json | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          author?: string
+          bible_book?: string | null
+          category?: string
+          category_slug?: string
+          conclusion?: string | null
+          content?: string
+          cover_url?: string | null
+          created_at?: string
+          excerpt?: string
+          id?: string
+          is_downloadable?: boolean
+          lesson_number?: number | null
+          level?: string
+          main_verse?: string | null
+          main_verse_ref?: string | null
+          objectives?: string[] | null
+          practical_application?: string | null
+          questions?: string[] | null
+          reference_verses?: Json | null
+          series?: string | null
+          slug?: string
+          status?: string
+          table_of_contents?: Json | null
+          title?: string
+          topics?: Json | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bible_quiz_attempts: {
+        Row: {
+          answers: Json
+          completed_at: string
+          id: string
+          passed: boolean
+          question_ids: string[]
+          score: number
+          total_questions: number
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          answers: Json
+          completed_at?: string
+          id?: string
+          passed: boolean
+          question_ids: string[]
+          score: number
+          total_questions?: number
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string
+          id?: string
+          passed?: boolean
+          question_ids?: string[]
+          score?: number
+          total_questions?: number
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
+      bible_quiz_rankings: {
+        Row: {
+          avatar_url: string | null
+          best_score: number
+          display_name: string
+          id: string
+          last_attempt_at: string
+          passed_attempts: number
+          total_attempts: number
+          total_score: number
+          user_id: string | null
+          win_rate: number
+        }
+        Insert: {
+          avatar_url?: string | null
+          best_score?: number
+          display_name: string
+          id?: string
+          last_attempt_at?: string
+          passed_attempts?: number
+          total_attempts?: number
+          total_score?: number
+          user_id?: string | null
+          win_rate?: number
+        }
+        Update: {
+          avatar_url?: string | null
+          best_score?: number
+          display_name?: string
+          id?: string
+          last_attempt_at?: string
+          passed_attempts?: number
+          total_attempts?: number
+          total_score?: number
+          user_id?: string | null
+          win_rate?: number
+        }
+        Relationships: []
+      }
       community_blocked_users: {
         Row: {
           blocked_user_id: string
@@ -376,9 +544,113 @@ export type Database = {
           },
         ]
       }
+      prayer_reports: {
+        Row: {
+          created_at: string
+          id: string
+          prayer_request_id: string
+          reason: string
+          reporter_user_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prayer_request_id: string
+          reason: string
+          reporter_user_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prayer_request_id?: string
+          reason?: string
+          reporter_user_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prayer_reports_prayer_request_id_fkey"
+            columns: ["prayer_request_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prayer_requests: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_anonymous: boolean
+          prayed_count: number
+          status: string
+          title: string | null
+          updated_at: string
+          user_id: string
+          verse_reference: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_anonymous?: boolean
+          prayed_count?: number
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+          verse_reference?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_anonymous?: boolean
+          prayed_count?: number
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+          verse_reference?: string | null
+        }
+        Relationships: []
+      }
+      prayer_support: {
+        Row: {
+          created_at: string
+          id: string
+          prayer_request_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prayer_request_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prayer_request_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prayer_support_prayer_request_id_fkey"
+            columns: ["prayer_request_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           email: string | null
           id: string
@@ -386,9 +658,11 @@ export type Database = {
           name: string | null
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -396,9 +670,11 @@ export type Database = {
           name?: string | null
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -406,6 +682,7 @@ export type Database = {
           name?: string | null
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }
