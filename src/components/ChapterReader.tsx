@@ -159,6 +159,29 @@ export function ChapterReader({
         </h1>
         <FontSizeControls />
       </div>
+      {(prev || next) && (
+        <nav aria-label="Navegação rápida do capítulo" className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
+          {prev && (
+            <Link
+              to="/biblia/$book/$chapter"
+              params={{ book: prev.book, chapter: String(prev.chapter) }}
+              className="hover:text-gold transition-colors inline-flex items-center gap-1 font-medium"
+            >
+              ← {BIBLE_BOOKS.find((b) => b.slug === prev.book)?.name ?? prev.book} {prev.chapter}
+            </Link>
+          )}
+          {prev && next && <span className="text-border">|</span>}
+          {next && (
+            <Link
+              to="/biblia/$book/$chapter"
+              params={{ book: next.book, chapter: String(next.chapter) }}
+              className="hover:text-gold transition-colors inline-flex items-center gap-1 font-medium"
+            >
+              {BIBLE_BOOKS.find((b) => b.slug === next.book)?.name ?? next.book} {next.chapter} →
+            </Link>
+          )}
+        </nav>
+      )}
       <p className="mt-1 text-xs text-muted-foreground">
         Texto bíblico disponibilizado através da Bible API. Verifique sempre o contexto canônico.
       </p>

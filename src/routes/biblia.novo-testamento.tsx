@@ -7,9 +7,9 @@ import { BookOpen, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/biblia/novo-testamento")({
   head: () => {
-    const title = "Novo Testamento — Todos os 27 Livros | Bíblia Online Oficial";
+    const title = "Novo Testamento — Bíblia Online";
     const description =
-      "Leia todos os 27 livros do Novo Testamento da Bíblia Sagrada online na Bíblia Online Oficial. Dos quatro Evangelhos ao Apocalipse, explore a vida de Jesus Cristo e a mensagem apostólica.";
+      "Leia todos os 27 livros do Novo Testamento completo na Bíblia Online. Acesse capítulos, pesquise versículos e navegue gratuitamente pela Bíblia Sagrada.";
     const canonical = url("/biblia/novo-testamento");
 
     return {

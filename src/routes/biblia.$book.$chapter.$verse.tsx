@@ -74,8 +74,10 @@ export const Route = createFileRoute("/biblia/$book/$chapter/$verse")({
     const ref = `${book.name} ${chapter}:${verse}`;
     const title = `${ref} — Bíblia Online`;
     const cleanText = text.replace(/"/g, "'").slice(0, 140);
-    const description = `Leia ${ref} na Bíblia Online: "${cleanText}...". Explore o contexto no capítulo ${chapter} de ${book.name}, temas bíblicos, orações e estudos relacionados.`;
+    const description = `Leia ${ref} na Bíblia Online: "${cleanText}...". Consulte o versículo no contexto de ${book.name} ${chapter} e navegue gratuitamente pela Bíblia Sagrada.`;
     const canonical = url(`/biblia/${params.book}/${params.chapter}/${params.verse}`);
+    const testamentName = book.testament === "AT" ? "Antigo Testamento" : "Novo Testamento";
+    const testamentPath = book.testament === "AT" ? "/biblia/antigo-testamento" : "/biblia/novo-testamento";
 
     return {
       meta: [
@@ -97,9 +99,10 @@ export const Route = createFileRoute("/biblia/$book/$chapter/$verse")({
             itemListElement: [
               { "@type": "ListItem", position: 1, name: "Início", item: url("/") },
               { "@type": "ListItem", position: 2, name: "Bíblia", item: url("/biblia") },
-              { "@type": "ListItem", position: 3, name: book.name, item: url(`/biblia/${params.book}`) },
-              { "@type": "ListItem", position: 4, name: `Capítulo ${chapter}`, item: url(`/biblia/${params.book}/${params.chapter}`) },
-              { "@type": "ListItem", position: 5, name: `Versículo ${verse}`, item: canonical },
+              { "@type": "ListItem", position: 3, name: testamentName, item: url(testamentPath) },
+              { "@type": "ListItem", position: 4, name: book.name, item: url(`/biblia/${params.book}`) },
+              { "@type": "ListItem", position: 5, name: `Capítulo ${chapter}`, item: url(`/biblia/${params.book}/${params.chapter}`) },
+              { "@type": "ListItem", position: 6, name: `Versículo ${verse}`, item: canonical },
             ],
           }),
         },
@@ -140,6 +143,8 @@ function VerseIndividualPage() {
 
   const ref = `${book.name} ${chapter}:${verse}`;
   const href = `/biblia/${book.slug}/${chapter}/${verse}`;
+  const testamentName = book.testament === "AT" ? "Antigo Testamento" : "Novo Testamento";
+  const testamentPath = book.testament === "AT" ? "/biblia/antigo-testamento" : "/biblia/novo-testamento";
 
   return (
     <SiteLayout>
@@ -149,6 +154,10 @@ function VerseIndividualPage() {
           <Link to="/" className="hover:text-foreground">Início</Link>
           <span>&gt;</span>
           <Link to="/biblia" className="hover:text-foreground">Bíblia</Link>
+          <span>&gt;</span>
+          <Link to={testamentPath} className="hover:text-foreground">
+            {testamentName}
+          </Link>
           <span>&gt;</span>
           <Link to="/biblia/$book" params={{ book: book.slug }} className="hover:text-foreground">
             {book.name}

@@ -7,9 +7,9 @@ import { BookOpen, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/biblia/antigo-testamento")({
   head: () => {
-    const title = "Antigo Testamento — Todos os 39 Livros | Bíblia Online Oficial";
+    const title = "Antigo Testamento — Bíblia Online";
     const description =
-      "Leia todos os 39 livros do Antigo Testamento da Bíblia Sagrada online na Bíblia Online Oficial. Do Gênesis a Malaquias, explore capítulos, versículos e histórias dos patriarcas, profetas e reis.";
+      "Leia todos os 39 livros do Antigo Testamento completo na Bíblia Online. Acesse capítulos, pesquise versículos e navegue gratuitamente pela Bíblia Sagrada.";
     const canonical = url("/biblia/antigo-testamento");
 
     return {

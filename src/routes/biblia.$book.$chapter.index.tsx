@@ -23,9 +23,12 @@ export const Route = createFileRoute("/biblia/$book/$chapter/")({
       return { meta: [{ title: "Capítulo não encontrado" }, { name: "robots", content: "noindex" }] };
     }
     const { book, chapter } = loaderData;
-    const title = `${book.name} ${chapter} — Bíblia Online Oficial`;
-    const description = `Leia ${book.name} ${chapter} completo na Bíblia Online. Consulte o capítulo, pesquise versículos e navegue pela Bíblia gratuitamente.`;
+    const title = `${book.name} ${chapter} — Bíblia Online`;
+    const description = `Leia ${book.name} ${chapter} completo na Bíblia Online. Consulte todos os versículos do capítulo e navegue gratuitamente pela Bíblia Sagrada.`;
     const path = `/biblia/${params.book}/${params.chapter}`;
+    const testamentName = book.testament === "AT" ? "Antigo Testamento" : "Novo Testamento";
+    const testamentPath = book.testament === "AT" ? "/biblia/antigo-testamento" : "/biblia/novo-testamento";
+
     return {
       meta: [
         { title },
@@ -59,16 +62,37 @@ export const Route = createFileRoute("/biblia/$book/$chapter/")({
               {
                 "@type": "ListItem",
                 position: 3,
+                name: testamentName,
+                item: url(testamentPath),
+              },
+              {
+                "@type": "ListItem",
+                position: 4,
                 name: book.name,
                 item: url(`/biblia/${book.slug}`),
               },
               {
                 "@type": "ListItem",
-                position: 4,
+                position: 5,
                 name: `Capítulo ${chapter}`,
                 item: url(path),
               },
             ],
+          }),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Chapter",
+            name: `${book.name} ${chapter}`,
+            position: chapter,
+            isPartOf: {
+              "@type": "Book",
+              name: `Bíblia Sagrada — ${book.name}`,
+              url: url(`/biblia/${book.slug}`),
+            },
+            inLanguage: "pt-BR",
           }),
         },
       ],
@@ -79,19 +103,27 @@ export const Route = createFileRoute("/biblia/$book/$chapter/")({
 
 function ChapterPage() {
   const { book, chapter } = Route.useLoaderData();
+  const testamentName = book.testament === "AT" ? "Antigo Testamento" : "Novo Testamento";
+  const testamentPath = book.testament === "AT" ? "/biblia/antigo-testamento" : "/biblia/novo-testamento";
 
   return (
     <SiteLayout>
       <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1fr_300px]">
         <div>
-          <nav className="mb-3 text-sm text-muted-foreground">
+          <nav aria-label="Navegação estrutural" className="mb-3 text-sm text-muted-foreground flex flex-wrap items-center gap-1">
+            <Link to="/" className="hover:text-foreground">Início</Link>
+            <span className="mx-1">&gt;</span>
             <Link to="/biblia" className="hover:text-foreground">Bíblia</Link>
-            <span className="mx-1">/</span>
+            <span className="mx-1">&gt;</span>
+            <Link to={testamentPath} className="hover:text-foreground">
+              {testamentName}
+            </Link>
+            <span className="mx-1">&gt;</span>
             <Link to="/biblia/$book" params={{ book: book.slug }} className="hover:text-foreground">
               {book.name}
             </Link>
-            <span className="mx-1">/</span>
-            <span className="text-foreground">{chapter}</span>
+            <span className="mx-1">&gt;</span>
+            <span className="text-foreground font-semibold">Capítulo {chapter}</span>
           </nav>
           <Suspense fallback={<Skeleton className="h-96 w-full" />}>
             <ChapterReader book={book} chapter={chapter} />

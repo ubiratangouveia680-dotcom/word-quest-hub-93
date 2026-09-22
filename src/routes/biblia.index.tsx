@@ -5,26 +5,38 @@ import { NEW_TESTAMENT, OLD_TESTAMENT, type BibleBook } from "@/lib/bible-books"
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/biblia/")({
-  head: () => ({
-    meta: [
-      { title: "Bíblia Online Oficial — Antigo e Novo Testamento Completo" },
-      {
-        name: "description",
-        content:
-          "Leia todos os 66 livros da Bíblia Sagrada na Bíblia Online Oficial. Navegue pelos livros do Antigo e Novo Testamento, consulte capítulos e versículos gratuitamente.",
-      },
-      { property: "og:title", content: "Bíblia Online Oficial — Antigo e Novo Testamento Completo" },
-      {
-        property: "og:description",
-        content:
-          "Leia todos os 66 livros da Bíblia Sagrada na Bíblia Online Oficial. Navegue pelos livros do Antigo e Novo Testamento gratuitamente.",
-      },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: url("/biblia") },
-      { property: "og:image", content: url("/icon-512.png") },
-    ],
-    links: [{ rel: "canonical", href: url("/biblia") }],
-  }),
+  head: () => {
+    const title = "Bíblia Online — Antigo e Novo Testamento";
+    const description =
+      "Leia todos os 66 livros da Bíblia Sagrada na Bíblia Online. Navegue pelos livros do Antigo e Novo Testamento, consulte capítulos e versículos gratuitamente.";
+    const canonical = url("/biblia");
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: canonical },
+        { property: "og:image", content: url("/icon-512.png") },
+      ],
+      links: [{ rel: "canonical", href: canonical }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Início", item: url("/") },
+              { "@type": "ListItem", position: 2, name: "Bíblia", item: canonical },
+            ],
+          }),
+        },
+      ],
+    };
+  },
   component: BibliaIndex,
 });
 
