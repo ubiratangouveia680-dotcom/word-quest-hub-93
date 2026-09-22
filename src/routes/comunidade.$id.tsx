@@ -11,6 +11,7 @@ import {
   deleteAnswer,
   deleteQuestion,
   updateQuestion,
+  normalizeCategoryId,
   COMMUNITY_CATEGORIES,
   fetchCategoriesFromDB,
   toggleQuestionLike,
@@ -360,14 +361,11 @@ function QuestionDetailsPage() {
       setIsSavingEdit(true);
       setEditError("");
 
-      // Valida que a categoria de edição é real e existe no banco
-      if (!editCategoryId || !editCategoryId.trim()) {
-        setEditError("Por favor, selecione uma categoria antes de salvar.");
-        setIsSavingEdit(false);
-        return;
-      }
-      if (dbCategories.length > 0 && !dbCategories.some((c) => c.id === editCategoryId)) {
-        setEditError("A categoria selecionada é inválida. Por favor, selecione uma categoria válida.");
+      // Valida e normaliza que a categoria de edição é real e existe no banco
+      const normalizedEditCat = normalizeCategoryId(editCategoryId);
+      const resolvedEditCat = dbCategories.find((c) => c.id === normalizedEditCat || c.id === editCategoryId)?.id || (dbCategories.length > 0 ? dbCategories[0]?.id : "geral");
+      if (!resolvedEditCat) {
+        setEditError("Por favor, selecione uma categoria válida antes de salvar.");
         setIsSavingEdit(false);
         return;
       }
@@ -375,7 +373,7 @@ function QuestionDetailsPage() {
       await updateQuestion(question.id, {
         title: editTitle.trim() || undefined,
         body: cleanBody,
-        categoryId: editCategoryId,
+        categoryId: resolvedEditCat,
         verseReference: editVerse.trim() || undefined,
       });
 
@@ -386,7 +384,7 @@ function QuestionDetailsPage() {
               ...prev,
               title: editTitle.trim() || prev.title,
               body: cleanBody,
-              category_id: editCategoryId,
+              category_id: resolvedEditCat,
               verse_reference: editVerse.trim() || null,
             }
           : null

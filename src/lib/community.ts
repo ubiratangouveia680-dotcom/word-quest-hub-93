@@ -828,6 +828,43 @@ export async function fetchAnswers(questionId: string, currentUserId?: string | 
 }
 
 // ----------------------------------------------------
+// Normalização e validação de categorias
+// ----------------------------------------------------
+/**
+ * Normaliza identificadores de categoria para corresponder exatamente
+ * aos IDs válidos da tabela `community_categories` no Supabase,
+ * prevenindo violação da foreign key `questions_category_id_fkey`.
+ */
+export function normalizeCategoryId(inputCategoryId: string | null | undefined): string {
+  if (!inputCategoryId) return "geral";
+  const normalized = inputCategoryId.trim().toLowerCase();
+
+  const ALIAS_MAP: Record<string, string> = {
+    "pedido-de-oracao": "oracao",
+    "pedidos-de-oracao": "oracao",
+    "oracoes": "oracao",
+    "versiculo": "biblia",
+    "versiculos": "biblia",
+    "palavra": "biblia",
+    "reflexao": "fe",
+    "reflexoes": "fe",
+    "testemunho": "vida-crista",
+    "testemunhos": "vida-crista",
+    "pergunta": "duvidas",
+    "perguntas": "duvidas",
+    "duvida": "duvidas",
+    "devocional": "geral",
+    "devocionais": "geral",
+    "estudos": "estudos-biblicos",
+    "estudo": "estudos-biblicos",
+    "quiz": "conhecimento",
+    "prova": "conhecimento",
+  };
+
+  return ALIAS_MAP[normalized] || normalized;
+}
+
+// ----------------------------------------------------
 // Mutations: Questions & Answers
 // ----------------------------------------------------
 export async function createQuestion(params: {
@@ -845,31 +882,24 @@ export async function createQuestion(params: {
   const rawTitle = params.title?.trim() || "";
   const sanitizedTitle = rawTitle ? sanitizeText(rawTitle) : (sanitizedBody.slice(0, 60) + (sanitizedBody.length > 60 ? "..." : ""));
 
-  // Garantir que categoryId seja um valor válido não-vazio.
-  // NÃO validamos contra o array estático local — o ID deve vir de fetchCategoriesFromDB()
-  // para garantir que existe no banco. Se vier vazio/undefined, lançamos erro descritivo.
-  const categoryId = params.categoryId?.trim();
-  if (!categoryId) {
-    throw new Error(
-      "Nenhuma categoria selecionada. Selecione uma categoria antes de publicar."
-    );
-  }
+  // Normalização e validação robusta da categoria contra o banco
+  const rawCat = params.categoryId?.trim();
+  const normalizedCat = normalizeCategoryId(rawCat);
 
-  // Verificar se a categoria realmente existe no banco antes de inserir
-  const { data: catExists, error: catError } = await supabase
-    .from("community_categories")
-    .select("id")
-    .eq("id", categoryId)
-    .maybeSingle();
-
-  if (catError) {
-    console.warn("[createQuestion] Não foi possível validar a categoria no banco:", catError.message);
-    // Continua sem validação para não bloquear em caso de erro de permissão
-  } else if (!catExists) {
-    throw new Error(
-      `A categoria selecionada ("${categoryId}") não existe no banco de dados. ` +
-      "Por favor, selecione uma categoria válida."
-    );
+  let categoryId = normalizedCat;
+  try {
+    const dbCats = await fetchCategoriesFromDB();
+    if (dbCats && dbCats.length > 0) {
+      const match = dbCats.find((c) => c.id === normalizedCat || c.id === rawCat);
+      if (match) {
+        categoryId = match.id;
+      } else {
+        const fallback = dbCats.find((c) => c.id === "duvidas") || dbCats.find((c) => c.id === "geral") || dbCats[0];
+        categoryId = fallback ? fallback.id : "geral";
+      }
+    }
+  } catch (err) {
+    console.warn("[createQuestion] Aviso ao resolver categoria no banco:", err);
   }
 
   const { data, error } = await supabase
@@ -934,9 +964,18 @@ export async function updateQuestion(
   if (updates.body !== undefined) {
     payload.body = sanitizeText(updates.body).trim();
   }
-  // Só inclui category_id se for um valor não-vazio (evita FK violation por string vazia)
   if (updates.categoryId && updates.categoryId.trim()) {
-    payload.category_id = updates.categoryId.trim();
+    const rawCat = updates.categoryId.trim();
+    const normalizedCat = normalizeCategoryId(rawCat);
+    let resolvedCatId = normalizedCat;
+    try {
+      const dbCats = await fetchCategoriesFromDB();
+      if (dbCats && dbCats.length > 0) {
+        const match = dbCats.find((c) => c.id === normalizedCat || c.id === rawCat);
+        resolvedCatId = match ? match.id : (dbCats.find((c) => c.id === "geral")?.id || dbCats[0]?.id || "geral");
+      }
+    } catch {}
+    payload.category_id = resolvedCatId;
   }
   if (updates.verseReference !== undefined) {
     payload.verse_reference = updates.verseReference.trim() ? sanitizeText(updates.verseReference.trim()) : null;

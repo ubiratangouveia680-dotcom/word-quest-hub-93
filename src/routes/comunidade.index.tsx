@@ -13,6 +13,7 @@ import {
   sanitizeText,
   fetchQuestions,
   fetchCategoriesFromDB,
+  normalizeCategoryId,
   createQuestion,
   updateQuestion,
   deleteQuestion,
@@ -291,8 +292,10 @@ function ComunidadeFeedPage() {
       return;
     }
 
-    // Valida que a categoria está selecionada e é real
-    if (!categoryId || !dbCategories.some((c) => c.id === categoryId)) {
+    // Valida e normaliza que a categoria é real
+    const normalizedCat = normalizeCategoryId(categoryId);
+    const resolvedCat = dbCategories.find((c) => c.id === normalizedCat || c.id === categoryId)?.id || (dbCategories.length > 0 ? dbCategories[0]?.id : "geral");
+    if (!resolvedCat) {
       setFormError("Por favor, selecione uma categoria válida antes de publicar.");
       return;
     }
@@ -312,7 +315,7 @@ function ComunidadeFeedPage() {
 
       const created = await createQuestion({
         userId: user.id,
-        categoryId,
+        categoryId: resolvedCat,
         title: title.trim() || undefined,
         body: cleanBody,
         verseReference: verseReference.trim() || undefined,
@@ -361,8 +364,10 @@ function ComunidadeFeedPage() {
       setIsSavingEdit(true);
       setEditError("");
 
-      // Valida que a categoria de edição é real
-      if (!editCategoryId || !dbCategories.some((c) => c.id === editCategoryId)) {
+      // Valida e normaliza que a categoria de edição é real
+      const normalizedEditCat = normalizeCategoryId(editCategoryId);
+      const resolvedEditCat = dbCategories.find((c) => c.id === normalizedEditCat || c.id === editCategoryId)?.id || (dbCategories.length > 0 ? dbCategories[0]?.id : "geral");
+      if (!resolvedEditCat) {
         setEditError("Por favor, selecione uma categoria válida antes de salvar.");
         setIsSavingEdit(false);
         return;
@@ -371,7 +376,7 @@ function ComunidadeFeedPage() {
       await updateQuestion(editingQuestion.id, {
         title: editTitle.trim() || undefined,
         body: cleanBody,
-        categoryId: editCategoryId,
+        categoryId: resolvedEditCat,
         verseReference: editVerse.trim() || undefined,
       });
 

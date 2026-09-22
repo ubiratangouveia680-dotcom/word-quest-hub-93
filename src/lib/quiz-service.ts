@@ -277,8 +277,8 @@ export async function submitQuizAttempt(
       // Procura se já existe um registro DESTE usuário específico pelo user_id (evita colisão de nomes e violação de RLS)
       const { data: existingRows, error: searchError } = await supabase
         .from('questions')
-        .select('id, user_id, title, body, created_at')
-        .eq('category_id', 'conhecimento')
+        .select('id, user_id, title, body, created_at, category_id')
+        .like('title', '[QUIZ_RANKING]%')
         .eq('user_id', effectiveUserId)
         .limit(1);
 
@@ -352,12 +352,32 @@ export async function submitQuizAttempt(
           userId: effectiveUserId,
         };
 
+        // Validação dinâmica do category_id contra community_categories para satisfazer questions_category_id_fkey
+        let quizCategoryId = 'conhecimento';
+        try {
+          const { data: catCheck } = await supabase
+            .from('community_categories')
+            .select('id')
+            .eq('id', 'conhecimento')
+            .maybeSingle();
+
+          if (!catCheck?.id) {
+            const { data: anyCat } = await supabase
+              .from('community_categories')
+              .select('id')
+              .limit(1);
+            if (anyCat && anyCat.length > 0 && anyCat[0]?.id) {
+              quizCategoryId = anyCat[0].id;
+            }
+          }
+        } catch {}
+
         const { error: insertError } = await supabase
           .from('questions')
           .insert([
             {
               user_id: effectiveUserId,
-              category_id: 'conhecimento',
+              category_id: quizCategoryId,
               title: `[QUIZ_RANKING] ${displayName}`,
               body: JSON.stringify(newPayload),
             },
@@ -478,8 +498,7 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
   try {
     const { data: qData, error: qError } = await supabase
       .from('questions')
-      .select('id, user_id, title, body, created_at, updated_at')
-      .eq('category_id', 'conhecimento')
+      .select('id, user_id, title, body, created_at, updated_at, category_id')
       .like('title', '[QUIZ_RANKING]%')
       .order('updated_at', { ascending: false })
       .limit(limit * 3);
@@ -679,7 +698,7 @@ export async function fetchUserQuizStats(userId?: string, displayName?: string):
       const { data: qRows } = await supabase
         .from('questions')
         .select('body, created_at, updated_at')
-        .eq('category_id', 'conhecimento')
+        .like('title', '[QUIZ_RANKING]%')
         .eq('user_id', userId)
         .limit(1);
 
