@@ -59,13 +59,17 @@ export function NotificationBell({ className }: NotificationBellProps) {
       loadData();
       if (payload.eventType === "INSERT") {
         setHasNewAlert(true);
-        // Exibe toast sutil e não-intrusivo
+        const refId = payload.new?.question_id || payload.new?.reference_id;
+        const rawMsg = payload.new?.message || "Alguém publicou um novo pedido de oração. Ore por essa pessoa.";
+        const cleanMsg = rawMsg.replace(/\s+/g, " ").trim();
+        const shortDesc = cleanMsg.length > 90 ? cleanMsg.slice(0, 90) + "..." : cleanMsg;
+
+        // Exibe toast com link direto para o pedido
         toast("🙏 Novo pedido de oração", {
-          description: "Alguém publicou um novo pedido de oração. Ore por essa pessoa.",
+          description: shortDesc,
           action: {
             label: "Ver pedido",
             onClick: () => {
-              const refId = payload.new?.reference_id;
               if (refId) {
                 navigate({
                   to: "/comunidade/pedidos-de-oracao",

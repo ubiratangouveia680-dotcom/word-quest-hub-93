@@ -446,9 +446,17 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
       if (!error && data) {
         hasDedicatedTable = true;
         recordPrayerTimestamp(input.userId);
-        dispatchPrayerNotificationFallback(data.id, input.userId).catch(() => {});
 
-        // Disparo de Web Push nativo para os outros dispositivos cadastrados
+        console.log("[PRAYER] Novo pedido criado");
+        console.log("[PRAYER] ID do pedido:", data.id);
+        console.log("[PRAYER] Autor:", input.userId);
+
+        // 1. Notificações internas no banco para o sininho de todos os outros usuários
+        dispatchPrayerNotificationFallback(data.id, input.userId, authorDisplayName, cleanContent).catch((err) =>
+          console.warn("[NOTIFICATION] Erro ao disparar fallback:", err)
+        );
+
+        // 2. Disparo de Web Push nativo para os outros dispositivos cadastrados
         notifyNewPrayerRequest({
           data: {
             authorId: input.userId,
@@ -456,7 +464,7 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
             prayerRequestId: data.id,
             content: cleanContent,
           },
-        }).catch((pushErr) => console.warn("notifyNewPrayerRequest error:", pushErr));
+        }).catch((pushErr) => console.warn("[PUSH] notifyNewPrayerRequest error:", pushErr));
 
         return {
           id: data.id,
@@ -502,9 +510,17 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
 
     if (!qError && qData) {
       recordPrayerTimestamp(input.userId);
-      dispatchPrayerNotificationFallback(qData.id, input.userId).catch(() => {});
 
-      // Disparo de Web Push nativo para os outros dispositivos cadastrados
+      console.log("[PRAYER] Novo pedido criado");
+      console.log("[PRAYER] ID do pedido:", qData.id);
+      console.log("[PRAYER] Autor:", input.userId);
+
+      // 1. Notificações internas no banco para o sininho de todos os outros usuários
+      dispatchPrayerNotificationFallback(qData.id, input.userId, authorDisplayName, cleanContent).catch((err) =>
+        console.warn("[NOTIFICATION] Erro ao disparar fallback:", err)
+      );
+
+      // 2. Disparo de Web Push nativo para os outros dispositivos cadastrados
       notifyNewPrayerRequest({
         data: {
           authorId: input.userId,
@@ -512,7 +528,7 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
           prayerRequestId: qData.id,
           content: cleanContent,
         },
-      }).catch((pushErr) => console.warn("notifyNewPrayerRequest error:", pushErr));
+      }).catch((pushErr) => console.warn("[PUSH] notifyNewPrayerRequest error:", pushErr));
 
       return {
         id: qData.id,

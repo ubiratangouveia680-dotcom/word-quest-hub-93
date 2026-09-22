@@ -458,6 +458,8 @@ export const sendTestVersePushToDevice = createServerFn({ method: "POST" })
 // ---------------------------------------------------------------------------
 // 9. Dispatch Web Push for New Prayer Request
 // ---------------------------------------------------------------------------
+// 9. Dispatch Web Push for New Prayer Request
+// ---------------------------------------------------------------------------
 export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
   .validator(
     (payload: {
@@ -470,8 +472,14 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ success: boolean; pushedDevices: number }> => {
     initWebPush();
 
+    console.log("[PRAYER] Novo pedido criado");
+    console.log("[PRAYER] ID do pedido:", data.prayerRequestId);
+    console.log("[PRAYER] Autor:", data.authorId);
+
     const subscriptions: { endpoint: string; p256dh: string; auth: string; userId?: string }[] = [];
     const seenEndpoints = new Set<string>();
+
+    console.log("[PUSH] Procurando subscriptions...");
 
     // 1. Coleta inscrições da tabela dedicada push_subscriptions (se existir)
     try {
@@ -526,6 +534,8 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
       }
     } catch {}
 
+    console.log("[PUSH] Subscriptions encontradas:", subscriptions.length);
+
     if (subscriptions.length === 0) {
       return { success: true, pushedDevices: 0 };
     }
@@ -550,6 +560,8 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
     await Promise.allSettled(
       subscriptions.map(async (sub) => {
         try {
+          console.log("[PUSH] Enviando para usuário:", sub.userId || "dispositivo_web");
+          console.log("[PUSH] Endpoint:", sub.endpoint.slice(0, 45) + "...");
           await webPush.sendNotification(
             {
               endpoint: sub.endpoint,
@@ -557,8 +569,10 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
             },
             pushPayload
           );
+          console.log("[PUSH] Resultado do envio: SUCCESS");
           dispatchedCount++;
         } catch (pushErr: any) {
+          console.warn("[PUSH] ERRO:", pushErr.message || pushErr);
           if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
             await removeInvalidSubscription(sub.endpoint);
           }
@@ -567,6 +581,37 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
     );
 
     return { success: true, pushedDevices: dispatchedCount };
+  });
+
+// ---------------------------------------------------------------------------
+// 9.1 Test Internal Notification Generator (Sininho 🔔)
+// ---------------------------------------------------------------------------
+export const createTestInternalNotification = createServerFn({ method: "POST" })
+  .validator((payload: { userId: string; prayerRequestId?: string }) => payload)
+  .handler(async ({ data }) => {
+    if (!data.userId) throw new Error("Usuário não identificado.");
+
+    try {
+      console.log("[NOTIFICATION] Criando notificação interna de teste para:", data.userId);
+      const { error } = await supabase.from("notifications").insert({
+        user_id: data.userId,
+        actor_id: data.userId,
+        type: "reaction",
+        question_id: data.prayerRequestId || "461ab5b2-9c40-418d-9a05-52ac209e0b14",
+        read: false,
+        message: "🙏 Teste do Sininho: Uma nova oração foi compartilhada na comunidade da Bíblia Online.",
+      });
+
+      if (error) {
+        console.warn("[NOTIFICATION] Erro ao criar notificação de teste:", error.message);
+        return { success: false, message: error.message };
+      }
+
+      return { success: true, message: "Notificação interna de teste enviada para o sininho com sucesso!" };
+    } catch (err: any) {
+      console.warn("[NOTIFICATION] Falha ao emitir notificação de teste:", err);
+      return { success: false, message: err.message || "Erro desconhecido" };
+    }
   });
 
 // ---------------------------------------------------------------------------

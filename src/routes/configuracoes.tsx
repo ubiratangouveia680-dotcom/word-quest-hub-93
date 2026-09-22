@@ -57,6 +57,7 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
 } from "@/lib/push-client";
+import { createTestInternalNotification } from "@/lib/push.functions";
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/configuracoes")({
@@ -93,6 +94,7 @@ function SettingsPage() {
   const [prayerPushEnabled, setPrayerPushEnabled] = useState<boolean>(() => getStoredPrayerPushState());
   const [isSubscribingPrayerPush, setIsSubscribingPrayerPush] = useState(false);
   const [isTestingPrayerPush, setIsTestingPrayerPush] = useState(false);
+  const [isTestingInternalNotif, setIsTestingInternalNotif] = useState(false);
 
   // Exclusão de conta
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
@@ -242,6 +244,32 @@ function SettingsPage() {
     } finally {
       setIsTestingPrayerPush(false);
     }
+  };
+
+  const handleTestInternalNotif = async () => {
+    if (!user?.id) {
+      toast.info("Você precisa estar conectado à sua conta para testar o sininho de notificações.");
+      return;
+    }
+    setIsTestingInternalNotif(true);
+    try {
+      const res = await createTestInternalNotification({ data: { userId: user.id } });
+      if (res.success) {
+        toast.success("Notificação interna de teste criada com sucesso! Veja o Sininho 🔔 aumentar no topo do site.");
+      } else {
+        toast.error("Falha ao criar notificação interna: " + (res.message || "Erro"));
+      }
+    } catch (e: any) {
+      toast.error("Erro ao testar sininho: " + e.message);
+    } finally {
+      setIsTestingInternalNotif(false);
+    }
+  };
+
+  const handleTestBothNotifs = async () => {
+    toast.info("Disparando testes simultâneos: Sininho 🔔 e Notificação Push no Aparelho 📱...");
+    await handleTestInternalNotif();
+    await handleTestPrayerPush();
   };
 
   const handleFontSizeChange = (delta: number) => {
@@ -541,6 +569,53 @@ function SettingsPage() {
                 )}
               </div>
             )}
+          </div>
+
+          {/* Painel de Testes Independentes */}
+          <div className="rounded-lg border border-border/80 bg-accent/25 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-foreground">🧪 Testes de Notificação para este Aparelho</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Teste cada canal separadamente para confirmar o funcionamento em tempo real no seu dispositivo:
+            </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleTestInternalNotif}
+                disabled={isTestingInternalNotif || !user?.id}
+                className="h-8 text-xs gap-1.5 cursor-pointer"
+              >
+                <Bell className="size-3.5 text-gold" />
+                <span>{isTestingInternalNotif ? "Criando no sininho..." : "Testar Notificação Interna 🔔"}</span>
+              </Button>
+
+              {hasNotificationSupport && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleTestPrayerPush}
+                  disabled={isTestingPrayerPush}
+                  className="h-8 text-xs gap-1.5 cursor-pointer"
+                >
+                  <HeartHandshake className="size-3.5 text-primary" />
+                  <span>{isTestingPrayerPush ? "Disparando Push..." : "Testar Web Push no Telefone 📱"}</span>
+                </Button>
+              )}
+
+              {hasNotificationSupport && user?.id && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleTestBothNotifs}
+                  disabled={isTestingInternalNotif || isTestingPrayerPush}
+                  className="h-8 text-xs font-semibold gap-1.5 cursor-pointer"
+                >
+                  <span>Testar Ambos (🔔 + 📱)</span>
+                </Button>
+              )}
+            </div>
           </div>
 
           <p className="text-[11px] text-muted-foreground">

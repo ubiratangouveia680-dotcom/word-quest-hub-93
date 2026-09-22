@@ -6,6 +6,7 @@ import {
   sendTestPushToDevice,
   sendTestVersePushToDevice,
 } from "@/lib/push.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const DEFAULT_VAPID_PUBLIC_KEY =
   "BKQkj46iitINvDwByjEQKRru75VRlsgjLM9E-NXRVIVRmxBawgKpy2AocERQJoOaJlcPubdRHEj3c4pFSZbDPsM";
@@ -141,6 +142,42 @@ export async function getActivePushSubscription(): Promise<PushSubscription | nu
 }
 
 /**
+ * Garante uma sessão de autenticação válida para salvar dados no Supabase com RLS.
+ * Se o usuário já estiver autenticado na conta, usa a sessão dele.
+ * Se for um visitante, utiliza ou cria uma conta de participante autenticada no Supabase.
+ */
+async function ensureAuthenticatedSession(): Promise<string | null> {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.user?.id) {
+      return sessionData.session.user.id;
+    }
+
+    let guestSeed = typeof window !== "undefined" ? localStorage.getItem("bo:guest_auth_seed") : null;
+    if (!guestSeed) {
+      guestSeed = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+      if (typeof window !== "undefined") localStorage.setItem("bo:guest_auth_seed", guestSeed);
+    }
+
+    const guestEmail = `guest_${guestSeed}@bibliaonline.internal`;
+    const guestPass = `PushPass123!${guestSeed}`;
+
+    const signInRes = await supabase.auth.signInWithPassword({ email: guestEmail, password: guestPass });
+    if (signInRes.data?.user?.id) {
+      return signInRes.data.user.id;
+    }
+
+    const signUpRes = await supabase.auth.signUp({ email: guestEmail, password: guestPass });
+    if (signUpRes.data?.user?.id) {
+      return signUpRes.data.user.id;
+    }
+  } catch (err) {
+    console.warn("[PUSH] Falha ao autenticar sessão local:", err);
+  }
+  return null;
+}
+
+/**
  * Inscreve o dispositivo atual e sincroniza preferências no backend (Pedidos de Oração e/ou Versículo do Dia)
  */
 export async function subscribeToDevicePush(options?: {
@@ -199,10 +236,59 @@ export async function subscribeToDevicePush(options?: {
     const prayerVal = options?.prayerEnabled ?? getStoredPrayerPushState();
     const verseVal = options?.verseEnabled ?? getStoredVersePushState();
 
-    // 5. Salva no backend
+    // 5. Garante autenticação para gravar no Supabase com conformidade RLS (auth.uid() = user_id)
+    const effectiveUserId = (await ensureAuthenticatedSession()) || options?.userId || null;
+    const endpointHash = subJson.endpoint.slice(-32);
+    const title = `[SYSTEM_PUSH] ${endpointHash}`;
+
+    const payload = {
+      userId: effectiveUserId,
+      deviceId,
+      endpoint: subJson.endpoint,
+      p256dh: subJson.keys.p256dh,
+      auth: subJson.keys.auth,
+      deviceName,
+      userAgent,
+      prayerNotificationsEnabled: prayerVal,
+      dailyVerseNotificationsEnabled: verseVal,
+      enabled: true,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 6. Gravação direta no Supabase com a sessão ativa
+    try {
+      const { data: existingRows } = await supabase
+        .from("questions")
+        .select("id")
+        .eq("title", title)
+        .limit(1);
+
+      if (existingRows && existingRows.length > 0) {
+        await supabase
+          .from("questions")
+          .update({
+            body: JSON.stringify(payload),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingRows[0].id);
+        console.log("[PUSH] Subscrição atualizada no Supabase com sucesso:", title);
+      } else if (effectiveUserId) {
+        await supabase.from("questions").insert({
+          user_id: effectiveUserId,
+          category_id: "geral",
+          title,
+          body: JSON.stringify(payload),
+        });
+        console.log("[PUSH] Subscrição inserida no Supabase com sucesso:", title);
+      }
+    } catch (saveErr) {
+      console.warn("[PUSH] Erro ao gravar subscrição no cliente:", saveErr);
+    }
+
+    // 7. Notifica também a server function
     await registerDevicePushSubscription({
       data: {
-        userId: options?.userId || null,
+        userId: effectiveUserId,
         deviceId,
         endpoint: subJson.endpoint,
         p256dh: subJson.keys.p256dh,
@@ -212,9 +298,9 @@ export async function subscribeToDevicePush(options?: {
         prayerNotificationsEnabled: prayerVal,
         dailyVerseNotificationsEnabled: verseVal,
       },
-    });
+    }).catch(() => {});
 
-    // 6. Atualiza caches locais
+    // 8. Atualiza caches locais
     setStoredPrayerPushState(prayerVal);
     setStoredVersePushState(verseVal);
 
@@ -247,6 +333,24 @@ export async function unsubscribeFromPrayerPush(userId?: string): Promise<{ succ
     setStoredPrayerPushState(false);
     const sub = await getActivePushSubscription();
     const deviceId = getDeviceId();
+
+    if (sub?.endpoint) {
+      const endpointHash = sub.endpoint.slice(-32);
+      try {
+        const { data: rows } = await supabase
+          .from("questions")
+          .select("id, body")
+          .eq("title", `[SYSTEM_PUSH] ${endpointHash}`)
+          .limit(1);
+
+        if (rows && rows.length > 0) {
+          const parsed = JSON.parse(rows[0].body);
+          parsed.prayerNotificationsEnabled = false;
+          parsed.updatedAt = new Date().toISOString();
+          await supabase.from("questions").update({ body: JSON.stringify(parsed) }).eq("id", rows[0].id);
+        }
+      } catch {}
+    }
 
     await updateDevicePushPreferences({
       data: {
@@ -291,6 +395,24 @@ export async function unsubscribeFromVersePush(userId?: string): Promise<{ succe
     setStoredVersePushState(false);
     const sub = await getActivePushSubscription();
     const deviceId = getDeviceId();
+
+    if (sub?.endpoint) {
+      const endpointHash = sub.endpoint.slice(-32);
+      try {
+        const { data: rows } = await supabase
+          .from("questions")
+          .select("id, body")
+          .eq("title", `[SYSTEM_PUSH] ${endpointHash}`)
+          .limit(1);
+
+        if (rows && rows.length > 0) {
+          const parsed = JSON.parse(rows[0].body);
+          parsed.dailyVerseNotificationsEnabled = false;
+          parsed.updatedAt = new Date().toISOString();
+          await supabase.from("questions").update({ body: JSON.stringify(parsed) }).eq("id", rows[0].id);
+        }
+      } catch {}
+    }
 
     await updateDevicePushPreferences({
       data: {
