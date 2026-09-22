@@ -222,6 +222,31 @@ export async function fetchCategories(): Promise<Category[]> {
 // ----------------------------------------------------
 // Questions Queries
 // ----------------------------------------------------
+/**
+ * Helper para identificar dados ou publicações internas geradas automaticamente pelo Quiz.
+ * Garante que identificadores como [QUIZ_RANKING], [QUIZ_...] ou payloads JSON com
+ * pontuação, estatísticas e tentativas NUNCA sejam retornados ou renderizados no mural público.
+ */
+export function isQuizInternalRecord(item: { title?: string | null; body?: string | null } | null | undefined): boolean {
+  if (!item) return false;
+  const title = String(item.title || "").trim();
+  const body = String(item.body || "").trim();
+
+  if (title.startsWith("[QUIZ_") || title.includes("[QUIZ_RANKING]") || title.toUpperCase().includes("QUIZ_RANKING")) {
+    return true;
+  }
+  if (
+    body.includes('"displayName"') ||
+    body.includes('"bestScore"') ||
+    body.includes('"passedAttempts"') ||
+    body.includes('"totalAttempts"') ||
+    body.includes('"winRate"')
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export interface FetchQuestionsParams {
   category_id?: string | null | undefined;
   filter?: ("recent" | "popular" | "most_answered" | "most_liked" | "answered" | "unanswered") | undefined;
@@ -243,6 +268,12 @@ export async function fetchQuestions({
     *,
     category:community_categories(*)
   `);
+
+  // Exclui estritamente registros internos e automáticos do Quiz no nível do banco
+  query = query
+    .not("title", "ilike", "[QUIZ_%")
+    .not("title", "ilike", "%QUIZ_RANKING%")
+    .not("body", "ilike", '%"displayName":%');
 
   if (category_id && category_id !== "todas") {
     query = query.eq("category_id", category_id);
@@ -279,7 +310,8 @@ export async function fetchQuestions({
     return [];
   }
 
-  const rawQuestions = data || [];
+  // Filtragem defensiva na camada lógica garantindo que nenhum post do quiz passe
+  const rawQuestions = (data || []).filter((q) => !isQuizInternalRecord(q));
   if (rawQuestions.length === 0) return [];
 
   // Fetch author profiles safely
@@ -415,8 +447,10 @@ export async function fetchQuestionById(id: string, currentUserId?: string | nul
     .eq("id", id)
     .single();
 
-  if (error || !data) {
-    console.error("Error fetching question by id:", error);
+  if (error || !data || isQuizInternalRecord(data)) {
+    if (error && (error as any).code !== "PGRST116") {
+      console.error("Error fetching question by id:", error);
+    }
     return null;
   }
 
@@ -620,6 +654,8 @@ export async function fetchPublicProfile(userId: string): Promise<PublicProfileD
     .from("questions")
     .select("*")
     .eq("user_id", userId)
+    .not("title", "ilike", "[QUIZ_%")
+    .not("body", "ilike", '%"displayName":%')
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -629,7 +665,7 @@ export async function fetchPublicProfile(userId: string): Promise<PublicProfileD
     avatar_url: null,
     created_at: profileCreatedAt,
     questions: (questions || [])
-      .filter((q) => !q.title?.startsWith("[ANÔNIMO]"))
+      .filter((q) => !q.title?.startsWith("[ANÔNIMO]") && !isQuizInternalRecord(q))
       .map((q) => ({
         ...q,
         author: {

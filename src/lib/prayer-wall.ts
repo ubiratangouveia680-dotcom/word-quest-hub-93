@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { sanitizeText, formatRelativeDate } from "@/lib/community";
+import { sanitizeText, formatRelativeDate, isQuizInternalRecord } from "@/lib/community";
 import { dispatchPrayerNotificationFallback } from "@/lib/user-notifications";
 
 export interface PrayerRequest {
@@ -106,6 +106,8 @@ export async function checkPrayerDailyQuota(userId: string): Promise<{
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .or("category_id.eq.oracao,title.ilike.%Pedido de Oração%")
+      .not("title", "ilike", "[QUIZ_%")
+      .not("body", "ilike", '%"displayName":%')
       .gte("created_at", since);
 
     if (!qError && qCount !== null) {
@@ -274,7 +276,10 @@ async function fetchPrayerRequestsFromQuestionsFallback({
     let query = supabase
       .from("questions")
       .select("*")
-      .or("category_id.eq.oracao,title.ilike.%Pedido de Oração%");
+      .or("category_id.eq.oracao,title.ilike.%Pedido de Oração%")
+      .not("title", "ilike", "[QUIZ_%")
+      .not("title", "ilike", "%QUIZ_RANKING%")
+      .not("body", "ilike", '%"displayName":%');
 
     if (search && search.trim()) {
       query = query.or(`body.ilike.%${search.trim()}%,title.ilike.%${search.trim()}%`);
@@ -286,13 +291,17 @@ async function fetchPrayerRequestsFromQuestionsFallback({
     const { data, error } = await query;
     if (error || !data) return [];
 
+    // Filtra defensivamente qualquer publicação interna do quiz
+    const validData = data.filter((q) => !isQuizInternalRecord(q));
+    if (validData.length === 0) return [];
+
     // Check prayer reactions (emoji: '🙏') and aggregate counts
     const prayedSet = new Set<string>();
     const prayerCountsMap = new Map<string, number>();
 
-    if (data.length > 0) {
+    if (validData.length > 0) {
       try {
-        const qIds = data.map((q) => q.id);
+        const qIds = validData.map((q) => q.id);
         const { data: reactions } = await supabase
           .from("reactions")
           .select("target_id, user_id")
@@ -312,7 +321,7 @@ async function fetchPrayerRequestsFromQuestionsFallback({
     }
 
     // Identify profiles for non-anonymous items
-    const nonAnonUserIds = data
+    const nonAnonUserIds = validData
       .filter((q) => !q.title?.startsWith("[ANÔNIMO]"))
       .map((q) => q.user_id);
 
@@ -341,7 +350,7 @@ async function fetchPrayerRequestsFromQuestionsFallback({
       } catch {}
     }
 
-    const results: PrayerRequest[] = data.map((q) => {
+    const results: PrayerRequest[] = validData.map((q) => {
       const isAnon = Boolean(q.title?.startsWith("[ANÔNIMO]"));
       const profile = isAnon ? null : profileMap.get(q.user_id);
       const prayedCount = prayerCountsMap.get(q.id) || 0;
@@ -741,10 +750,14 @@ export async function fetchMyPrayerRequests(userId: string): Promise<PrayerReque
       .select("*")
       .eq("user_id", userId)
       .eq("category_id", "oracao")
+      .not("title", "ilike", "[QUIZ_%")
+      .not("body", "ilike", '%"displayName":%')
       .order("created_at", { ascending: false });
 
-    if (!qError && Array.isArray(qData)) {
-      const qIds = qData.map((q) => q.id);
+    const filteredQData = (qData || []).filter((q) => !isQuizInternalRecord(q));
+
+    if (!qError && Array.isArray(filteredQData)) {
+      const qIds = filteredQData.map((q) => q.id);
       const prayerCountsMap = new Map<string, number>();
 
       if (qIds.length > 0) {
@@ -762,7 +775,7 @@ export async function fetchMyPrayerRequests(userId: string): Promise<PrayerReque
         } catch {}
       }
 
-      return qData.map((q) => {
+      return filteredQData.map((q) => {
         const isAnon = Boolean(q.title?.startsWith("[ANÔNIMO]"));
         let displayTitle: string | null = q.title;
         if (isAnon || displayTitle?.startsWith("[ANÔNIMO]")) {
