@@ -467,7 +467,7 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
             authorName: authorDisplayName,
             prayerRequestId: data.id,
             content: cleanContent,
-            accessToken: token,
+            ...(token ? { accessToken: token } : {}),
           },
         }).catch((pushErr) => console.warn("[PUSH/NOTIF] notifyNewPrayerRequest warning:", pushErr));
 
@@ -530,7 +530,7 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
           authorName: authorDisplayName,
           prayerRequestId: qData.id,
           content: cleanContent,
-          accessToken: token,
+          ...(token ? { accessToken: token } : {}),
         },
       }).catch((pushErr) => console.warn("[PUSH/NOTIF] notifyNewPrayerRequest warning:", pushErr));
 

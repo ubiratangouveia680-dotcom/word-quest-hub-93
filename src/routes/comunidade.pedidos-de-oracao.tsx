@@ -301,8 +301,8 @@ function PrayerWallPage() {
 
       const authorName = isAnonymous
         ? "Pedido anônimo"
-        : user.user_metadata?.full_name ||
-          user.user_metadata?.name ||
+        : user.user_metadata?.["full_name"] ||
+          user.user_metadata?.["name"] ||
           user.email?.split("@")[0] ||
           "Irmão(ã) em Cristo";
 
@@ -386,7 +386,9 @@ function PrayerWallPage() {
             prayerAuthorId: prayer.user_id,
             actorUserId: user.id,
             prayerRequestId: prayer.id,
-            accessToken: sData?.session?.access_token,
+            ...(sData?.session?.access_token
+              ? { accessToken: sData.session.access_token }
+              : {}),
           },
         }).catch(() => {});
       }

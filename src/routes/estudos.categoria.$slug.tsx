@@ -87,11 +87,12 @@ function CategoryPage() {
                   key={m.id || m.slug}
                   to={
                     m.type === "escola-dominical"
-                      ? `/estudos/escola-dominical/${m.slug}`
+                      ? "/estudos/escola-dominical/$slug"
                       : m.type === "apostila"
-                      ? `/estudos/apostilas/${m.slug}`
-                      : `/estudos/${m.slug}`
+                      ? "/estudos/apostilas/$slug"
+                      : "/estudos/$slug"
                   }
+                  params={{ slug: m.slug }}
                   className="group flex flex-col justify-between rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/50 hover:shadow-md"
                 >
                   <div>

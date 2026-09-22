@@ -29,6 +29,20 @@
       "when": 1789887000000,
       "tag": "0003_real_bible_quiz_rankings",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790104616830,
+      "tag": "0004_restore_prayer_materials_and_profile_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790104874456,
+      "tag": "0005_restore_push_notification_schema",
+      "breakpoints": true
     }
   ]
 }
