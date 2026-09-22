@@ -52,6 +52,7 @@ import { Route as VersiculosPorTemaIndexRouteImport } from './routes/versiculos-
 import { Route as VersiculosPorTemaSlugRouteImport } from './routes/versiculos-por-tema.$slug'
 import { Route as VersiculosIndexRouteImport } from './routes/versiculos.index'
 import { Route as VersiculosSlugRouteImport } from './routes/versiculos.$slug'
+import { Route as ApiCronDailyVerseRouteImport } from './routes/api.cron.daily-verse'
 import { Route as BibliaBookIndexRouteImport } from './routes/biblia.$book.index'
 import { Route as EstudosApostilasIndexRouteImport } from './routes/estudos.apostilas.index'
 import { Route as EstudosApostilasSlugRouteImport } from './routes/estudos.apostilas.$slug'
@@ -277,6 +278,11 @@ const VersiculosSlugRoute = VersiculosSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => VersiculosRoute,
 } as any)
+const ApiCronDailyVerseRoute = ApiCronDailyVerseRouteImport.update({
+  id: '/api/cron/daily-verse',
+  path: '/api/cron/daily-verse',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BibliaBookIndexRoute = BibliaBookIndexRouteImport.update({
   id: '/biblia/$book/',
   path: '/biblia/$book/',
@@ -364,6 +370,7 @@ export interface FileRoutesByFullPath {
   '/temas/': typeof TemasIndexRoute
   '/versiculos-por-tema/': typeof VersiculosPorTemaIndexRoute
   '/versiculos/': typeof VersiculosIndexRoute
+  '/api/cron/daily-verse': typeof ApiCronDailyVerseRoute
   '/estudos/apostilas/$slug': typeof EstudosApostilasSlugRoute
   '/estudos/categoria/$slug': typeof EstudosCategoriaSlugRoute
   '/estudos/escola-dominical/$slug': typeof EstudosEscolaDominicalSlugRoute
@@ -413,6 +420,7 @@ export interface FileRoutesByTo {
   '/temas': typeof TemasIndexRoute
   '/versiculos-por-tema': typeof VersiculosPorTemaIndexRoute
   '/versiculos': typeof VersiculosIndexRoute
+  '/api/cron/daily-verse': typeof ApiCronDailyVerseRoute
   '/estudos/apostilas/$slug': typeof EstudosApostilasSlugRoute
   '/estudos/categoria/$slug': typeof EstudosCategoriaSlugRoute
   '/estudos/escola-dominical/$slug': typeof EstudosEscolaDominicalSlugRoute
@@ -467,6 +475,7 @@ export interface FileRoutesById {
   '/temas/': typeof TemasIndexRoute
   '/versiculos-por-tema/': typeof VersiculosPorTemaIndexRoute
   '/versiculos/': typeof VersiculosIndexRoute
+  '/api/cron/daily-verse': typeof ApiCronDailyVerseRoute
   '/estudos/apostilas/$slug': typeof EstudosApostilasSlugRoute
   '/estudos/categoria/$slug': typeof EstudosCategoriaSlugRoute
   '/estudos/escola-dominical/$slug': typeof EstudosEscolaDominicalSlugRoute
@@ -522,6 +531,7 @@ export interface FileRouteTypes {
     | '/temas/'
     | '/versiculos-por-tema/'
     | '/versiculos/'
+    | '/api/cron/daily-verse'
     | '/estudos/apostilas/$slug'
     | '/estudos/categoria/$slug'
     | '/estudos/escola-dominical/$slug'
@@ -571,6 +581,7 @@ export interface FileRouteTypes {
     | '/temas'
     | '/versiculos-por-tema'
     | '/versiculos'
+    | '/api/cron/daily-verse'
     | '/estudos/apostilas/$slug'
     | '/estudos/categoria/$slug'
     | '/estudos/escola-dominical/$slug'
@@ -624,6 +635,7 @@ export interface FileRouteTypes {
     | '/temas/'
     | '/versiculos-por-tema/'
     | '/versiculos/'
+    | '/api/cron/daily-verse'
     | '/estudos/apostilas/$slug'
     | '/estudos/categoria/$slug'
     | '/estudos/escola-dominical/$slug'
@@ -670,6 +682,7 @@ export interface RootRouteChildren {
   ComunidadeIndexRoute: typeof ComunidadeIndexRoute
   DevocionaisIndexRoute: typeof DevocionaisIndexRoute
   EstudosIndexRoute: typeof EstudosIndexRoute
+  ApiCronDailyVerseRoute: typeof ApiCronDailyVerseRoute
   EstudosApostilasSlugRoute: typeof EstudosApostilasSlugRoute
   EstudosCategoriaSlugRoute: typeof EstudosCategoriaSlugRoute
   EstudosEscolaDominicalSlugRoute: typeof EstudosEscolaDominicalSlugRoute
@@ -983,6 +996,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VersiculosSlugRouteImport
       parentRoute: typeof VersiculosRoute
     }
+    '/api/cron/daily-verse': {
+      id: '/api/cron/daily-verse'
+      path: '/api/cron/daily-verse'
+      fullPath: '/api/cron/daily-verse'
+      preLoaderRoute: typeof ApiCronDailyVerseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/biblia/$book/': {
       id: '/biblia/$book/'
       path: '/biblia/$book'
@@ -1130,6 +1150,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComunidadeIndexRoute: ComunidadeIndexRoute,
   DevocionaisIndexRoute: DevocionaisIndexRoute,
   EstudosIndexRoute: EstudosIndexRoute,
+  ApiCronDailyVerseRoute: ApiCronDailyVerseRoute,
   EstudosApostilasSlugRoute: EstudosApostilasSlugRoute,
   EstudosCategoriaSlugRoute: EstudosCategoriaSlugRoute,
   EstudosEscolaDominicalSlugRoute: EstudosEscolaDominicalSlugRoute,

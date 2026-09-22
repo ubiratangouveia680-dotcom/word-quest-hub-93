@@ -40,23 +40,23 @@ import {
   fetchNotificationSettings,
   saveNotificationSettings,
   saveLocalNotificationSettings,
-  requestNotificationPermission,
-  getNotificationPermission,
-  isPushNotificationSupported,
-  showDailyVerseNotification,
   DEFAULT_NOTIFICATION_SETTINGS,
   type VerseNotificationSettings,
 } from "@/lib/notifications";
 import {
   subscribeToPrayerPush,
   unsubscribeFromPrayerPush,
+  subscribeToVersePush,
+  unsubscribeFromVersePush,
   testPrayerPush,
-  getActivePushSubscription,
+  testDailyVersePush,
+  checkDeviceNotificationStatus,
+  getStoredPrayerPushState,
+  getStoredVersePushState,
+  isPushNotificationSupported,
+  getNotificationPermission,
+  requestNotificationPermission,
 } from "@/lib/push-client";
-import {
-  getPrayerNotificationPreferences,
-  savePrayerNotificationPreferences,
-} from "@/lib/push.functions";
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/configuracoes")({
@@ -81,15 +81,16 @@ function SettingsPage() {
   const navigate = useNavigate();
   const { user, profile, isAuthenticated, signOut, deleteAccount } = useAuth();
 
-  // Notificações
+  // Notificações de Versículo do Dia (Push Nativo)
   const [notifSettings, setNotifSettings] = useState<VerseNotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
+  const [versePushEnabled, setVersePushEnabled] = useState<boolean>(() => getStoredVersePushState());
   const [isSavingNotif, setIsSavingNotif] = useState(false);
-  const [isTestingNotif, setIsTestingNotif] = useState(false);
+  const [isTestingVerseNotif, setIsTestingVerseNotif] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<string>("default");
   const [hasNotificationSupport, setHasNotificationSupport] = useState(false);
 
-  // Notificações de Pedidos de Oração
-  const [prayerPushEnabled, setPrayerPushEnabled] = useState(true);
+  // Notificações de Pedidos de Oração (Push Nativo)
+  const [prayerPushEnabled, setPrayerPushEnabled] = useState<boolean>(() => getStoredPrayerPushState());
   const [isSubscribingPrayerPush, setIsSubscribingPrayerPush] = useState(false);
   const [isTestingPrayerPush, setIsTestingPrayerPush] = useState(false);
 
@@ -106,26 +107,16 @@ function SettingsPage() {
   useEffect(() => {
     setHasNotificationSupport(isPushNotificationSupported());
     setPermissionStatus(getNotificationPermission());
+
     fetchNotificationSettings(user?.id).then((settings) => {
       setNotifSettings(settings);
     });
 
-    // Carrega status da subscrição de push de pedidos de oração
-    getActivePushSubscription().then((sub) => {
-      if (sub) {
-        setPrayerPushEnabled(true);
-      }
+    // Consulta e sincroniza status do dispositivo e do usuário (sem flickering no reload)
+    checkDeviceNotificationStatus(user?.id).then((status) => {
+      setPrayerPushEnabled(status.prayerNotificationsEnabled);
+      setVersePushEnabled(status.dailyVerseNotificationsEnabled);
     });
-
-    if (user?.id) {
-      getPrayerNotificationPreferences({ data: { userId: user.id } })
-        .then((pref) => {
-          if (pref) {
-            setPrayerPushEnabled(pref.enabled);
-          }
-        })
-        .catch(() => {});
-    }
   }, [user?.id]);
 
   const updateNotifField = (updates: Partial<VerseNotificationSettings>) => {
@@ -140,9 +131,9 @@ function SettingsPage() {
     setIsSavingNotif(true);
     try {
       await saveNotificationSettings(notifSettings, user?.id);
-      toast.success("Configurações de notificação salvas com sucesso!");
+      toast.success("Horários salvos com sucesso!");
     } catch {
-      toast.error("Erro ao salvar preferências.");
+      toast.error("Erro ao salvar horários.");
     } finally {
       setIsSavingNotif(false);
     }
@@ -152,25 +143,57 @@ function SettingsPage() {
     const perm = await requestNotificationPermission();
     setPermissionStatus(perm);
     if (perm === "granted") {
-      toast.success("Permissão concedida! Você receberá os versículos nos horários agendados.");
+      toast.success("Permissão concedida no aparelho!");
+      await checkDeviceNotificationStatus(user?.id);
     } else if (perm === "denied") {
       toast.error("Permissão bloqueada. Habilite as notificações nas configurações do seu navegador.");
     }
   };
 
-  const handleTestNotification = async () => {
-    setIsTestingNotif(true);
+  // Toggle Push do Versículo do Dia
+  const handleToggleVersePush = async (checked: boolean) => {
     try {
-      const ok = await showDailyVerseNotification("morning_verse", user?.id, { force: true });
-      if (ok) {
-        toast.success("Notificação de teste enviada!");
+      if (checked) {
+        const res = await subscribeToVersePush(user?.id);
+        const perm = getNotificationPermission();
+        setPermissionStatus(perm);
+
+        if (res.success) {
+          setVersePushEnabled(true);
+          updateNotifField({ verse_notifications_enabled: true });
+          toast.success("Notificações do Versículo do Dia ativadas!");
+        } else if (perm === "denied") {
+          toast.error("Notificações bloqueadas no navegador. Habilite nas permissões do site.");
+          setVersePushEnabled(false);
+        } else {
+          toast.info(res.message || "Permissão não concedida.");
+          setVersePushEnabled(false);
+        }
       } else {
-        toast.info("Não foi possível enviar o teste. Verifique a permissão do seu dispositivo.");
+        await unsubscribeFromVersePush(user?.id);
+        setVersePushEnabled(false);
+        updateNotifField({ verse_notifications_enabled: false });
+        toast.info("Notificações do Versículo do Dia desativadas para este aparelho.");
       }
     } catch {
-      toast.error("Erro ao emitir notificação de teste.");
+      toast.error("Erro ao atualizar preferências.");
+    }
+  };
+
+  // Disparo de teste real de Versículo do Dia via Web Push
+  const handleTestDailyVersePush = async () => {
+    setIsTestingVerseNotif(true);
+    try {
+      const res = await testDailyVersePush(user?.id);
+      if (res.success) {
+        toast.success("Versículo do Dia enviado via Push! Verifique a barra de notificações do seu aparelho.");
+      } else {
+        toast.error(res.message || "Não foi possível emitir a notificação push de teste.");
+      }
+    } catch {
+      toast.error("Erro ao disparar teste de notificação push.");
     } finally {
-      setIsTestingNotif(false);
+      setIsTestingVerseNotif(false);
     }
   };
 
@@ -179,30 +202,24 @@ function SettingsPage() {
     setIsSubscribingPrayerPush(true);
     try {
       if (checked) {
-        const ok = await subscribeToPrayerPush(user?.id);
+        const res = await subscribeToPrayerPush(user?.id);
         const perm = getNotificationPermission();
         setPermissionStatus(perm);
 
-        if (ok) {
+        if (res.success) {
           setPrayerPushEnabled(true);
-          await savePrayerNotificationPreferences({
-            data: { userId: user?.id, enabled: true, allRequests: true },
-          }).catch(() => {});
-          toast.success("Notificações push de pedidos de oração ativadas!");
+          toast.success("Notificações de pedidos de oração ativadas com sucesso!");
         } else if (perm === "denied") {
-          toast.error("Notificações bloqueadas nas permissões do navegador.");
+          toast.error("Notificações bloqueadas nas permissões do navegador. Habilite nas configurações do seu navegador.");
           setPrayerPushEnabled(false);
         } else {
-          toast.info("Permissão não concedida ou serviço push indisponível.");
+          toast.info(res.message || "Permissão não concedida.");
           setPrayerPushEnabled(false);
         }
       } else {
-        await unsubscribeFromPrayerPush(user?.id).catch(() => {});
-        await savePrayerNotificationPreferences({
-          data: { userId: user?.id, enabled: false, allRequests: false },
-        }).catch(() => {});
+        await unsubscribeFromPrayerPush(user?.id);
         setPrayerPushEnabled(false);
-        toast.info("Notificações de pedidos de oração desativadas.");
+        toast.info("Notificações de pedidos de oração desativadas para este aparelho.");
       }
     } catch {
       toast.error("Erro ao atualizar preferências de notificações push.");
@@ -218,7 +235,7 @@ function SettingsPage() {
       if (res.success) {
         toast.success("Notificação push de teste enviada com sucesso! Verifique sua barra do sistema.");
       } else {
-        toast.error(res.error || "Não foi possível emitir a notificação push de teste.");
+        toast.error(res.message || "Não foi possível emitir a notificação push de teste.");
       }
     } catch {
       toast.error("Erro ao disparar teste de notificação push.");
@@ -277,7 +294,7 @@ function SettingsPage() {
           </p>
         </div>
 
-        {/* 1. SEÇÃO DE NOTIFICAÇÕES */}
+        {/* 1. SEÇÃO DE NOTIFICAÇÕES DO VERSÍCULO DO DIA */}
         <section className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-5">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
@@ -285,35 +302,54 @@ function SettingsPage() {
                 <Bell className="size-5" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-foreground">Notificações do Versículo do Dia</h2>
+                <h2 className="text-lg font-semibold text-foreground">Notificações do Versículo do Dia (Push)</h2>
                 <p className="text-xs text-muted-foreground">
-                  Receba uma palavra inspiradora da Bíblia Sagrada no seu dispositivo.
+                  Receba uma palavra inspiradora da Bíblia Sagrada diretamente na barra do seu dispositivo.
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Ativar notificações</span>
+              <span className="text-xs text-muted-foreground">
+                {versePushEnabled ? "Ativado" : "Desativado"}
+              </span>
               <Switch
-                checked={notifSettings.verse_notifications_enabled}
-                onCheckedChange={(checked) =>
-                  updateNotifField({ verse_notifications_enabled: checked })
-                }
+                checked={versePushEnabled}
+                onCheckedChange={handleToggleVersePush}
               />
             </div>
           </div>
+
+          {/* Aviso se permissão do navegador estiver bloqueada */}
+          {permissionStatus === "denied" && (
+            <div className="flex items-start gap-2.5 rounded-lg bg-destructive/10 border border-destructive/25 p-3 text-xs text-destructive">
+              <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Notificações bloqueadas nas configurações do navegador</p>
+                <p className="text-[11px] opacity-90 mt-0.5">
+                  Para receber o Versículo do Dia no seu aparelho, clique no ícone de cadeado/ajustes ao lado da URL no seu navegador e altere a permissão de "Notificações" para "Permitir".
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Permissão no navegador */}
           {hasNotificationSupport && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg bg-accent/40 p-3.5 border border-border/60 text-xs">
               <div className="flex items-center gap-2">
                 <span
-                  className={`size-2.5 rounded-full ${permissionStatus === "granted" ? "bg-emerald-500" : "bg-amber-500"}`}
+                  className={`size-2.5 rounded-full ${
+                    permissionStatus === "granted" && versePushEnabled ? "bg-emerald-500" : "bg-amber-500"
+                  }`}
                 />
                 <span>
                   {permissionStatus === "granted"
-                    ? "Permissão concedida neste navegador"
-                    : "Permissão pendente para receber notificações no aparelho"}
+                    ? versePushEnabled
+                      ? "Notificações push prontas e ativas para este aparelho."
+                      : "Permissão concedida no navegador; ative o botão acima para receber."
+                    : permissionStatus === "denied"
+                    ? "Permissão bloqueada no navegador."
+                    : "Permissão pendente para receber notificações push no aparelho."}
                 </span>
               </div>
               {permissionStatus !== "granted" ? (
@@ -324,11 +360,11 @@ function SettingsPage() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={handleTestNotification}
-                  disabled={isTestingNotif}
-                  className="h-8 text-xs text-primary"
+                  onClick={handleTestDailyVersePush}
+                  disabled={isTestingVerseNotif}
+                  className="h-8 text-xs text-primary font-medium"
                 >
-                  {isTestingNotif ? "Enviando..." : "Testar Notificação Agora"}
+                  {isTestingVerseNotif ? "Enviando Versículo Push..." : "Testar Versículo no Meu Aparelho"}
                 </Button>
               )}
             </div>
@@ -447,6 +483,19 @@ function SettingsPage() {
             </div>
           </div>
 
+          {/* Aviso se permissão do navegador estiver bloqueada */}
+          {permissionStatus === "denied" && (
+            <div className="flex items-start gap-2.5 rounded-lg bg-destructive/10 border border-destructive/25 p-3 text-xs text-destructive">
+              <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Notificações bloqueadas nas configurações do navegador</p>
+                <p className="text-[11px] opacity-90 mt-0.5">
+                  Para receber avisos de novos pedidos no seu aparelho, clique no ícone de cadeado/ajustes na barra de endereço do navegador e mude a permissão de "Notificações" para "Permitir".
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Status do Navegador / Aparelho */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg bg-accent/40 p-3.5 border border-border/60 text-xs">
             <div className="flex items-center gap-2">
@@ -461,7 +510,9 @@ function SettingsPage() {
                   : permissionStatus === "granted"
                   ? prayerPushEnabled
                     ? "Notificações push prontas e ativas para este aparelho."
-                    : "Permissão concedida no navegador; ligue a chave acima para receber."
+                    : "Permissão concedida no navegador; ative a chave acima para receber."
+                  : permissionStatus === "denied"
+                  ? "Permissão bloqueada no navegador."
                   : "Permissão necessária no aparelho para receber avisos na barra do sistema."}
               </span>
             </div>
@@ -485,7 +536,7 @@ function SettingsPage() {
                     disabled={isTestingPrayerPush}
                     className="h-8 text-xs text-primary font-medium"
                   >
-                    {isTestingPrayerPush ? "Enviando push..." : "Testar no Meu Aparelho"}
+                    {isTestingPrayerPush ? "Enviando Pedido Push..." : "Testar Pedido no Meu Aparelho"}
                   </Button>
                 )}
               </div>

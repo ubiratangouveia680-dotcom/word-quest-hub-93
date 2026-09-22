@@ -1,26 +1,32 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import webPush from "web-push";
+import { getDailyRef } from "@/lib/daily-verse";
 
 export interface PushSubscriptionData {
-  userId: string;
+  userId?: string | null;
+  deviceId?: string;
   endpoint: string;
   p256dh: string;
   auth: string;
   deviceName?: string;
   userAgent?: string;
+  prayerNotificationsEnabled?: boolean;
+  dailyVerseNotificationsEnabled?: boolean;
 }
 
 export interface PrayerPushPreferences {
   prayer_requests_enabled: boolean;
   prayer_support_enabled: boolean;
   community_enabled: boolean;
+  enabled: boolean; // Alias conveniente para compatibilidade
 }
 
 export const DEFAULT_PRAYER_PUSH_PREFS: PrayerPushPreferences = {
   prayer_requests_enabled: true,
   prayer_support_enabled: true,
   community_enabled: true,
+  enabled: true,
 };
 
 const DEFAULT_VAPID_PUBLIC_KEY =
@@ -47,7 +53,6 @@ function initWebPush() {
 // ---------------------------------------------------------------------------
 export const registerDevicePushSubscription = createServerFn({ method: "POST" })
   .validator((data: PushSubscriptionData) => {
-    if (!data.userId) throw new Error("Usuário não identificado.");
     if (!data.endpoint || !data.p256dh || !data.auth) {
       throw new Error("Dados de inscrição Push inválidos.");
     }
@@ -55,12 +60,15 @@ export const registerDevicePushSubscription = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<{ success: boolean; message: string }> => {
     const now = new Date().toISOString();
+    const prayerEnabled = data.prayerNotificationsEnabled ?? true;
+    const verseEnabled = data.dailyVerseNotificationsEnabled ?? true;
+    const deviceId = data.deviceId || "dev_" + data.endpoint.slice(-16);
 
-    // 1. Tenta gravar na tabela dedicada push_subscriptions
+    // 1. Tenta gravar na tabela dedicada push_subscriptions (se existir)
     try {
       const { error } = await supabase.from("push_subscriptions").upsert(
         {
-          user_id: data.userId,
+          user_id: data.userId || null,
           endpoint: data.endpoint,
           p256dh: data.p256dh,
           auth: data.auth,
@@ -69,7 +77,7 @@ export const registerDevicePushSubscription = createServerFn({ method: "POST" })
           updated_at: now,
           last_seen_at: now,
         },
-        { onConflict: "user_id,endpoint" }
+        { onConflict: "endpoint" }
       );
 
       if (!error) {
@@ -77,29 +85,48 @@ export const registerDevicePushSubscription = createServerFn({ method: "POST" })
       }
     } catch {}
 
-    // 2. Fallback resiliente no banco Supabase (tabela questions com category_id: system_push)
+    // 2. Fallback resiliente no banco Supabase (tabela questions com title: [SYSTEM_PUSH] ...)
     try {
       const endpointHash = data.endpoint.slice(-32);
       const title = `[SYSTEM_PUSH] ${endpointHash}`;
 
+      // Procura se já existe registro com este endpoint para preservar preferências
+      const { data: existingRows } = await supabase
+        .from("questions")
+        .select("id, body")
+        .eq("title", title)
+        .limit(1);
+
+      let existingPayload: any = {};
+      if (existingRows && existingRows.length > 0) {
+        try {
+          existingPayload = JSON.parse(existingRows[0].body);
+        } catch {}
+      }
+
       const payload = {
-        userId: data.userId,
+        userId: data.userId || existingPayload.userId || null,
+        deviceId: deviceId || existingPayload.deviceId,
         endpoint: data.endpoint,
         p256dh: data.p256dh,
         auth: data.auth,
-        deviceName: data.deviceName || "Navegador Web",
-        userAgent: data.userAgent || null,
+        deviceName: data.deviceName || existingPayload.deviceName || "Navegador Web",
+        userAgent: data.userAgent || existingPayload.userAgent || null,
+        prayerNotificationsEnabled:
+          data.prayerNotificationsEnabled !== undefined
+            ? data.prayerNotificationsEnabled
+            : existingPayload.prayerNotificationsEnabled !== undefined
+            ? existingPayload.prayerNotificationsEnabled
+            : prayerEnabled,
+        dailyVerseNotificationsEnabled:
+          data.dailyVerseNotificationsEnabled !== undefined
+            ? data.dailyVerseNotificationsEnabled
+            : existingPayload.dailyVerseNotificationsEnabled !== undefined
+            ? existingPayload.dailyVerseNotificationsEnabled
+            : verseEnabled,
         enabled: true,
         updatedAt: now,
       };
-
-      // Procura se já existe registro com este endpoint
-      const { data: existingRows } = await supabase
-        .from("questions")
-        .select("id")
-        .eq("category_id", "system_push")
-        .eq("title", title)
-        .limit(1);
 
       if (existingRows && existingRows.length > 0) {
         await supabase
@@ -111,8 +138,8 @@ export const registerDevicePushSubscription = createServerFn({ method: "POST" })
           .eq("id", existingRows[0].id);
       } else {
         await supabase.from("questions").insert({
-          user_id: data.userId.includes("-") ? data.userId : "1e481484-0dec-45d9-ae8f-c97549615b99",
-          category_id: "system_push",
+          user_id: (data.userId && data.userId.includes("-")) ? data.userId : "1e481484-0dec-45d9-ae8f-c97549615b99",
+          category_id: "geral",
           title,
           body: JSON.stringify(payload),
         });
@@ -125,48 +152,180 @@ export const registerDevicePushSubscription = createServerFn({ method: "POST" })
   });
 
 // ---------------------------------------------------------------------------
-// 2. Fetch Notification Preferences
+// 2. Fetch Device & User Notification Status
+// ---------------------------------------------------------------------------
+export const getDeviceNotificationStatus = createServerFn({ method: "GET" })
+  .validator((input: { endpoint?: string; deviceId?: string; userId?: string }) => input || {})
+  .handler(async ({ data }): Promise<{
+    hasSubscription: boolean;
+    prayerNotificationsEnabled: boolean;
+    dailyVerseNotificationsEnabled: boolean;
+  }> => {
+    let prayerEnabled = true;
+    let verseEnabled = true;
+    let found = false;
+
+    // 1. Consulta por endpoint se fornecido
+    if (data.endpoint) {
+      try {
+        const endpointHash = data.endpoint.slice(-32);
+        const title = `[SYSTEM_PUSH] ${endpointHash}`;
+
+        const { data: rows } = await supabase
+          .from("questions")
+          .select("body")
+          .eq("title", title)
+          .limit(1);
+
+        if (rows && rows.length > 0) {
+          const parsed = JSON.parse(rows[0].body);
+          found = true;
+          if (parsed.prayerNotificationsEnabled !== undefined) {
+            prayerEnabled = Boolean(parsed.prayerNotificationsEnabled);
+          } else if (parsed.prayer_requests_enabled !== undefined) {
+            prayerEnabled = Boolean(parsed.prayer_requests_enabled);
+          }
+          if (parsed.dailyVerseNotificationsEnabled !== undefined) {
+            verseEnabled = Boolean(parsed.dailyVerseNotificationsEnabled);
+          }
+        }
+      } catch {}
+    }
+
+    // 2. Se não achou por endpoint, tenta por deviceId ou userId
+    if (!found && (data.deviceId || data.userId)) {
+      try {
+        let query = supabase.from("questions").select("body").like("title", "[SYSTEM_PUSH]%");
+        if (data.deviceId) {
+          query = query.ilike("body", `%"deviceId":"${data.deviceId}"%`);
+        } else if (data.userId) {
+          query = query.ilike("body", `%"userId":"${data.userId}"%`);
+        }
+
+        const { data: rows } = await query.limit(1);
+        if (rows && rows.length > 0) {
+          const parsed = JSON.parse(rows[0].body);
+          found = true;
+          if (parsed.prayerNotificationsEnabled !== undefined) {
+            prayerEnabled = Boolean(parsed.prayerNotificationsEnabled);
+          }
+          if (parsed.dailyVerseNotificationsEnabled !== undefined) {
+            verseEnabled = Boolean(parsed.dailyVerseNotificationsEnabled);
+          }
+        }
+      } catch {}
+    }
+
+    return {
+      hasSubscription: found,
+      prayerNotificationsEnabled: prayerEnabled,
+      dailyVerseNotificationsEnabled: verseEnabled,
+    };
+  });
+
+// ---------------------------------------------------------------------------
+// 3. Update Device Notification Preferences
+// ---------------------------------------------------------------------------
+export const updateDevicePushPreferences = createServerFn({ method: "POST" })
+  .validator((payload: {
+    endpoint?: string;
+    deviceId?: string;
+    userId?: string;
+    prayerEnabled?: boolean;
+    verseEnabled?: boolean;
+  }) => payload)
+  .handler(async ({ data }): Promise<{ success: boolean }> => {
+    const now = new Date().toISOString();
+
+    try {
+      let rowsToUpdate: { id: string; body: string }[] = [];
+
+      if (data.endpoint) {
+        const endpointHash = data.endpoint.slice(-32);
+        const { data: rows } = await supabase
+          .from("questions")
+          .select("id, body")
+          .eq("title", `[SYSTEM_PUSH] ${endpointHash}`);
+        if (rows) rowsToUpdate = rows;
+      } else if (data.deviceId) {
+        const { data: rows } = await supabase
+          .from("questions")
+          .select("id, body")
+          .like("title", "[SYSTEM_PUSH]%")
+          .ilike("body", `%"deviceId":"${data.deviceId}"%`);
+        if (rows) rowsToUpdate = rows;
+      } else if (data.userId) {
+        const { data: rows } = await supabase
+          .from("questions")
+          .select("id, body")
+          .like("title", "[SYSTEM_PUSH]%")
+          .ilike("body", `%"userId":"${data.userId}"%`);
+        if (rows) rowsToUpdate = rows;
+      }
+
+      for (const r of rowsToUpdate) {
+        try {
+          const parsed = JSON.parse(r.body);
+          if (data.prayerEnabled !== undefined) {
+            parsed.prayerNotificationsEnabled = data.prayerEnabled;
+            parsed.prayer_requests_enabled = data.prayerEnabled;
+          }
+          if (data.verseEnabled !== undefined) {
+            parsed.dailyVerseNotificationsEnabled = data.verseEnabled;
+          }
+          if (data.userId) {
+            parsed.userId = data.userId;
+          }
+          parsed.updatedAt = now;
+
+          await supabase
+            .from("questions")
+            .update({ body: JSON.stringify(parsed), updated_at: now })
+            .eq("id", r.id);
+        } catch {}
+      }
+
+      return { success: true };
+    } catch (err) {
+      console.warn("updateDevicePushPreferences error:", err);
+      return { success: false };
+    }
+  });
+
+// ---------------------------------------------------------------------------
+// 4. Fetch Prayer Notification Preferences (Legacy & Auth Support)
 // ---------------------------------------------------------------------------
 export const getPrayerNotificationPreferences = createServerFn({ method: "GET" })
-  .validator((userId: string) => {
-    if (!userId) throw new Error("Usuário não identificado.");
-    return userId;
+  .validator((input: any) => {
+    const userId = typeof input === "string" ? input : input?.userId || input?.data?.userId;
+    return userId || "";
   })
   .handler(async ({ data: userId }): Promise<PrayerPushPreferences> => {
-    try {
-      const { data, error } = await supabase
-        .from("prayer_notification_preferences")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
+    if (!userId) return DEFAULT_PRAYER_PUSH_PREFS;
 
-      if (!error && data) {
-        return {
-          prayer_requests_enabled: data.prayer_requests_enabled,
-          prayer_support_enabled: data.prayer_support_enabled,
-          community_enabled: data.community_enabled,
-        };
-      }
-    } catch {}
-
-    // Fallback: busca preferência salva no payload de system_push
     try {
       const { data: rows } = await supabase
         .from("questions")
         .select("body")
-        .eq("category_id", "system_push")
+        .like("title", "[SYSTEM_PUSH]%")
         .ilike("body", `%"userId":"${userId}"%`)
         .limit(1);
 
       if (rows && rows.length > 0) {
         const parsed = JSON.parse(rows[0].body);
-        if (parsed.prayer_requests_enabled !== undefined) {
-          return {
-            prayer_requests_enabled: parsed.prayer_requests_enabled,
-            prayer_support_enabled: true,
-            community_enabled: true,
-          };
-        }
+        const isEnabled =
+          parsed.prayerNotificationsEnabled !== undefined
+            ? parsed.prayerNotificationsEnabled
+            : parsed.prayer_requests_enabled !== undefined
+            ? parsed.prayer_requests_enabled
+            : true;
+
+        return {
+          prayer_requests_enabled: isEnabled,
+          prayer_support_enabled: true,
+          community_enabled: true,
+          enabled: isEnabled,
+        };
       }
     } catch {}
 
@@ -174,43 +333,37 @@ export const getPrayerNotificationPreferences = createServerFn({ method: "GET" }
   });
 
 // ---------------------------------------------------------------------------
-// 3. Save Notification Preferences
+// 5. Save Prayer Notification Preferences
 // ---------------------------------------------------------------------------
 export const savePrayerNotificationPreferences = createServerFn({ method: "POST" })
-  .validator((payload: { userId: string; preferences: PrayerPushPreferences }) => {
-    if (!payload.userId) throw new Error("Usuário não identificado.");
-    return payload;
+  .validator((payload: any) => {
+    const userId = payload?.userId || payload?.data?.userId;
+    const isEnabled =
+      payload?.preferences?.prayer_requests_enabled ??
+      payload?.enabled ??
+      payload?.data?.enabled ??
+      payload?.data?.preferences?.prayer_requests_enabled ??
+      true;
+    return { userId, enabled: isEnabled };
   })
   .handler(async ({ data }): Promise<{ success: boolean }> => {
-    try {
-      const { error } = await supabase.from("prayer_notification_preferences").upsert(
-        {
-          user_id: data.userId,
-          prayer_requests_enabled: data.preferences.prayer_requests_enabled,
-          prayer_support_enabled: data.preferences.prayer_support_enabled,
-          community_enabled: data.preferences.community_enabled,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
+    if (!data.userId) return { success: true };
 
-      if (!error) return { success: true };
-    } catch {}
-
-    // Fallback de preferência: atualiza nas inscrições do usuário
     try {
       const { data: rows } = await supabase
         .from("questions")
         .select("id, body")
-        .eq("category_id", "system_push")
+        .like("title", "[SYSTEM_PUSH]%")
         .ilike("body", `%"userId":"${data.userId}"%`);
 
       if (rows && rows.length > 0) {
         for (const r of rows) {
           try {
             const parsed = JSON.parse(r.body);
-            parsed.prayer_requests_enabled = data.preferences.prayer_requests_enabled;
-            parsed.enabled = data.preferences.prayer_requests_enabled;
+            parsed.prayerNotificationsEnabled = data.enabled;
+            parsed.prayer_requests_enabled = data.enabled;
+            parsed.enabled = data.enabled;
+            parsed.updatedAt = new Date().toISOString();
             await supabase.from("questions").update({ body: JSON.stringify(parsed) }).eq("id", r.id);
           } catch {}
         }
@@ -221,7 +374,7 @@ export const savePrayerNotificationPreferences = createServerFn({ method: "POST"
   });
 
 // ---------------------------------------------------------------------------
-// 4. Remove Invalid/Expired Subscription (HTTP 410 / 404)
+// 6. Remove Invalid/Expired Subscription (HTTP 410 / 404)
 // ---------------------------------------------------------------------------
 async function removeInvalidSubscription(endpoint: string) {
   try {
@@ -233,13 +386,12 @@ async function removeInvalidSubscription(endpoint: string) {
     await supabase
       .from("questions")
       .delete()
-      .eq("category_id", "system_push")
       .eq("title", `[SYSTEM_PUSH] ${endpointHash}`);
   } catch {}
 }
 
 // ---------------------------------------------------------------------------
-// 5. Send Direct Test Web Push to Current Device
+// 7. Send Direct Test Web Push for Prayer Requests
 // ---------------------------------------------------------------------------
 export const sendTestPushToDevice = createServerFn({ method: "POST" })
   .validator((data: { endpoint: string; p256dh: string; auth: string }) => data)
@@ -255,18 +407,56 @@ export const sendTestPushToDevice = createServerFn({ method: "POST" })
           title: "🙏 Teste de Notificação Push",
           body: "Seu aparelho está pronto para receber avisos de novos pedidos de oração!",
           url: "/comunidade/pedidos-de-oracao",
-          tag: "test-push-" + Date.now(),
+          tag: "test-prayer-push-" + Date.now(),
+          icon: "/icon-192.png",
+          badge: "/favicon.png",
         })
       );
       return { success: true, message: "Notificação de teste enviada com sucesso ao seu aparelho!" };
     } catch (err: any) {
       console.warn("sendTestPushToDevice failed:", err);
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        await removeInvalidSubscription(data.endpoint);
+      }
       return { success: false, message: "Falha ao emitir Web Push: " + (err.message || String(err)) };
     }
   });
 
 // ---------------------------------------------------------------------------
-// 6. Dispatch Web Push for New Prayer Request
+// 8. Send Direct Test Web Push for Daily Verse
+// ---------------------------------------------------------------------------
+export const sendTestVersePushToDevice = createServerFn({ method: "POST" })
+  .validator((data: { endpoint: string; p256dh: string; auth: string }) => data)
+  .handler(async ({ data }): Promise<{ success: boolean; message: string }> => {
+    initWebPush();
+    try {
+      const verse = getDailyRef();
+      await webPush.sendNotification(
+        {
+          endpoint: data.endpoint,
+          keys: { p256dh: data.p256dh, auth: data.auth },
+        },
+        JSON.stringify({
+          title: "📖 Versículo do Dia",
+          body: `"${verse.text}"\n\n— ${verse.bookName} ${verse.chapter}:${verse.verse}`,
+          url: "/versiculo-do-dia",
+          tag: "test-verse-push-" + Date.now(),
+          icon: "/icon-192.png",
+          badge: "/favicon.png",
+        })
+      );
+      return { success: true, message: "Versículo do Dia de teste enviado com sucesso ao seu aparelho!" };
+    } catch (err: any) {
+      console.warn("sendTestVersePushToDevice failed:", err);
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        await removeInvalidSubscription(data.endpoint);
+      }
+      return { success: false, message: "Falha ao emitir Web Push: " + (err.message || String(err)) };
+    }
+  });
+
+// ---------------------------------------------------------------------------
+// 9. Dispatch Web Push for New Prayer Request
 // ---------------------------------------------------------------------------
 export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
   .validator(
@@ -280,10 +470,10 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ success: boolean; pushedDevices: number }> => {
     initWebPush();
 
-    const subscriptions: { endpoint: string; p256dh: string; auth: string; userId: string }[] = [];
+    const subscriptions: { endpoint: string; p256dh: string; auth: string; userId?: string }[] = [];
     const seenEndpoints = new Set<string>();
 
-    // 1. Coleta inscrições da tabela dedicada push_subscriptions
+    // 1. Coleta inscrições da tabela dedicada push_subscriptions (se existir)
     try {
       const { data: subs, error: subError } = await supabase
         .from("push_subscriptions")
@@ -305,20 +495,23 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
       }
     } catch {}
 
-    // 2. Coleta inscrições do fallback resiliente em questions (category: system_push)
+    // 2. Coleta inscrições do fallback resiliente em questions (title: [SYSTEM_PUSH] ...)
     try {
       const { data: qRows, error: qError } = await supabase
         .from("questions")
         .select("id, body, user_id")
-        .eq("category_id", "system_push")
-        .neq("user_id", data.authorId);
+        .like("title", "[SYSTEM_PUSH]%");
 
       if (!qError && qRows && Array.isArray(qRows)) {
         for (const r of qRows) {
           try {
             const p = JSON.parse(r.body);
-            if (p.userId === data.authorId) continue;
-            if (p.enabled === false || p.prayer_requests_enabled === false) continue;
+            // Regra crucial: NUNCA notificar o próprio autor do pedido
+            if (p.userId && p.userId === data.authorId) continue;
+            // Verifica se as notificações de oração estão ativadas para este dispositivo
+            if (p.prayerNotificationsEnabled === false || p.prayer_requests_enabled === false || p.enabled === false) {
+              continue;
+            }
             if (p.endpoint && p.p256dh && p.auth && !seenEndpoints.has(p.endpoint)) {
               seenEndpoints.add(p.endpoint);
               subscriptions.push({
@@ -366,7 +559,6 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
           );
           dispatchedCount++;
         } catch (pushErr: any) {
-          // Se a subscription expirou ou foi revogada (410 Gone ou 404 Not Found), remove automaticamente
           if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
             await removeInvalidSubscription(sub.endpoint);
           }
@@ -378,7 +570,93 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
   });
 
 // ---------------------------------------------------------------------------
-// 7. Dispatch Web Push for Prayer Support ("Alguém está orando por você")
+// 10. Dispatch Scheduled Web Push for Daily Verse
+// ---------------------------------------------------------------------------
+export const dispatchDailyVersePush = createServerFn({ method: "POST" })
+  .validator((options?: { force?: boolean }) => options || {})
+  .handler(async ({ data: options }): Promise<{ success: boolean; pushedDevices: number }> => {
+    initWebPush();
+
+    const subscriptions: { endpoint: string; p256dh: string; auth: string }[] = [];
+    const seenEndpoints = new Set<string>();
+
+    // 1. Coleta inscrições da tabela dedicada (se existir)
+    try {
+      const { data: subs } = await supabase.from("push_subscriptions").select("endpoint, p256dh, auth");
+      if (subs && Array.isArray(subs)) {
+        for (const s of subs) {
+          if (!seenEndpoints.has(s.endpoint)) {
+            seenEndpoints.add(s.endpoint);
+            subscriptions.push(s);
+          }
+        }
+      }
+    } catch {}
+
+    // 2. Coleta inscrições do fallback resiliente em questions (title: [SYSTEM_PUSH] ...)
+    try {
+      const { data: qRows } = await supabase
+        .from("questions")
+        .select("body")
+        .like("title", "[SYSTEM_PUSH]%");
+
+      if (qRows && Array.isArray(qRows)) {
+        for (const r of qRows) {
+          try {
+            const p = JSON.parse(r.body);
+            // Verifica se notificações de versículo estão ativadas
+            if (p.dailyVerseNotificationsEnabled === false) continue;
+            if (p.endpoint && p.p256dh && p.auth && !seenEndpoints.has(p.endpoint)) {
+              seenEndpoints.add(p.endpoint);
+              subscriptions.push({ endpoint: p.endpoint, p256dh: p.p256dh, auth: p.auth });
+            }
+          } catch {}
+        }
+      }
+    } catch {}
+
+    if (subscriptions.length === 0) {
+      return { success: true, pushedDevices: 0 };
+    }
+
+    const verse = getDailyRef();
+    const todayStr = new Date().toISOString().split("T")[0];
+
+    const pushPayload = JSON.stringify({
+      title: "📖 Versículo do Dia",
+      body: `"${verse.text}"\n\n— ${verse.bookName} ${verse.chapter}:${verse.verse}`,
+      url: "/versiculo-do-dia",
+      tag: `daily-verse-${todayStr}`,
+      icon: "/icon-192.png",
+      badge: "/favicon.png",
+    });
+
+    let dispatchedCount = 0;
+
+    await Promise.allSettled(
+      subscriptions.map(async (sub) => {
+        try {
+          await webPush.sendNotification(
+            {
+              endpoint: sub.endpoint,
+              keys: { p256dh: sub.p256dh, auth: sub.auth },
+            },
+            pushPayload
+          );
+          dispatchedCount++;
+        } catch (pushErr: any) {
+          if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
+            await removeInvalidSubscription(sub.endpoint);
+          }
+        }
+      })
+    );
+
+    return { success: true, pushedDevices: dispatchedCount };
+  });
+
+// ---------------------------------------------------------------------------
+// 11. Dispatch Web Push for Prayer Support Interaction
 // ---------------------------------------------------------------------------
 export const notifyPrayerSupportInteraction = createServerFn({ method: "POST" })
   .validator((payload: { prayerAuthorId: string; actorUserId: string; prayerRequestId: string }) => {
@@ -427,7 +705,7 @@ export const notifyPrayerSupportInteraction = createServerFn({ method: "POST" })
         const { data: qRows } = await supabase
           .from("questions")
           .select("body")
-          .eq("category_id", "system_push")
+          .like("title", "[SYSTEM_PUSH]%")
           .ilike("body", `%"userId":"${data.prayerAuthorId}"%`);
 
         (qRows || []).forEach((r) => {

@@ -1,12 +1,20 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, KeyRound, Lock, Mail, User } from "lucide-react";
+import { ArrowLeft, Bell, CheckCircle2, KeyRound, Lock, Mail, User } from "lucide-react";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
+import { subscribeToPrayerPush, unsubscribeFromPrayerPush } from "@/lib/push-client";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -38,6 +46,11 @@ function AuthPage() {
   const [next, setNext] = useState("/perfil");
   const [recoveryEmailSent, setRecoveryEmailSent] = useState(false);
 
+  // Onboarding de notificações push para novos usuários cadastrados
+  const [showPrayerOnboardingModal, setShowPrayerOnboardingModal] = useState(false);
+  const [signedUpUserId, setSignedUpUserId] = useState<string | null>(null);
+  const [isProcessingPushChoice, setIsProcessingPushChoice] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const nextParam = params.get("next") || params.get("returnUrl");
@@ -56,11 +69,37 @@ function AuthPage() {
   }, []);
 
   useEffect(() => {
-    // Se o usuário já estiver logado e não estiver no fluxo de redefinição de senha, redireciona
-    if (!isLoading && user && mode !== "recovery") {
+    // Se o usuário já estiver logado e não estiver no fluxo de redefinição de senha ou no onboarding de cadastro, redireciona
+    if (!isLoading && user && mode !== "recovery" && !showPrayerOnboardingModal && !signedUpUserId) {
       navigate({ to: next as any });
     }
-  }, [user, isLoading, mode, next, navigate]);
+  }, [user, isLoading, mode, next, navigate, showPrayerOnboardingModal, signedUpUserId]);
+
+  const handleAcceptPrayerNotifications = async () => {
+    setIsProcessingPushChoice(true);
+    try {
+      await subscribeToPrayerPush(signedUpUserId || user?.id);
+      toast.success("Notificações de pedidos de oração ativadas com sucesso!");
+    } catch {
+      toast.info("Você poderá ativar as notificações a qualquer momento nas Configurações.");
+    } finally {
+      setIsProcessingPushChoice(false);
+      setShowPrayerOnboardingModal(false);
+      navigate({ to: next as any });
+    }
+  };
+
+  const handleDismissPrayerNotifications = async () => {
+    setIsProcessingPushChoice(true);
+    try {
+      await unsubscribeFromPrayerPush(signedUpUserId || user?.id);
+    } catch {}
+    finally {
+      setIsProcessingPushChoice(false);
+      setShowPrayerOnboardingModal(false);
+      navigate({ to: next as any });
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -90,7 +129,9 @@ function AuthPage() {
         if (newUser && !newUser.confirmed_at && newUser.identities?.length) {
           toast.info("Verifique seu e-mail para confirmar o cadastro, se necessário.");
         }
-        navigate({ to: next as any });
+        // Pergunta exclusivamente no fluxo de cadastro inicial de novos usuários
+        setSignedUpUserId(newUser?.id || "new_user");
+        setShowPrayerOnboardingModal(true);
       }
       return;
     }
@@ -363,6 +404,50 @@ function AuthPage() {
             )}
           </form>
         )}
+
+        {/* Modal de Onboarding no Cadastro: Notificações de Pedidos de Oração */}
+        <Dialog
+          open={showPrayerOnboardingModal}
+          onOpenChange={(open) => {
+            if (!open && !isProcessingPushChoice) {
+              setShowPrayerOnboardingModal(false);
+              navigate({ to: next as any });
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-md text-center p-6 space-y-4">
+            <div className="mx-auto size-14 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <Bell className="size-7" />
+            </div>
+            <DialogHeader className="space-y-2 text-center">
+              <DialogTitle className="text-xl font-bold font-display text-center">
+                Você deseja receber notificações de novos pedidos de oração?
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground text-center">
+                Interceda pelos irmãos da comunidade. Sempre que alguém publicar um novo pedido de oração, você receberá um aviso no seu aparelho para que possa orar por essa pessoa.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex flex-col gap-2 pt-2">
+              <Button
+                onClick={handleAcceptPrayerNotifications}
+                disabled={isProcessingPushChoice}
+                className="w-full gap-2 font-semibold h-11"
+              >
+                <Bell className="size-4" />
+                {isProcessingPushChoice ? "Ativando..." : "Ativar notificações"}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleDismissPrayerNotifications}
+                disabled={isProcessingPushChoice}
+                className="w-full text-muted-foreground h-10 hover:text-foreground"
+              >
+                Agora não
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </SiteLayout>
   );

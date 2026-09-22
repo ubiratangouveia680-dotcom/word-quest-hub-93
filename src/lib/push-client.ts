@@ -1,4 +1,11 @@
-import { registerDevicePushSubscription, savePrayerNotificationPreferences, sendTestPushToDevice } from "@/lib/push.functions";
+import {
+  registerDevicePushSubscription,
+  getDeviceNotificationStatus,
+  updateDevicePushPreferences,
+  savePrayerNotificationPreferences,
+  sendTestPushToDevice,
+  sendTestVersePushToDevice,
+} from "@/lib/push.functions";
 
 export const DEFAULT_VAPID_PUBLIC_KEY =
   "BKQkj46iitINvDwByjEQKRru75VRlsgjLM9E-NXRVIVRmxBawgKpy2AocERQJoOaJlcPubdRHEj3c4pFSZbDPsM";
@@ -12,6 +19,23 @@ export function getVapidPublicKey(): string {
     );
   }
   return DEFAULT_VAPID_PUBLIC_KEY;
+}
+
+/**
+ * Retorna um identificador estável para este navegador/dispositivo
+ */
+export function getDeviceId(): string {
+  if (typeof window === "undefined") return "server_device";
+  try {
+    let id = localStorage.getItem("bo:device_id");
+    if (!id) {
+      id = "dev_" + Math.random().toString(36).substring(2, 11) + "_" + Date.now().toString(36);
+      localStorage.setItem("bo:device_id", id);
+    }
+    return id;
+  } catch {
+    return "dev_fallback";
+  }
 }
 
 /**
@@ -47,8 +71,60 @@ export function getPushPermission(): NotificationPermission | "unsupported" {
   }
 }
 
+export async function requestNotificationPermission(): Promise<NotificationPermission> {
+  if (!isWebPushSupported()) return "denied";
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === "granted" && "serviceWorker" in navigator) {
+      await navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+    }
+    return permission;
+  } catch {
+    return "denied";
+  }
+}
+
 export const isPushNotificationSupported = isWebPushSupported;
 export const getNotificationPermission = getPushPermission;
+
+// ---------------------------------------------------------------------------
+// Armazenamento Local Instantâneo para UI (Sem flickering no reload)
+// ---------------------------------------------------------------------------
+export function getStoredPrayerPushState(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const val = localStorage.getItem("bo:prayer_push_enabled");
+    if (val === null) return true; // Default ativado
+    return val === "true";
+  } catch {
+    return true;
+  }
+}
+
+export function setStoredPrayerPushState(enabled: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem("bo:prayer_push_enabled", enabled ? "true" : "false");
+  } catch {}
+}
+
+export function getStoredVersePushState(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const val = localStorage.getItem("bo:verse_push_enabled");
+    if (val === null) return true; // Default ativado
+    return val === "true";
+  } catch {
+    return true;
+  }
+}
+
+export function setStoredVersePushState(enabled: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem("bo:verse_push_enabled", enabled ? "true" : "false");
+  } catch {}
+}
 
 /**
  * Obtém a inscrição push ativa no navegador atual
@@ -65,15 +141,19 @@ export async function getActivePushSubscription(): Promise<PushSubscription | nu
 }
 
 /**
- * Inscreve o dispositivo atual para receber notificações Web Push de Pedidos de Oração
+ * Inscreve o dispositivo atual e sincroniza preferências no backend (Pedidos de Oração e/ou Versículo do Dia)
  */
-export async function subscribeToPrayerPush(userId?: string): Promise<{ success: boolean; message: string }> {
+export async function subscribeToDevicePush(options?: {
+  userId?: string;
+  prayerEnabled?: boolean;
+  verseEnabled?: boolean;
+}): Promise<{ success: boolean; message: string }> {
   if (!isWebPushSupported()) {
     return { success: false, message: "Este navegador ou dispositivo não possui suporte a Web Push Notifications." };
   }
 
   try {
-    // 1. Solicita permissão se ainda não foi decidida
+    // 1. Solicita permissão se ainda não foi concedida
     let permission = Notification.permission;
     if (permission !== "granted") {
       permission = await Notification.requestPermission();
@@ -108,6 +188,7 @@ export async function subscribeToPrayerPush(userId?: string): Promise<{ success:
     }
 
     // 4. Identifica o dispositivo
+    const deviceId = getDeviceId();
     const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
     let deviceName = "Navegador Web";
     if (/Android/i.test(userAgent)) deviceName = "Dispositivo Android";
@@ -115,45 +196,34 @@ export async function subscribeToPrayerPush(userId?: string): Promise<{ success:
     else if (/Macintosh|Mac OS/i.test(userAgent)) deviceName = "Computador Mac";
     else if (/iPhone|iPad/i.test(userAgent)) deviceName = "Dispositivo Apple";
 
-    // 5. Salva a inscrição no backend (multi-dispositivo)
-    const effectiveUserId = userId || localStorage.getItem("bo:guest_device_id") || "guest_" + Math.random().toString(36).slice(2, 10);
-    if (!userId && typeof window !== "undefined") {
-      localStorage.setItem("bo:guest_device_id", effectiveUserId);
-    }
+    const prayerVal = options?.prayerEnabled ?? getStoredPrayerPushState();
+    const verseVal = options?.verseEnabled ?? getStoredVersePushState();
 
+    // 5. Salva no backend
     await registerDevicePushSubscription({
       data: {
-        userId: effectiveUserId,
+        userId: options?.userId || null,
+        deviceId,
         endpoint: subJson.endpoint,
         p256dh: subJson.keys.p256dh,
         auth: subJson.keys.auth,
         deviceName,
         userAgent,
+        prayerNotificationsEnabled: prayerVal,
+        dailyVerseNotificationsEnabled: verseVal,
       },
     });
 
-    // 6. Salva preferência ativa
-    await savePrayerNotificationPreferences({
-      data: {
-        userId: effectiveUserId,
-        preferences: {
-          prayer_requests_enabled: true,
-          prayer_support_enabled: true,
-          community_enabled: true,
-        },
-      },
-    });
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("bo:prayer_push_enabled", "true");
-    }
+    // 6. Atualiza caches locais
+    setStoredPrayerPushState(prayerVal);
+    setStoredVersePushState(verseVal);
 
     return {
       success: true,
-      message: "Dispositivo registrado com sucesso! Você receberá notificações push quando surgirem novos pedidos de oração.",
+      message: "Dispositivo registrado com sucesso para receber notificações!",
     };
   } catch (err: any) {
-    console.error("subscribeToPrayerPush error:", err);
+    console.error("subscribeToDevicePush error:", err);
     return {
       success: false,
       message: err?.message || "Erro inesperado ao registrar para notificações push.",
@@ -162,27 +232,35 @@ export async function subscribeToPrayerPush(userId?: string): Promise<{ success:
 }
 
 /**
+ * Ativa notificações de pedidos de oração
+ */
+export async function subscribeToPrayerPush(userId?: string): Promise<{ success: boolean; message: string }> {
+  setStoredPrayerPushState(true);
+  return subscribeToDevicePush({ userId, prayerEnabled: true });
+}
+
+/**
  * Desativa notificações de pedidos de oração para este dispositivo
  */
 export async function unsubscribeFromPrayerPush(userId?: string): Promise<{ success: boolean; message: string }> {
   try {
-    const effectiveUserId = userId || (typeof window !== "undefined" ? localStorage.getItem("bo:guest_device_id") : null);
+    setStoredPrayerPushState(false);
+    const sub = await getActivePushSubscription();
+    const deviceId = getDeviceId();
 
-    if (effectiveUserId) {
+    await updateDevicePushPreferences({
+      data: {
+        endpoint: sub?.endpoint,
+        deviceId,
+        userId,
+        prayerEnabled: false,
+      },
+    }).catch(() => {});
+
+    if (userId) {
       await savePrayerNotificationPreferences({
-        data: {
-          userId: effectiveUserId,
-          preferences: {
-            prayer_requests_enabled: false,
-            prayer_support_enabled: false,
-            community_enabled: false,
-          },
-        },
-      });
-    }
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("bo:prayer_push_enabled", "false");
+        data: { userId, enabled: false },
+      }).catch(() => {});
     }
 
     return {
@@ -198,7 +276,80 @@ export async function unsubscribeFromPrayerPush(userId?: string): Promise<{ succ
 }
 
 /**
- * Dispara uma notificação de teste diretamente para o dispositivo atual via Web Push real
+ * Ativa notificações do versículo do dia
+ */
+export async function subscribeToVersePush(userId?: string): Promise<{ success: boolean; message: string }> {
+  setStoredVersePushState(true);
+  return subscribeToDevicePush({ userId, verseEnabled: true });
+}
+
+/**
+ * Desativa notificações do versículo do dia para este dispositivo
+ */
+export async function unsubscribeFromVersePush(userId?: string): Promise<{ success: boolean; message: string }> {
+  try {
+    setStoredVersePushState(false);
+    const sub = await getActivePushSubscription();
+    const deviceId = getDeviceId();
+
+    await updateDevicePushPreferences({
+      data: {
+        endpoint: sub?.endpoint,
+        deviceId,
+        userId,
+        verseEnabled: false,
+      },
+    }).catch(() => {});
+
+    return {
+      success: true,
+      message: "Notificações do Versículo do Dia desativadas para este aparelho.",
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err?.message || "Erro ao desativar notificações.",
+    };
+  }
+}
+
+/**
+ * Consulta o status sincronizado das notificações (Pedidos e Versículo)
+ */
+export async function checkDeviceNotificationStatus(userId?: string): Promise<{
+  hasSubscription: boolean;
+  prayerNotificationsEnabled: boolean;
+  dailyVerseNotificationsEnabled: boolean;
+}> {
+  try {
+    const sub = await getActivePushSubscription();
+    const deviceId = getDeviceId();
+
+    const res = await getDeviceNotificationStatus({
+      data: {
+        endpoint: sub?.endpoint,
+        deviceId,
+        userId,
+      },
+    });
+
+    if (res.hasSubscription) {
+      setStoredPrayerPushState(res.prayerNotificationsEnabled);
+      setStoredVersePushState(res.dailyVerseNotificationsEnabled);
+    }
+
+    return res;
+  } catch {
+    return {
+      hasSubscription: false,
+      prayerNotificationsEnabled: getStoredPrayerPushState(),
+      dailyVerseNotificationsEnabled: getStoredVersePushState(),
+    };
+  }
+}
+
+/**
+ * Dispara notificação de teste de Pedidos de Oração
  */
 export async function testPrayerPush(userId?: string): Promise<{ success: boolean; message: string }> {
   if (!isWebPushSupported()) {
@@ -206,33 +357,65 @@ export async function testPrayerPush(userId?: string): Promise<{ success: boolea
   }
 
   try {
-    const sub = await getActivePushSubscription();
+    let sub = await getActivePushSubscription();
     if (!sub) {
-      // Se ainda não tem inscrição, tenta inscrever primeiro
       const subRes = await subscribeToPrayerPush(userId);
       if (!subRes.success) return subRes;
+      sub = await getActivePushSubscription();
     }
 
-    const currentSub = await getActivePushSubscription();
-    const subJson = currentSub?.toJSON();
-
+    const subJson = sub?.toJSON();
     if (!subJson?.endpoint || !subJson?.keys?.p256dh || !subJson?.keys?.auth) {
       return { success: false, message: "Inscrição de push não encontrada para teste." };
     }
 
-    const res = await sendTestPushToDevice({
+    return await sendTestPushToDevice({
       data: {
         endpoint: subJson.endpoint,
         p256dh: subJson.keys.p256dh,
         auth: subJson.keys.auth,
       },
     });
-
-    return res;
   } catch (err: any) {
     return {
       success: false,
       message: err?.message || "Erro ao enviar notificação de teste.",
+    };
+  }
+}
+
+/**
+ * Dispara notificação de teste do Versículo do Dia via Web Push real
+ */
+export async function testDailyVersePush(userId?: string): Promise<{ success: boolean; message: string }> {
+  if (!isWebPushSupported()) {
+    return { success: false, message: "Web Push não suportado neste navegador." };
+  }
+
+  try {
+    let sub = await getActivePushSubscription();
+    if (!sub) {
+      const subRes = await subscribeToVersePush(userId);
+      if (!subRes.success) return subRes;
+      sub = await getActivePushSubscription();
+    }
+
+    const subJson = sub?.toJSON();
+    if (!subJson?.endpoint || !subJson?.keys?.p256dh || !subJson?.keys?.auth) {
+      return { success: false, message: "Inscrição de push não encontrada para teste." };
+    }
+
+    return await sendTestVersePushToDevice({
+      data: {
+        endpoint: subJson.endpoint,
+        p256dh: subJson.keys.p256dh,
+        auth: subJson.keys.auth,
+      },
+    });
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err?.message || "Erro ao enviar Versículo do Dia de teste.",
     };
   }
 }
