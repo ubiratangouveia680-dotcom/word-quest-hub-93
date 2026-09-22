@@ -337,8 +337,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = useCallback(async (email: string) => {
     try {
+      const redirectUrl = typeof window !== "undefined"
+        ? `${window.location.origin}/redefinir-senha`
+        : "https://bibliaonlineoficial.com.br/redefinir-senha";
+
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth?mode=recovery`,
+        redirectTo: redirectUrl,
       });
       if (error) {
         return { error: new Error(getFriendlyAuthErrorMessage(error)) };

@@ -13,6 +13,7 @@ Disallow: /favoritos
 Disallow: /perfil
 Disallow: /configuracoes
 Disallow: /auth
+Disallow: /redefinir-senha
 Disallow: /menu
 Disallow: /api/
 

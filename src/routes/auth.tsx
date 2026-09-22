@@ -53,18 +53,32 @@ function AuthPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    const modeParam = params.get("mode");
+    const codeParam = params.get("code");
+    const tokenHashParam = params.get("token_hash");
+
+    // Se chegar qualquer indício de redefinição de senha em /auth, redireciona imediatamente para a rota dedicada /redefinir-senha
+    if (
+      modeParam === "recovery" ||
+      codeParam ||
+      tokenHashParam ||
+      hash.includes("type=recovery") ||
+      hash.includes("access_token")
+    ) {
+      window.location.replace(`/redefinir-senha${window.location.search}${window.location.hash}`);
+      return;
+    }
+
     const nextParam = params.get("next") || params.get("returnUrl");
     if (isSafePath(nextParam)) {
       setNext(nextParam);
     }
 
-    const modeParam = params.get("mode");
     if (modeParam === "signup") {
       setMode("signup");
     } else if (modeParam === "forgot") {
       setMode("forgot");
-    } else if (modeParam === "recovery" || window.location.hash.includes("type=recovery")) {
-      setMode("recovery");
     }
   }, []);
 

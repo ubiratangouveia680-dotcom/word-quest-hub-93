@@ -25,6 +25,7 @@ import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PergunteRouteImport } from './routes/pergunte'
 import { Route as PergunteABibliaRouteImport } from './routes/pergunte-a-biblia'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SobreRouteImport } from './routes/sobre'
@@ -140,6 +141,11 @@ const PergunteABibliaRoute = PergunteABibliaRouteImport.update({
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
+  id: '/redefinir-senha',
+  path: '/redefinir-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
@@ -343,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/pergunte': typeof PergunteRoute
   '/pergunte-a-biblia': typeof PergunteABibliaRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
@@ -396,6 +403,7 @@ export interface FileRoutesByTo {
   '/pergunte': typeof PergunteRoute
   '/pergunte-a-biblia': typeof PergunteABibliaRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
@@ -448,6 +456,7 @@ export interface FileRoutesById {
   '/pergunte': typeof PergunteRoute
   '/pergunte-a-biblia': typeof PergunteABibliaRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sobre': typeof SobreRoute
@@ -504,6 +513,7 @@ export interface FileRouteTypes {
     | '/pergunte'
     | '/pergunte-a-biblia'
     | '/privacidade'
+    | '/redefinir-senha'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/sobre'
@@ -557,6 +567,7 @@ export interface FileRouteTypes {
     | '/pergunte'
     | '/pergunte-a-biblia'
     | '/privacidade'
+    | '/redefinir-senha'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/sobre'
@@ -608,6 +619,7 @@ export interface FileRouteTypes {
     | '/pergunte'
     | '/pergunte-a-biblia'
     | '/privacidade'
+    | '/redefinir-senha'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/sobre'
@@ -663,6 +675,7 @@ export interface RootRouteChildren {
   PergunteRoute: typeof PergunteRoute
   PergunteABibliaRoute: typeof PergunteABibliaRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
+  RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SobreRoute: typeof SobreRoute
@@ -805,6 +818,13 @@ declare module '@tanstack/react-router' {
       path: '/privacidade'
       fullPath: '/privacidade'
       preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/redefinir-senha': {
+      id: '/redefinir-senha'
+      path: '/redefinir-senha'
+      fullPath: '/redefinir-senha'
+      preLoaderRoute: typeof RedefinirSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/robots.txt': {
@@ -1131,6 +1151,7 @@ const rootRouteChildren: RootRouteChildren = {
   PergunteRoute: PergunteRoute,
   PergunteABibliaRoute: PergunteABibliaRoute,
   PrivacidadeRoute: PrivacidadeRoute,
+  RedefinirSenhaRoute: RedefinirSenhaRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SobreRoute: SobreRoute,
