@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { notifyNewPrayerRequest } from "@/lib/push.functions";
 
 export interface UserNotification {
   id: string;
@@ -202,8 +203,7 @@ export function subscribeToUserNotifications(
 
 /**
  * Cria notificações internas para todos os outros membros cadastrados quando um novo pedido de oração é criado.
- * REGRA ESTRITA: O autor do pedido (authorId) NUNCA recebe notificação de seu próprio pedido.
- * IMPORTANTE: Insere sem .select() para total conformidade com as regras de RLS do PostgreSQL.
+ * Processado com segurança no servidor através da server function notifyNewPrayerRequest.
  */
 export async function dispatchPrayerNotificationFallback(
   prayerId: string,
@@ -214,55 +214,19 @@ export async function dispatchPrayerNotificationFallback(
   if (!prayerId || !authorId) return;
 
   try {
-    console.log("[NOTIFICATION] Criando notificações internas");
-    console.log("[PRAYER] ID do pedido:", prayerId);
-    console.log("[PRAYER] Autor:", authorId);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
 
-    // 1. Busca os perfis de usuários cadastrados (exceto o próprio autor)
-    const { data: profiles, error: profError } = await supabase
-      .from("profiles")
-      .select("user_id")
-      .neq("user_id", authorId)
-      .limit(500);
-
-    if (profError || !profiles || profiles.length === 0) {
-      console.log("[NOTIFICATION] Destinatários encontrados: 0");
-      return;
-    }
-
-    const recipientIds = Array.from(
-      new Set(profiles.map((p) => p.user_id).filter((uid) => uid && uid !== authorId))
-    );
-
-    console.log("[NOTIFICATION] Destinatários encontrados:", recipientIds.length);
-    if (recipientIds.length === 0) return;
-
-    const authorDisplayName = authorName && authorName.trim() ? authorName.trim() : "Alguém da comunidade";
-    const cleanBody = (prayerContent || "").replace(/\s+/g, " ").trim();
-    const shortPreview = cleanBody.length > 70 ? cleanBody.slice(0, 70).trim() + "..." : cleanBody;
-    const msg = shortPreview
-      ? `🙏 ${authorDisplayName} publicou um novo pedido de oração:\n"${shortPreview}"`
-      : `🙏 ${authorDisplayName} publicou um novo pedido de oração. Ore por essa pessoa.`;
-
-    // 2. Monta o lote de notificações para os destinatários
-    const rows = recipientIds.map((rId) => ({
-      user_id: rId,
-      actor_id: authorId,
-      type: "reaction",
-      question_id: prayerId,
-      read: false,
-      message: msg,
-    }));
-
-    // 3. Insere em lote (SEM .select() para evitar bloqueio por RLS na leitura alheia)
-    const { error: insErr } = await supabase.from("notifications").insert(rows);
-
-    if (insErr) {
-      console.warn("[NOTIFICATION] Erro ao inserir lote de notificações:", insErr.message);
-    } else {
-      console.log("[NOTIFICATION] Notificações criadas:", rows.length);
-    }
+    await notifyNewPrayerRequest({
+      data: {
+        authorId,
+        authorName,
+        prayerRequestId: prayerId,
+        content: prayerContent || "",
+        accessToken: token,
+      },
+    });
   } catch (err) {
-    console.warn("[NOTIFICATION] Falha ao despachar notificações internas:", err);
+    console.warn("[NOTIFICATION] Falha ao despachar notificações no backend:", err);
   }
 }

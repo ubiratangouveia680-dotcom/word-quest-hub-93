@@ -457,20 +457,19 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
         console.log("[PRAYER] ID do pedido:", data.id);
         console.log("[PRAYER] Autor:", input.userId);
 
-        // 1. Notificações internas no banco para o sininho de todos os outros usuários
-        dispatchPrayerNotificationFallback(data.id, input.userId, authorDisplayName, cleanContent).catch((err) =>
-          console.warn("[NOTIFICATION] Erro ao disparar fallback:", err)
-        );
+        // Notificações internas no banco e Web Push disparados de forma segura pelo backend
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
 
-        // 2. Disparo de Web Push nativo para os outros dispositivos cadastrados
         notifyNewPrayerRequest({
           data: {
             authorId: input.userId,
             authorName: authorDisplayName,
             prayerRequestId: data.id,
             content: cleanContent,
+            accessToken: token,
           },
-        }).catch((pushErr) => console.warn("[PUSH] notifyNewPrayerRequest error:", pushErr));
+        }).catch((pushErr) => console.warn("[PUSH/NOTIF] notifyNewPrayerRequest warning:", pushErr));
 
         return {
           id: data.id,
@@ -521,20 +520,19 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
       console.log("[PRAYER] ID do pedido:", qData.id);
       console.log("[PRAYER] Autor:", input.userId);
 
-      // 1. Notificações internas no banco para o sininho de todos os outros usuários
-      dispatchPrayerNotificationFallback(qData.id, input.userId, authorDisplayName, cleanContent).catch((err) =>
-        console.warn("[NOTIFICATION] Erro ao disparar fallback:", err)
-      );
+      // Notificações internas no banco e Web Push disparados de forma segura pelo backend
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
 
-      // 2. Disparo de Web Push nativo para os outros dispositivos cadastrados
       notifyNewPrayerRequest({
         data: {
           authorId: input.userId,
           authorName: authorDisplayName,
           prayerRequestId: qData.id,
           content: cleanContent,
+          accessToken: token,
         },
-      }).catch((pushErr) => console.warn("[PUSH] notifyNewPrayerRequest error:", pushErr));
+      }).catch((pushErr) => console.warn("[PUSH/NOTIF] notifyNewPrayerRequest warning:", pushErr));
 
       return {
         id: qData.id,

@@ -457,9 +457,25 @@ export const sendTestVersePushToDevice = createServerFn({ method: "POST" })
   });
 
 // ---------------------------------------------------------------------------
-// 9. Dispatch Web Push for New Prayer Request
 // ---------------------------------------------------------------------------
-// 9. Dispatch Web Push for New Prayer Request
+// In-Memory Deduplication Map para Notificações de Oração
+// ---------------------------------------------------------------------------
+const processedPrayerNotifications = new Map<string, number>();
+
+function shouldProcessPrayerNotification(prayerId: string): boolean {
+  const now = Date.now();
+  for (const [id, ts] of processedPrayerNotifications.entries()) {
+    if (now - ts > 3600000) processedPrayerNotifications.delete(id);
+  }
+  if (processedPrayerNotifications.has(prayerId)) {
+    return false;
+  }
+  processedPrayerNotifications.set(prayerId, now);
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// 9. Dispatch Web Push & Internal Notifications for New Prayer Request
 // ---------------------------------------------------------------------------
 export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
   .validator(
@@ -468,6 +484,7 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
       authorName?: string;
       prayerRequestId: string;
       content: string;
+      accessToken?: string;
     }) => payload
   )
   .handler(async ({ data }): Promise<{ success: boolean; pushedDevices: number }> => {
@@ -476,6 +493,80 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
     console.log("[PRAYER] Novo pedido criado");
     console.log("[PRAYER] ID do pedido:", data.prayerRequestId);
     console.log("[PRAYER] Autor:", data.authorId);
+
+    const isFirstRun = shouldProcessPrayerNotification(data.prayerRequestId);
+
+    // 1. Criar notificações internas para o Sininho dos outros usuários no backend
+    if (isFirstRun) {
+      try {
+        console.log("[NOTIFICATION] Criando notificações internas no backend para pedido:", data.prayerRequestId);
+        const authClient = getAuthenticatedClient(data.accessToken);
+
+        // Tenta via RPC se existir
+        let rpcExecuted = false;
+        try {
+          const cleanPreview = (data.content || "").replace(/\s+/g, " ").trim().slice(0, 80);
+          const { data: rpcCount, error: rpcErr } = await (authClient as any).rpc(
+            "create_prayer_notifications",
+            {
+              p_question_id: data.prayerRequestId,
+              p_author_id: data.authorId,
+              p_author_name: data.authorName || "Alguém da comunidade",
+              p_message_preview: cleanPreview,
+            }
+          );
+          if (!rpcErr && typeof rpcCount === "number") {
+            rpcExecuted = true;
+            console.log("[NOTIFICATION] Notificações criadas via RPC no backend:", rpcCount);
+          }
+        } catch {}
+
+        if (!rpcExecuted) {
+          // Fallback resiliente no backend usando cliente autenticado
+          const { data: profiles, error: profErr } = await authClient
+            .from("profiles")
+            .select("user_id")
+            .neq("user_id", data.authorId)
+            .limit(500);
+
+          if (!profErr && profiles && profiles.length > 0) {
+            const candidateIds = Array.from(
+              new Set(profiles.map((p) => p.user_id).filter((uid) => uid && uid !== data.authorId))
+            );
+
+            if (candidateIds.length > 0) {
+              const authorDisplayName = data.authorName && data.authorName.trim() ? data.authorName.trim() : "Alguém da comunidade";
+              const cleanBody = (data.content || "").replace(/\s+/g, " ").trim();
+              const shortPreview = cleanBody.length > 70 ? cleanBody.slice(0, 70).trim() + "..." : cleanBody;
+              const msg = shortPreview
+                ? `🙏 ${authorDisplayName} publicou um novo pedido de oração:\n"${shortPreview}"`
+                : `🙏 ${authorDisplayName} publicou um novo pedido de oração. Ore por essa pessoa.`;
+
+              const rows = candidateIds.map((rId) => ({
+                user_id: rId,
+                actor_id: data.authorId,
+                type: "reaction",
+                question_id: data.prayerRequestId,
+                read: false,
+                message: msg,
+              }));
+
+              // Inserção em lote segura SEM .select() para total conformidade com RLS
+              const { error: insErr } = await authClient.from("notifications").insert(rows);
+              if (insErr) {
+                console.warn("[NOTIFICATION] Aviso ao inserir notificações internas:", insErr.message);
+              } else {
+                console.log("[NOTIFICATION] Notificações internas criadas no backend:", rows.length);
+              }
+            }
+          }
+        }
+      } catch (notifErr: any) {
+        console.warn("[NOTIFICATION] Erro não impeditivo ao processar notificações internas:", notifErr?.message || notifErr);
+      }
+    } else {
+      console.log("[NOTIFICATION] Pedido já processado anteriormente. Ignorando duplicação interna.");
+    }
 
     const subscriptions: { endpoint: string; p256dh: string; auth: string; userId?: string }[] = [];
     const seenEndpoints = new Set<string>();
@@ -607,12 +698,23 @@ export const createTestInternalNotification = createServerFn({ method: "POST" })
 
     try {
       console.log("[NOTIFICATION] Criando notificação interna de teste para:", data.userId);
-      const client = getAuthenticatedClient(data.accessToken);
+      let targetQId = data.prayerRequestId;
+      if (!targetQId) {
+        const { data: qRows } = await client.from("questions").select("id").limit(1);
+        if (qRows && qRows.length > 0) {
+          targetQId = qRows[0].id;
+        }
+      }
+
+      if (!targetQId) {
+        return { success: false, message: "Nenhum tópico existente para associar notificação." };
+      }
+
       const { error } = await client.from("notifications").insert({
         user_id: data.userId,
         actor_id: data.userId,
         type: "reaction",
-        question_id: data.prayerRequestId || "461ab5b2-9c40-418d-9a05-52ac209e0b14",
+        question_id: targetQId,
         read: false,
         message: "🙏 Teste do Sininho: Uma nova oração foi compartilhada na comunidade da Bíblia Online.",
       });
@@ -719,7 +821,7 @@ export const dispatchDailyVersePush = createServerFn({ method: "POST" })
 // 11. Dispatch Web Push for Prayer Support Interaction
 // ---------------------------------------------------------------------------
 export const notifyPrayerSupportInteraction = createServerFn({ method: "POST" })
-  .validator((payload: { prayerAuthorId: string; actorUserId: string; prayerRequestId: string }) => {
+  .validator((payload: { prayerAuthorId: string; actorUserId: string; prayerRequestId: string; accessToken?: string }) => {
     if (!payload.prayerAuthorId) throw new Error("Autor do pedido não identificado.");
     return payload;
   })
@@ -731,9 +833,10 @@ export const notifyPrayerSupportInteraction = createServerFn({ method: "POST" })
     initWebPush();
 
     try {
-      // 1. Salva notificação in-app
+      // 1. Salva notificação in-app com cliente autenticado e sem .select()
       try {
-        await supabase.from("notifications").insert({
+        const client = getAuthenticatedClient(data.accessToken);
+        await client.from("notifications").insert({
           user_id: data.prayerAuthorId,
           actor_id: data.actorUserId,
           type: "reaction",
@@ -741,7 +844,9 @@ export const notifyPrayerSupportInteraction = createServerFn({ method: "POST" })
           read: false,
           message: "🙏 Alguém da comunidade começou a orar pelo seu pedido de oração.",
         });
-      } catch {}
+      } catch (err: any) {
+        console.warn("[NOTIFICATION] Erro ao registrar apoio em oração:", err?.message || err);
+      }
 
       // 2. Busca inscrições do autor
       const subscriptions: { endpoint: string; p256dh: string; auth: string }[] = [];

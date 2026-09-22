@@ -379,11 +379,13 @@ function PrayerWallPage() {
 
       // Trigger notification if newly praying
       if (willPray && prayer.user_id && prayer.user_id !== user.id) {
+        const { data: sData } = await supabase.auth.getSession();
         notifyPrayerSupportInteraction({
           data: {
             prayerAuthorId: prayer.user_id,
             actorUserId: user.id,
             prayerRequestId: prayer.id,
+            accessToken: sData?.session?.access_token,
           },
         }).catch(() => {});
       }
