@@ -11,8 +11,8 @@ import { url } from "@/lib/site";
 export const Route = createFileRoute("/versiculo-do-dia")({
   head: () => {
     const today = getDailyRef();
-    const title = `Versículo do Dia: ${today.bookName} ${today.chapter}:${today.verse} — Bíblia Online`;
-    const desc = `${today.text} — Reflexão, explicação contextualizada, aplicação prática e oração para hoje.`;
+    const title = `Versículo do Dia: ${today.bookName} ${today.chapter}:${today.verse} — Bíblia Online Oficial`;
+    const desc = `${today.text} — Reflexão bíblica diária, explicação contextualizada, aplicação prática e oração para hoje.`;
     return {
       meta: [
         { title },
@@ -20,6 +20,7 @@ export const Route = createFileRoute("/versiculo-do-dia")({
         { property: "og:title", content: title },
         { property: "og:description", content: desc },
         { property: "og:url", content: url("/versiculo-do-dia") },
+        { property: "og:image", content: url("/icon-512.png") },
         { property: "og:type", content: "article" },
       ],
       links: [{ rel: "canonical", href: url("/versiculo-do-dia") }],

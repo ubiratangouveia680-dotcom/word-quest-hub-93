@@ -133,8 +133,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
-          name: "Bíblia Online",
-          url: SITE_URL,
+          name: "Bíblia Online Oficial",
+          url: `${SITE_URL}/`,
           slogan: "Leia, compreenda e compartilhe a Palavra de Deus.",
           inLanguage: "pt-BR",
           potentialAction: {
@@ -152,8 +152,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Organization",
-          name: "Bíblia Online",
-          url: SITE_URL,
+          name: "Bíblia Online Oficial",
+          url: `${SITE_URL}/`,
           logo: `${SITE_URL}/icon-512.png`,
           description:
             "Portal cristão dedicado à leitura da Bíblia Sagrada, estudos bíblicos, orações, lições da Escola Dominical, devocionais e edificação espiritual.",
@@ -182,24 +182,30 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       });
     }
 
+    const gsv =
+      (typeof process !== "undefined"
+        ? process.env?.["GOOGLE_SITE_VERIFICATION"] || process.env?.["VITE_GOOGLE_SITE_VERIFICATION"]
+        : "") ||
+      (import.meta.env ? import.meta.env["VITE_GOOGLE_SITE_VERIFICATION"] || import.meta.env["GOOGLE_SITE_VERIFICATION"] : "");
+
     return {
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-        { title: "Bíblia Online — Leia a Bíblia Sagrada em português" },
+        { title: "Bíblia Online Oficial — Leia a Bíblia Online" },
         {
           name: "description",
           content:
-            "Leia a Bíblia online em português, pesquise versículos, veja o versículo do dia, estudos bíblicos, devocionais e orações.",
+            "Leia a Bíblia online gratuitamente. Pesquise livros, capítulos e versículos da Bíblia e encontre conteúdo bíblico para sua caminhada de fé.",
         },
-        { property: "og:site_name", content: "Bíblia Online" },
+        { property: "og:site_name", content: "Bíblia Online Oficial" },
         { property: "og:type", content: "website" },
         { property: "og:locale", content: "pt_BR" },
+        { property: "og:image", content: `${SITE_URL}/icon-512.png` },
         { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:image", content: `${SITE_URL}/icon-512.png` },
         { name: "theme-color", content: "#fbf9f4" },
-      ...(import.meta.env["VITE_GOOGLE_SITE_VERIFICATION"]
-        ? [{ name: "google-site-verification", content: import.meta.env["VITE_GOOGLE_SITE_VERIFICATION"] }]
-          : []),
+        ...(gsv ? [{ name: "google-site-verification", content: gsv }] : []),
       ],
       links: [
         { rel: "stylesheet", href: appCss },

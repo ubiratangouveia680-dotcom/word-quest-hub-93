@@ -13,6 +13,8 @@ Disallow: /favoritos
 Disallow: /perfil
 Disallow: /configuracoes
 Disallow: /auth
+Disallow: /menu
+Disallow: /api/
 
 Sitemap: ${SITE_URL}/sitemap.xml
 `;

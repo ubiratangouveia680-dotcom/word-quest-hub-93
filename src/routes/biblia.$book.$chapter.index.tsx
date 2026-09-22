@@ -23,8 +23,8 @@ export const Route = createFileRoute("/biblia/$book/$chapter/")({
       return { meta: [{ title: "Capítulo não encontrado" }, { name: "robots", content: "noindex" }] };
     }
     const { book, chapter } = loaderData;
-    const title = `${book.name} ${chapter} — Bíblia Online`;
-    const description = `Leia ${book.name} capítulo ${chapter} completo, versículo por versículo, em português.`;
+    const title = `${book.name} ${chapter} — Bíblia Online Oficial`;
+    const description = `Leia ${book.name} ${chapter} completo na Bíblia Online. Consulte o capítulo, pesquise versículos e navegue pela Bíblia gratuitamente.`;
     const path = `/biblia/${params.book}/${params.chapter}`;
     return {
       meta: [
@@ -34,6 +34,7 @@ export const Route = createFileRoute("/biblia/$book/$chapter/")({
         { property: "og:description", content: description },
         { property: "og:type", content: "article" },
         { property: "og:url", content: url(path) },
+        { property: "og:image", content: url("/icon-512.png") },
       ],
       links: [{ rel: "canonical", href: url(path) }],
       scripts: [

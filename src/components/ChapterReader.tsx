@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, NotebookPen, Pause, Play, Sparkles, Square, Volume2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, NotebookPen, Pause, Play, Sparkles, Square, Volume2, BookOpen } from "lucide-react";
 import { chapterQuery } from "@/lib/bible-queries";
 import { BIBLE_BOOKS, type BibleBook } from "@/lib/bible-books";
 import { VerseActions } from "@/components/VerseActions";
@@ -255,26 +255,36 @@ export function ChapterReader({
       <AdMobile className="mt-8" />
       <AdEndOfChapter className="mt-6" />
 
-      <nav className="mt-8 flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-2.5 sm:gap-3">
+      <nav aria-label="Navegação entre capítulos" className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
         {prev ? (
           <Button asChild variant="outline" className="h-10 text-xs sm:text-sm">
             <Link to="/biblia/$book/$chapter" params={{ book: prev.book, chapter: String(prev.chapter) }}>
               <ChevronLeft className="mr-1 size-4" />
-              <span className="xs:hidden">Cap. anterior</span>
-              <span className="hidden xs:inline">Capítulo anterior</span>
+              <span className="sm:hidden">Cap. anterior ({prev.chapter})</span>
+              <span className="hidden sm:inline">Capítulo anterior ({prev.chapter})</span>
             </Link>
           </Button>
         ) : (
-          <span />
+          <span className="hidden sm:inline-block" />
         )}
-        {next && (
-          <Button asChild variant="outline" className="h-10 text-xs sm:text-sm ml-auto xs:ml-0">
+
+        <Button asChild variant="ghost" className="h-10 text-xs sm:text-sm text-gold hover:text-gold/90 hover:bg-gold/10">
+          <Link to="/biblia/$book" params={{ book: book.slug }}>
+            <BookOpen className="mr-1.5 size-4" />
+            <span>Índice de {book.name}</span>
+          </Link>
+        </Button>
+
+        {next ? (
+          <Button asChild variant="outline" className="h-10 text-xs sm:text-sm ml-auto sm:ml-0">
             <Link to="/biblia/$book/$chapter" params={{ book: next.book, chapter: String(next.chapter) }}>
-              <span className="xs:hidden">Próx. capítulo</span>
-              <span className="hidden xs:inline">Próximo capítulo</span>
+              <span className="sm:hidden">Próx. capítulo ({next.chapter})</span>
+              <span className="hidden sm:inline">Próximo capítulo ({next.chapter})</span>
               <ChevronRight className="ml-1 size-4" />
             </Link>
           </Button>
+        ) : (
+          <span className="hidden sm:inline-block" />
         )}
       </nav>
     </article>

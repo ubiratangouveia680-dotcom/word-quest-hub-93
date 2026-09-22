@@ -59,6 +59,7 @@ export const Route = createFileRoute("/menu")({
       },
       { property: "og:url", content: url("/menu") },
       { property: "og:type", content: "website" },
+      { name: "robots", content: "noindex,nofollow" },
     ],
     links: [{ rel: "canonical", href: url("/menu") }],
   }),

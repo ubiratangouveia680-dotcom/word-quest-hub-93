@@ -7,15 +7,21 @@ import { url } from "@/lib/site";
 export const Route = createFileRoute("/biblia/")({
   head: () => ({
     meta: [
-      { title: "Bíblia Online completa — Antigo e Novo Testamento" },
+      { title: "Bíblia Online Oficial — Antigo e Novo Testamento Completo" },
       {
         name: "description",
         content:
-          "Todos os 66 livros da Bíblia em português: Antigo e Novo Testamento. Escolha um livro e leia capítulos e versículos gratuitamente.",
+          "Leia todos os 66 livros da Bíblia Sagrada na Bíblia Online Oficial. Navegue pelos livros do Antigo e Novo Testamento, consulte capítulos e versículos gratuitamente.",
       },
-      { property: "og:title", content: "Bíblia Online completa — Antigo e Novo Testamento" },
-      { property: "og:description", content: "Todos os 66 livros da Bíblia em português." },
+      { property: "og:title", content: "Bíblia Online Oficial — Antigo e Novo Testamento Completo" },
+      {
+        property: "og:description",
+        content:
+          "Leia todos os 66 livros da Bíblia Sagrada na Bíblia Online Oficial. Navegue pelos livros do Antigo e Novo Testamento gratuitamente.",
+      },
+      { property: "og:type", content: "website" },
       { property: "og:url", content: url("/biblia") },
+      { property: "og:image", content: url("/icon-512.png") },
     ],
     links: [{ rel: "canonical", href: url("/biblia") }],
   }),

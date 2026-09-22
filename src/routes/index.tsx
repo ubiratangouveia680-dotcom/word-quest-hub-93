@@ -31,17 +31,17 @@ import { url } from "@/lib/site";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Bíblia Online — Bíblia Sagrada, Estudos e Versículos" },
+      { title: "Bíblia Online Oficial — Leia a Bíblia Online" },
       {
         name: "description",
         content:
-          "Leia a Bíblia Sagrada online completa em português com capítulos e versículos. Acesse estudos bíblicos profundos, lições da Escola Dominical, apostilas em PDF, devocionais diários, orações, mural de pedidos de oração e teste seus conhecimentos com o quiz bíblico.",
+          "Leia a Bíblia online gratuitamente. Pesquise livros, capítulos e versículos da Bíblia e encontre conteúdo bíblico para sua caminhada de fé.",
       },
-      { property: "og:title", content: "Bíblia Online — Bíblia Sagrada, Estudos e Versículos" },
+      { property: "og:title", content: "Bíblia Online Oficial — Leia a Bíblia Online" },
       {
         property: "og:description",
         content:
-          "Leia a Bíblia Sagrada online completa em português com capítulos e versículos. Acesse estudos bíblicos profundos, lições da Escola Dominical, apostilas em PDF, devocionais diários, orações, mural de pedidos de oração e teste seus conhecimentos com o quiz bíblico.",
+          "Leia a Bíblia online gratuitamente. Pesquise livros, capítulos e versículos da Bíblia e encontre conteúdo bíblico para sua caminhada de fé.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: url("/") },

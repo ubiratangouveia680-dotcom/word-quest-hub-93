@@ -15,8 +15,8 @@ export const Route = createFileRoute("/biblia/$book/")({
       return { meta: [{ title: "Livro não encontrado" }, { name: "robots", content: "noindex" }] };
     }
     const { book } = loaderData;
-    const title = `${book.name} — Bíblia Online | Todos os capítulos`;
-    const description = `${book.description} Leia ${book.name} online, capítulo por capítulo, em português.`;
+    const title = `Bíblia ${book.name} — Bíblia Online Oficial`;
+    const description = `Leia o livro de ${book.name} completo na Bíblia Online Oficial. Consulte todos os ${book.chapters} capítulos, pesquise versículos e navegue pela Bíblia gratuitamente.`;
     return {
       meta: [
         { title },
@@ -25,6 +25,7 @@ export const Route = createFileRoute("/biblia/$book/")({
         { property: "og:description", content: description },
         { property: "og:type", content: "article" },
         { property: "og:url", content: url(`/biblia/${params.book}`) },
+        { property: "og:image", content: url("/icon-512.png") },
       ],
       links: [{ rel: "canonical", href: url(`/biblia/${params.book}`) }],
       scripts: [

@@ -7,9 +7,9 @@ import { BookOpen, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/biblia/antigo-testamento")({
   head: () => {
-    const title = "Antigo Testamento — Todos os 39 Livros | Bíblia Online";
+    const title = "Antigo Testamento — Todos os 39 Livros | Bíblia Online Oficial";
     const description =
-      "Leia todos os 39 livros do Antigo Testamento da Bíblia Sagrada online em português. Do Gênesis a Malaquias, explore capítulos, versículos e histórias dos patriarcas, profetas e reis.";
+      "Leia todos os 39 livros do Antigo Testamento da Bíblia Sagrada online na Bíblia Online Oficial. Do Gênesis a Malaquias, explore capítulos, versículos e histórias dos patriarcas, profetas e reis.";
     const canonical = url("/biblia/antigo-testamento");
 
     return {
@@ -20,6 +20,7 @@ export const Route = createFileRoute("/biblia/antigo-testamento")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: canonical },
+        { property: "og:image", content: url("/icon-512.png") },
         { name: "twitter:card", content: "summary_large_image" },
       ],
       links: [{ rel: "canonical", href: canonical }],

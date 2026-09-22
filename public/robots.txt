@@ -6,5 +6,7 @@ Disallow: /favoritos
 Disallow: /perfil
 Disallow: /configuracoes
 Disallow: /auth
+Disallow: /menu
+Disallow: /api/
 
 Sitemap: https://bibliaonlineoficial.com.br/sitemap.xml
