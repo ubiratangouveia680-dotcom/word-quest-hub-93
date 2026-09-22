@@ -90,15 +90,15 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 
 function Logo() {
   return (
-    <Link to="/" className="flex min-h-11 min-w-0 items-center gap-2.5 shrink">
-      <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
+    <Link to="/" className="flex min-h-11 shrink-0 items-center gap-2.5">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
         <BookOpen className="size-5" />
       </span>
-      <span className="leading-tight">
-        <span className="block font-display text-lg font-bold text-foreground">
+      <span className="leading-tight whitespace-nowrap">
+        <span className="block font-display text-lg font-bold text-foreground whitespace-nowrap">
           Bíblia Online
         </span>
-        <span className="hidden text-[11px] text-muted-foreground xl:block">
+        <span className="hidden text-[11px] text-muted-foreground xl:block whitespace-nowrap">
           Leia, compreenda e compartilhe a Palavra de Deus.
         </span>
       </span>
@@ -127,12 +127,12 @@ export function SiteLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col bg-background text-foreground antialiased selection:bg-gold/25 selection:text-foreground">
       {/* CABEÇALHO */}
       <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto grid h-16 w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 sm:px-6 lg:flex lg:justify-between">
+        <div className="mx-auto flex h-16 w-full max-w-screen-xl items-center gap-2 px-3 sm:px-4 lg:px-6">
           {/* 1. Logo */}
           <Logo />
 
           {/* 2. Menu Desktop */}
-          <nav className="hidden items-center gap-0.5 xl:gap-1 lg:flex" aria-label="Navegação Principal">
+          <nav className="hidden flex-1 shrink-0 items-center justify-center gap-0.5 xl:gap-1 lg:flex" aria-label="Navegação Principal">
             {DESKTOP_NAV.map((item) => (
               <Link
                 key={item.to}
@@ -146,7 +146,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </nav>
 
           {/* 3. Ações no Cabeçalho */}
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 lg:ml-0">
             {/* Sino de Notificações (visível para usuários autenticados no desktop e mobile) */}
             {isAuthenticated && <NotificationBell />}
 
