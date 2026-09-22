@@ -3,6 +3,7 @@ import { useState, useEffect, useTransition } from "react";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
 import { useAuth } from "@/lib/auth-context";
+import { AuthPromptModal } from "@/components/AuthPromptModal";
 import {
   COMMUNITY_CATEGORIES,
   getCategoryMeta,
@@ -234,6 +235,25 @@ function ComunidadeFeedPage() {
     loadFeed(true);
   }, [selectedCategory, activeSearch, user?.id]);
 
+  // Restaura rascunho de post após login/cadastro
+  useEffect(() => {
+    if (isAuthenticated && typeof window !== "undefined") {
+      const savedDraft = localStorage.getItem("bo:post_draft");
+      if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft);
+          if (draft.body) setBody(draft.body);
+          if (draft.title) setTitle(draft.title);
+          if (draft.categoryId) setCategoryId(draft.categoryId);
+          if (draft.verseReference) setVerseReference(draft.verseReference);
+          setIsCreateModalOpen(true);
+          toast.info("Rascunho restaurado! Você já pode publicar.");
+        } catch {}
+        localStorage.removeItem("bo:post_draft");
+      }
+    }
+  }, [isAuthenticated]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setActiveSearch(searchQuery.trim());
@@ -242,7 +262,10 @@ function ComunidadeFeedPage() {
   // Open Create Modal handler
   const handleOpenCreateModal = () => {
     if (!isAuthenticated || !user) {
-      setVisitorModalMessage("Entre na sua conta para participar da comunidade.");
+      if (body || title) {
+        localStorage.setItem("bo:post_draft", JSON.stringify({ title, body, categoryId, verseReference }));
+      }
+      setVisitorModalMessage("Para publicar, você precisa criar uma conta gratuita.");
       setIsVisitorModalOpen(true);
       return;
     }
@@ -254,6 +277,10 @@ function ComunidadeFeedPage() {
   const handleSubmitPublication = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAuthenticated || !user) {
+      if (body || title) {
+        localStorage.setItem("bo:post_draft", JSON.stringify({ title, body, categoryId, verseReference }));
+      }
+      setVisitorModalMessage("Para publicar, você precisa criar uma conta gratuita.");
       setIsVisitorModalOpen(true);
       return;
     }
@@ -1033,35 +1060,18 @@ function ComunidadeFeedPage() {
           </DialogContent>
         </Dialog>
 
-        {/* MODAL: Aviso de Visitante / Login Necessário */}
-        <Dialog open={isVisitorModalOpen} onOpenChange={setIsVisitorModalOpen}>
-          <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 text-center">
-            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-primary/10 text-2xl">
-              🕊️
-            </div>
-            <DialogHeader>
-              <DialogTitle className="font-display text-xl text-center">
-                Participe da Comunidade Palavra Viva
-              </DialogTitle>
-              <DialogDescription className="text-center text-sm">
-                {visitorModalMessage}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-4">
-              <Button asChild className="w-full sm:w-auto font-bold">
-                <Link to="/auth" search={{ mode: "signin" }}>
-                  Entrar na conta
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full sm:w-auto">
-                <Link to="/auth" search={{ mode: "signup" }}>
-                  Criar conta gratuita
-                </Link>
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* MODAL: Aviso de Visitante / Login Necessário com Retorno Automático */}
+        <AuthPromptModal
+          open={isVisitorModalOpen}
+          onOpenChange={setIsVisitorModalOpen}
+          title="Participe da Comunidade Palavra Viva"
+          description={
+            visitorModalMessage ||
+            "Para publicar, curtir ou interagir na comunidade, você precisa criar uma conta gratuita."
+          }
+          nextUrl="/comunidade"
+          icon="🕊️"
+        />
 
         {/* MODAL: Perfil Público do Autor (LGPD Compliant - ZERO Dados Privados) */}
         <Dialog

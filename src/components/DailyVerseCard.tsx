@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Heart, Share2 } from "lucide-react";
@@ -7,6 +8,7 @@ import { getDailyRef } from "@/lib/daily-verse";
 import { useFavorites } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AuthPromptModal } from "@/components/AuthPromptModal";
 
 export function DailyVerseCard() {
   const ref = getDailyRef();
@@ -19,8 +21,13 @@ export function DailyVerseCard() {
   const { toggle, isFavorite, userId } = useFavorites();
   const favId = `verse:${ref.bookSlug}:${ref.chapter}:${ref.verse}`;
   const fav = isFavorite(favId);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const handleFavorite = async () => {
+    if (!userId) {
+      setAuthModalOpen(true);
+      return;
+    }
     const added = await toggle({
       id: favId,
       kind: "verse",
@@ -29,7 +36,7 @@ export function DailyVerseCard() {
       href,
     });
     if (added) {
-      toast.success(userId ? "Versículo adicionado aos favoritos!" : "Versículo salvo nos favoritos do navegador!");
+      toast.success("Versículo adicionado aos favoritos!");
     } else {
       toast.info("Versículo removido dos favoritos.");
     }
@@ -128,6 +135,15 @@ export function DailyVerseCard() {
           Ver reflexão completa →
         </Link>
       </div>
+
+      <AuthPromptModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        title="Salve seus versículos favoritos"
+        description="Para salvar versículos e acessar sua lista personalizada em qualquer celular ou computador, crie sua conta gratuita."
+        nextUrl={href}
+        icon="❤️"
+      />
     </article>
   );
 }

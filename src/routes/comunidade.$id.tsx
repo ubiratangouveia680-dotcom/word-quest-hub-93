@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
+import { AuthPromptModal } from "@/components/AuthPromptModal";
 import { useAuth } from "@/lib/auth-context";
 import {
   fetchQuestionById,
@@ -154,6 +155,23 @@ function QuestionDetailsPage() {
     loadData();
   }, [id, user?.id]);
 
+  // Recupera rascunho de comentário após login
+  useEffect(() => {
+    if (isAuthenticated) {
+      try {
+        const saved = localStorage.getItem(`bo:comment_draft_${id}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.body) setAnswerBody(parsed.body);
+          if (parsed.verse) setAnswerVerse(parsed.verse);
+          localStorage.removeItem(`bo:comment_draft_${id}`);
+        }
+      } catch (e) {
+        // Silently ignore
+      }
+    }
+  }, [id, isAuthenticated]);
+
   // Carrega categorias reais do banco ao montar o componente
   useEffect(() => {
     let active = true;
@@ -234,7 +252,17 @@ function QuestionDetailsPage() {
   const handleSubmitAnswer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAuthenticated || !user || !question) {
-      setVisitorModalMessage("Entre para comentar nesta publicação.");
+      if (answerBody.trim()) {
+        try {
+          localStorage.setItem(
+            `bo:comment_draft_${id}`,
+            JSON.stringify({ body: answerBody, verse: answerVerse })
+          );
+        } catch {
+          // ignore
+        }
+      }
+      setVisitorModalMessage("Para comentar nesta publicação, você precisa criar uma conta gratuita.");
       setIsVisitorModalOpen(true);
       return;
     }
@@ -877,34 +905,14 @@ function QuestionDetailsPage() {
         </section>
 
         {/* MODAL: Aviso de Visitante / Login Necessário */}
-        <Dialog open={isVisitorModalOpen} onOpenChange={setIsVisitorModalOpen}>
-          <DialogContent className="sm:max-w-md text-center">
-            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-primary/10 text-2xl">
-              🕊️
-            </div>
-            <DialogHeader>
-              <DialogTitle className="font-display text-xl text-center">
-                Participe da Comunidade Palavra Viva
-              </DialogTitle>
-              <DialogDescription className="text-center text-sm">
-                {visitorModalMessage}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-4">
-              <Button asChild className="w-full sm:w-auto font-bold">
-                <Link to="/auth" search={{ mode: "signin" }}>
-                  Entrar na conta
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full sm:w-auto">
-                <Link to="/auth" search={{ mode: "signup" }}>
-                  Criar conta gratuita
-                </Link>
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <AuthPromptModal
+          open={isVisitorModalOpen}
+          onOpenChange={setIsVisitorModalOpen}
+          title="Participe da Comunidade Palavra Viva"
+          description={visitorModalMessage || "Para interagir, curtir ou comentar nesta publicação, você precisa criar uma conta gratuita."}
+          nextUrl={`/comunidade/${id}`}
+          icon="🕊️"
+        />
 
         {/* MODAL: Perfil Público (LGPD Compliant) */}
         <Dialog

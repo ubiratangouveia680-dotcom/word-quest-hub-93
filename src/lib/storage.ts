@@ -130,6 +130,9 @@ export function useFavorites() {
 
   const toggle = useCallback(
     async (item: Omit<FavoriteItem, "createdAt">): Promise<boolean> => {
+      if (!userId) {
+        return false;
+      }
       const current = items;
       const exists = current.some((i) => i.id === item.id || i.title === item.title);
 
@@ -184,6 +187,7 @@ export function useFavorites() {
 
   const remove = useCallback(
     async (idOrTitle: string) => {
+      if (!userId) return;
       const next = items.filter((i) => i.id !== idOrTitle && i.title !== idOrTitle);
       setItems(next);
       write(FAVORITES_KEY, next);

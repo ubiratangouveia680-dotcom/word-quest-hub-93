@@ -117,45 +117,9 @@ function saveLocalAttempt(attempt: any) {
 }
 
 /**
- * Garante uma sessão de autenticação válida para salvar dados no Supabase com RLS.
- * Se o usuário já estiver autenticado na conta, usa a sessão dele.
- * Se for um visitante, utiliza ou cria uma conta de participante autenticada no Supabase.
- */
-async function getEffectiveSupabaseUserId(currentUserId?: string): Promise<string | null> {
-  if (currentUserId) return currentUserId;
-  try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (sessionData?.session?.user?.id) {
-      return sessionData.session.user.id;
-    }
-
-    let guestSeed = typeof window !== 'undefined' ? localStorage.getItem('bo:guest_auth_seed') : null;
-    if (!guestSeed) {
-      guestSeed = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-      if (typeof window !== 'undefined') localStorage.setItem('bo:guest_auth_seed', guestSeed);
-    }
-
-    const guestEmail = `guest_${guestSeed}@bibliaonline.internal`;
-    const guestPass = `QuizPass123!${guestSeed}`;
-
-    const signInRes = await supabase.auth.signInWithPassword({ email: guestEmail, password: guestPass });
-    if (signInRes.data?.user?.id) {
-      return signInRes.data.user.id;
-    }
-
-    const signUpRes = await supabase.auth.signUp({ email: guestEmail, password: guestPass });
-    if (signUpRes.data?.user?.id) {
-      return signUpRes.data.user.id;
-    }
-  } catch (err) {
-    console.warn('[Quiz] Falha ao autenticar sessão de participante:', err);
-  }
-  return null;
-}
-
-/**
  * Valida o resultado com segurança.
  * Busca o gabarito no banco (ou no seed seguro), calcula a pontuação e registra a tentativa real no banco de dados na nuvem.
+ * REGRA ESTRITA: Exige usuário cadastrado e autenticado. Visitantes não podem gerar pontuação nem participar do ranking.
  */
 export async function submitQuizAttempt(
   answers: UserQuizAnswer[],
@@ -163,6 +127,16 @@ export async function submitQuizAttempt(
   userDisplayName?: string,
   userAvatarUrl?: string | null
 ): Promise<QuizFinalResult> {
+  // 1. Verificação obrigatória de autenticação no backend/banco
+  const { data: sessionData } = await supabase.auth.getSession();
+  const sessionUser = sessionData?.session?.user;
+  const effectiveUserId = sessionUser?.id || (userId && userId.trim() ? userId : null);
+
+  if (!effectiveUserId) {
+    throw new Error(
+      "Para participar do Quiz Bíblico e registrar pontuação no Ranking, você precisa criar uma conta gratuita."
+    );
+  }
   // Deduplicação para evitar duplicação de pontos em caso de envio duplo ou cliques repetidos
   const answersHash = answers.map((a) => `${a.questionId}:${a.selectedOriginalLetter}`).sort().join('|');
   const dedupeKey = `${userId || userDisplayName || 'anon'}_${answersHash}`;
@@ -264,9 +238,6 @@ export async function submitQuizAttempt(
     passed,
     completedAt: now,
   });
-
-  // Autenticação para persistência no banco Supabase
-  const effectiveUserId = await getEffectiveSupabaseUserId(userId);
 
   // 1. Grava no banco compartilhado na nuvem (Supabase - Bridge em questions)
   try {
@@ -402,6 +373,7 @@ export async function submitQuizAttempt(
     const nextWinRate = Math.round((nextTotalScore / (nextTotalAttempts * 10)) * 100);
 
     const payload: any = {
+      user_id: effectiveUserId,
       display_name: displayName,
       avatar_url: userAvatarUrl || currentRank?.avatar_url || null,
       best_score: nextBestScore,
@@ -412,14 +384,9 @@ export async function submitQuizAttempt(
       last_attempt_at: now,
     };
 
-    if (userId) {
-      payload.user_id = userId;
-      await (supabase as any).from('bible_quiz_rankings').upsert(payload, { onConflict: 'user_id' });
-    } else if (currentRank?.id) {
-      await (supabase as any).from('bible_quiz_rankings').update(payload).eq('id', currentRank.id);
-    } else {
-      await (supabase as any).from('bible_quiz_rankings').insert([payload]);
-    }
+    await (supabase as any)
+      .from('bible_quiz_rankings')
+      .upsert(payload, { onConflict: 'user_id' });
   } catch {}
 
   const finalResult: QuizFinalResult = {
@@ -473,6 +440,12 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
       for (const row of qData) {
         try {
           const parsed = JSON.parse(row.body);
+          const rawUserId = row.user_id || parsed.userId;
+          // REGRA DE SEGURANÇA: Somente usuários reais cadastrados aparecem no Ranking
+          if (!rawUserId || String(rawUserId).startsWith('guest_') || String(rawUserId).startsWith('user_')) {
+            continue;
+          }
+
           const displayName = (parsed.displayName || row.title.replace('[QUIZ_RANKING]', '')).trim();
           if (!displayName) continue;
 
@@ -502,7 +475,7 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
             }
           } else {
             map.set(key, {
-              userId: row.user_id || row.id || `user_${displayName}`,
+              userId: rawUserId,
               displayName,
               avatarUrl: parsed.avatarUrl || null,
               bestScore,
@@ -527,11 +500,15 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
     const { data: dedicatedRows, error: dError } = await (supabase as any)
       .from('bible_quiz_rankings')
       .select('*')
+      .not('user_id', 'is', null)
       .order('total_score', { ascending: false })
       .limit(limit);
 
     if (!dError && dedicatedRows && Array.isArray(dedicatedRows)) {
       for (const r of dedicatedRows) {
+        if (!r.user_id || String(r.user_id).startsWith('guest_') || String(r.user_id).startsWith('user_')) {
+          continue;
+        }
         const displayName = String(r.display_name || '').trim();
         if (!displayName) continue;
         const key = displayName.toLowerCase();

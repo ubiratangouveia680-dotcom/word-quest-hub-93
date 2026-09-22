@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
+import { AuthPromptModal } from "@/components/AuthPromptModal";
 import { useAuth } from "@/lib/auth-context";
 import {
   fetchPrayerRequests,
@@ -213,6 +214,25 @@ function PrayerWallPage() {
     };
   }, [isLoading, prayers]);
 
+  // Recupera rascunho de pedido de oração após login
+  useEffect(() => {
+    if (isAuthenticated) {
+      try {
+        const saved = localStorage.getItem("bo:prayer_draft");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.content) setContent(parsed.content);
+          if (parsed.verseReference) setVerseReference(parsed.verseReference);
+          if (typeof parsed.isAnonymous === "boolean") setIsAnonymous(parsed.isAnonymous);
+          setIsCreateModalOpen(true);
+          localStorage.removeItem("bo:prayer_draft");
+        }
+      } catch {
+        // Silently ignore
+      }
+    }
+  }, [isAuthenticated]);
+
   // Handle Search Submit
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,7 +242,7 @@ function PrayerWallPage() {
   // Open Create Modal
   const handleOpenCreateModal = () => {
     if (!isAuthenticated || !user) {
-      setVisitorModalMessage("Entre ou crie sua conta para publicar um pedido de oração.");
+      setVisitorModalMessage("Para publicar um pedido de oração e receber orações da comunidade, você precisa criar uma conta gratuita.");
       setIsVisitorModalOpen(true);
       return;
     }
@@ -234,6 +254,17 @@ function PrayerWallPage() {
   const handleSubmitPrayer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAuthenticated || !user) {
+      if (content.trim()) {
+        try {
+          localStorage.setItem(
+            "bo:prayer_draft",
+            JSON.stringify({ content, verseReference, isAnonymous })
+          );
+        } catch {
+          // ignore
+        }
+      }
+      setVisitorModalMessage("Para publicar um pedido de oração, você precisa criar uma conta gratuita.");
       setIsVisitorModalOpen(true);
       return;
     }
@@ -900,35 +931,14 @@ function PrayerWallPage() {
         </Dialog>
 
         {/* 5. MODAL: VISITANTE NÃO LOGADO */}
-        <Dialog open={isVisitorModalOpen} onOpenChange={setIsVisitorModalOpen}>
-          <DialogContent className="max-w-md p-6 text-center space-y-4">
-            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-gold/15 text-2xl">
-              🙏
-            </div>
-            <div className="space-y-1.5">
-              <DialogTitle className="text-lg font-display font-bold text-foreground">
-                Participe da Comunidade
-              </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                {visitorModalMessage || "Entre ou crie sua conta para interceder e compartilhar pedidos de oração."}
-              </DialogDescription>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 pt-2">
-              <Button asChild size="sm" className="font-semibold text-xs h-9">
-                <Link to="/auth">Entrar na minha conta</Link>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsVisitorModalOpen(false)}
-                className="text-xs h-9"
-              >
-                Continuar visualizando
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <AuthPromptModal
+          open={isVisitorModalOpen}
+          onOpenChange={setIsVisitorModalOpen}
+          title="Participe dos Pedidos de Oração"
+          description={visitorModalMessage || "Para interceder, orar ou publicar um pedido de oração, você precisa criar uma conta gratuita."}
+          nextUrl="/comunidade/pedidos-de-oracao"
+          icon="🙏"
+        />
 
         {/* 6. MODAL: EXCLUSÃO DE PEDIDO DE ORAÇÃO */}
         <AlertDialog open={Boolean(deletingPrayerId)} onOpenChange={(open) => !open && setDeletingPrayerId(null)}>

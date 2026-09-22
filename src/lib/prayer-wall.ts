@@ -401,6 +401,12 @@ export interface CreatePrayerInput {
 }
 
 export async function createPrayerRequest(input: CreatePrayerInput): Promise<PrayerRequest | null> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const sessionUser = sessionData?.session?.user;
+  if (!sessionUser || !input.userId || sessionUser.id !== input.userId) {
+    throw new Error("Para criar um pedido de oração, você precisa criar uma conta gratuita.");
+  }
+
   const cleanContent = sanitizeText(input.content.trim());
   if (!cleanContent || cleanContent.length < 5) {
     throw new Error("Por favor, escreva um pedido de oração com no mínimo 5 caracteres.");
@@ -567,6 +573,12 @@ export async function togglePrayerSupport(
   currentCount: number,
   authorId?: string
 ): Promise<{ prayed: boolean; count: number }> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const sessionUser = sessionData?.session?.user;
+  if (!sessionUser || !userId || sessionUser.id !== userId) {
+    throw new Error("Para se unir em oração, você precisa criar uma conta gratuita.");
+  }
+
   if (hasDedicatedTable !== false) {
     try {
       // 1. Try prayer_support table
@@ -676,6 +688,12 @@ export async function togglePrayerSupport(
 // Delete Prayer Request (Author or Admin)
 // ---------------------------------------------------------------------------
 export async function deletePrayerRequest(id: string, userId: string): Promise<boolean> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const sessionUser = sessionData?.session?.user;
+  if (!sessionUser || !userId || sessionUser.id !== userId) {
+    throw new Error("Não autorizado.");
+  }
+
   if (hasDedicatedTable !== false) {
     try {
       const { error } = await supabase
@@ -715,6 +733,11 @@ export async function reportPrayerRequest(input: {
   reporterUserId: string;
   reason: PrayerReportReason;
 }): Promise<boolean> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const sessionUser = sessionData?.session?.user;
+  if (!sessionUser || !input.reporterUserId || sessionUser.id !== input.reporterUserId) {
+    throw new Error("Para reportar um pedido, você precisa criar uma conta gratuita.");
+  }
   if (hasDedicatedTable !== false) {
     try {
       const { error } = await supabase.from("prayer_reports").insert({

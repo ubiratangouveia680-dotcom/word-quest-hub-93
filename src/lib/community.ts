@@ -582,6 +582,10 @@ export async function togglePrayer(
   userId: string,
   questionAuthorId?: string
 ): Promise<{ userHasPrayed: boolean; prayedCount: number }> {
+  if (!userId || !userId.trim()) {
+    throw new Error("Para apoiar em oração, você precisa criar uma conta gratuita.");
+  }
+
   const { data: existing } = await supabase
     .from("reactions")
     .select("id")
@@ -833,6 +837,10 @@ export async function createQuestion(params: {
   body: string;
   verseReference?: string | undefined;
 }): Promise<Question | null> {
+  if (!params.userId || !params.userId.trim()) {
+    throw new Error("Para publicar, você precisa criar uma conta gratuita.");
+  }
+
   const sanitizedBody = sanitizeText(params.body);
   const rawTitle = params.title?.trim() || "";
   const sanitizedTitle = rawTitle ? sanitizeText(rawTitle) : (sanitizedBody.slice(0, 60) + (sanitizedBody.length > 60 ? "..." : ""));
@@ -952,6 +960,10 @@ export async function createAnswer(params: {
   questionAuthorId?: string | undefined;
   parentAnswerAuthorId?: string | undefined;
 }): Promise<Answer | null> {
+  if (!params.userId || !params.userId.trim()) {
+    throw new Error("Para comentar, você precisa criar uma conta gratuita.");
+  }
+
   const sanitizedBody = sanitizeText(params.body);
   const { data, error } = await supabase
     .from("answers")
@@ -1031,6 +1043,10 @@ export async function deleteAnswer(answerId: string, questionId: string) {
 // Likes
 // ----------------------------------------------------
 export async function toggleQuestionLike(questionId: string, userId: string, questionAuthorId?: string): Promise<boolean> {
+  if (!userId || !userId.trim()) {
+    throw new Error("Para curtir uma publicação, você precisa criar uma conta gratuita.");
+  }
+
   const { data: existing } = await supabase
     .from("question_likes")
     .select("id")
@@ -1058,6 +1074,10 @@ export async function toggleQuestionLike(questionId: string, userId: string, que
 }
 
 export async function toggleAnswerLike(answerId: string, questionId: string, userId: string, answerAuthorId?: string): Promise<boolean> {
+  if (!userId || !userId.trim()) {
+    throw new Error("Para curtir um comentário, você precisa criar uma conta gratuita.");
+  }
+
   const { data: existing } = await supabase
     .from("answer_likes")
     .select("id")
@@ -1097,6 +1117,10 @@ export async function toggleReaction(params: {
   targetAuthorId?: string;
   questionId: string;
 }): Promise<boolean> {
+  if (!params.userId || !params.userId.trim()) {
+    throw new Error("Para reagir a uma publicação, você precisa criar uma conta gratuita.");
+  }
+
   const { data: existing } = await supabase
     .from("reactions")
     .select("id")

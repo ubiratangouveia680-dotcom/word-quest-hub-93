@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Copy, Heart, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useFavorites, type FavoriteKind } from "@/lib/storage";
+import { AuthPromptModal } from "@/components/AuthPromptModal";
 
 interface Props {
   id: string;
@@ -31,6 +33,7 @@ export function VerseActions({ id, kind, title, text, href, compact }: Props) {
   const { toggle, isFavorite, userId } = useFavorites();
   const fav = isFavorite(id);
   const size = compact ? "size-3.5" : "size-4";
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   return (
     <div className="flex items-center gap-0.5">
@@ -40,24 +43,11 @@ export function VerseActions({ id, kind, title, text, href, compact }: Props) {
         className={compact ? "size-7" : ""}
         aria-label={fav ? "Remover dos favoritos" : "Favoritar"}
         onClick={async () => {
-          const added = await toggle({ id, kind, title, text, href });
           if (!userId) {
-            toast.success(
-              added ? "Versículo salvo nos favoritos do navegador!" : "Removido dos favoritos",
-              {
-                description: "Crie uma conta para sincronizar seus favoritos em todos os seus dispositivos.",
-                action: {
-                  label: "Entrar",
-                  onClick: () => {
-                    window.location.href = `/auth?mode=signin&next=${encodeURIComponent(
-                      window.location.pathname + window.location.hash
-                    )}`;
-                  },
-                },
-              }
-            );
+            setAuthModalOpen(true);
             return;
           }
+          const added = await toggle({ id, kind, title, text, href });
           toast.success(added ? "Adicionado aos favoritos" : "Removido dos favoritos");
         }}
       >
@@ -84,6 +74,15 @@ export function VerseActions({ id, kind, title, text, href, compact }: Props) {
       >
         <Share2 className={size} />
       </Button>
+
+      <AuthPromptModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        title="Salve seus versículos favoritos"
+        description="Para salvar versículos e acessar sua lista personalizada em qualquer celular ou computador, crie sua conta gratuita."
+        nextUrl={typeof window !== "undefined" ? window.location.pathname + window.location.hash : href}
+        icon="❤️"
+      />
     </div>
   );
 }

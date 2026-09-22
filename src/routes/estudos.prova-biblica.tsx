@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/SiteLayout";
 import { AdBanner, AdDesktop } from "@/components/Ads";
 import { useAuth } from "@/lib/auth-context";
+import { AuthPromptModal } from "@/components/AuthPromptModal";
 import {
   fetchQuizQuestions,
   submitQuizAttempt,
@@ -144,13 +145,16 @@ function BibleQuizPage() {
     },
   });
 
-  // Modal para solicitar nome do visitante antes de salvar no ranking
-  const [guestNameModalOpen, setGuestNameModalOpen] = useState(false);
-  const [guestName, setGuestName] = useState("");
+  // Modal de prompt de autenticação
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Mutação para submeter a prova
   const submitQuizMutation = useMutation({
-    mutationFn: async (overrideName?: string) => {
+    mutationFn: async () => {
+      if (!isAuthenticated || !user?.id) {
+        throw new Error("Para participar do Quiz Bíblico, você precisa criar uma conta gratuita.");
+      }
+
       const answersArray: UserQuizAnswer[] = questions.map((q) => {
         const sel = selectedAnswers[q.id];
         return {
@@ -160,11 +164,11 @@ function BibleQuizPage() {
         };
       });
 
-      const nameToUse = overrideName || profile?.name || profile?.username || undefined;
+      const nameToUse = profile?.name || profile?.username || undefined;
 
       return await submitQuizAttempt(
         answersArray,
-        user?.id,
+        user.id,
         nameToUse,
         profile?.avatar_url
       );
@@ -176,8 +180,8 @@ function BibleQuizPage() {
       queryClient.refetchQueries({ queryKey: ["quiz-rankings"] });
       queryClient.invalidateQueries({ queryKey: ["user-quiz-stats"] });
     },
-    onError: () => {
-      toast.error("Erro ao validar o resultado da prova.");
+    onError: (err: any) => {
+      toast.error(err.message || "Erro ao validar o resultado da prova.");
       setStep("in_progress");
     },
   });
@@ -218,30 +222,29 @@ function BibleQuizPage() {
       return;
     }
 
-    // Se estiver logado, salva diretamente com a conta do usuário
-    if (isAuthenticated) {
-      setStep("submitting");
-      submitQuizMutation.mutate();
-    } else {
-      // Se não estiver logado, solicita o nome antes de finalizar
-      setGuestNameModalOpen(true);
-    }
-  };
-
-  const handleConfirmGuestName = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (submitQuizMutation.isPending || step === "submitting") return;
-    const trimmed = guestName.trim();
-    if (!trimmed) {
-      toast.warning("Por favor, digite seu nome para registrar sua pontuação no ranking.");
+    // Validação estrita: apenas usuários autenticados podem submeter e pontuar
+    if (!isAuthenticated || !user) {
+      setAuthModalOpen(true);
       return;
     }
-    setGuestNameModalOpen(false);
+
     setStep("submitting");
-    submitQuizMutation.mutate(trimmed);
+    submitQuizMutation.mutate();
+  };
+
+  const handleStartQuiz = () => {
+    if (!isAuthenticated || !user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    startQuizMutation.mutate();
   };
 
   const handleRestart = () => {
+    if (!isAuthenticated || !user) {
+      setAuthModalOpen(true);
+      return;
+    }
     startQuizMutation.mutate();
   };
 
@@ -338,19 +341,29 @@ function BibleQuizPage() {
                   </div>
 
                   {!isAuthenticated && (
-                    <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-800 dark:text-amber-300">
-                      Você pode realizar a prova gratuitamente como visitante!{" "}
-                      <Link to="/auth" className="font-semibold underline">
-                        Entre ou crie uma conta
-                      </Link>{" "}
-                      para registrar seus pontos no Ranking Bíblico.
+                    <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-muted-foreground flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+                      <div>
+                        <p className="font-semibold text-foreground">
+                          Para participar do Quiz Bíblico, você precisa criar uma conta gratuita.
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          Seus pontos serão salvos com segurança no Ranking Bíblico oficial.
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => setAuthModalOpen(true)}
+                        className="shrink-0 font-bold text-xs h-9 px-4"
+                      >
+                        Criar conta / Entrar
+                      </Button>
                     </div>
                   )}
 
                   <div className="mt-6">
                     <Button
                       size="lg"
-                      onClick={() => startQuizMutation.mutate()}
+                      onClick={handleStartQuiz}
                       disabled={startQuizMutation.isPending}
                       className="h-12 px-8 text-base font-bold shadow-md"
                     >
@@ -838,65 +851,15 @@ function BibleQuizPage() {
         )}
       </div>
 
-      {/* MODAL PARA USUÁRIO NÃO LOGADO INFORMAR O NOME PARA O RANKING */}
-      <Dialog open={guestNameModalOpen} onOpenChange={setGuestNameModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
-              <Trophy className="size-6 text-amber-500" />
-            </div>
-            <DialogTitle className="text-center font-display text-xl font-bold">
-              Registrar no Ranking Bíblico
-            </DialogTitle>
-            <DialogDescription className="text-center text-xs text-muted-foreground">
-              Parabéns por responder as 10 questões! Digite seu nome para salvar sua pontuação no quadro de honra oficial.
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleConfirmGuestName} className="space-y-4 pt-2">
-            <div>
-              <label htmlFor="guest-name" className="text-xs font-semibold text-foreground block mb-1.5">
-                Seu Nome ou Apelido
-              </label>
-              <Input
-                id="guest-name"
-                placeholder="Ex: Carlos Eduardo, Maria Silva..."
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                autoFocus
-                maxLength={40}
-                className="h-10 text-sm"
-              />
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Sua pontuação e taxa de acertos serão salvas e exibidas no ranking com esse nome.
-              </p>
-            </div>
-
-            <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setGuestNameModalOpen(false);
-                  setStep("submitting");
-                  submitQuizMutation.mutate("Participante");
-                }}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                Continuar como anônimo
-              </Button>
-              <Button
-                type="submit"
-                disabled={!guestName.trim()}
-                className="font-bold text-xs h-10 px-6 gap-1.5"
-              >
-                <Check className="size-4" /> Salvar e Ver Resultado
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* MODAL DE AUTENTICAÇÃO OBRIGATÓRIA PARA O QUIZ */}
+      <AuthPromptModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        title="Participe do Quiz Bíblico"
+        description="Para participar do Quiz Bíblico, responder perguntas e registrar sua pontuação no Ranking Oficial, você precisa criar uma conta gratuita."
+        nextUrl="/estudos/prova-biblica"
+        icon="🏆"
+      />
     </SiteLayout>
   );
 }
