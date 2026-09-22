@@ -99,9 +99,10 @@ export const registerDevicePushSubscription = createServerFn({ method: "POST" })
         .limit(1);
 
       let existingPayload: any = {};
-      if (existingRows && existingRows.length > 0) {
+      const existingRow = existingRows?.[0];
+      if (existingRow) {
         try {
-          existingPayload = JSON.parse(existingRows[0].body);
+          existingPayload = JSON.parse(existingRow.body);
         } catch {}
       }
 
@@ -129,14 +130,14 @@ export const registerDevicePushSubscription = createServerFn({ method: "POST" })
         updatedAt: now,
       };
 
-      if (existingRows && existingRows.length > 0) {
+      if (existingRow) {
         await supabase
           .from("questions")
           .update({
             body: JSON.stringify(payload),
             updated_at: now,
           })
-          .eq("id", existingRows[0].id);
+          .eq("id", existingRow.id);
       } else {
         await supabase.from("questions").insert({
           user_id: (data.userId && data.userId.includes("-")) ? data.userId : "1e481484-0dec-45d9-ae8f-c97549615b99",
@@ -178,8 +179,9 @@ export const getDeviceNotificationStatus = createServerFn({ method: "GET" })
           .eq("title", title)
           .limit(1);
 
-        if (rows && rows.length > 0) {
-          const parsed = JSON.parse(rows[0].body);
+        const firstRow = rows?.[0];
+        if (firstRow) {
+          const parsed = JSON.parse(firstRow.body);
           found = true;
           if (parsed.prayerNotificationsEnabled !== undefined) {
             prayerEnabled = Boolean(parsed.prayerNotificationsEnabled);
@@ -204,8 +206,9 @@ export const getDeviceNotificationStatus = createServerFn({ method: "GET" })
         }
 
         const { data: rows } = await query.limit(1);
-        if (rows && rows.length > 0) {
-          const parsed = JSON.parse(rows[0].body);
+        const firstRow = rows?.[0];
+        if (firstRow) {
+          const parsed = JSON.parse(firstRow.body);
           found = true;
           if (parsed.prayerNotificationsEnabled !== undefined) {
             prayerEnabled = Boolean(parsed.prayerNotificationsEnabled);
@@ -312,8 +315,9 @@ export const getPrayerNotificationPreferences = createServerFn({ method: "GET" }
         .ilike("body", `%"userId":"${userId}"%`)
         .limit(1);
 
-      if (rows && rows.length > 0) {
-        const parsed = JSON.parse(rows[0].body);
+      const firstRow = rows?.[0];
+      if (firstRow) {
+        const parsed = JSON.parse(firstRow.body);
         const isEnabled =
           parsed.prayerNotificationsEnabled !== undefined
             ? parsed.prayerNotificationsEnabled
@@ -588,7 +592,7 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
               endpoint: s.endpoint,
               p256dh: s.p256dh,
               auth: s.auth,
-              userId: s.user_id,
+              ...(s.user_id ? { userId: s.user_id } : {}),
             });
           }
         }
@@ -698,6 +702,7 @@ export const createTestInternalNotification = createServerFn({ method: "POST" })
 
     try {
       console.log("[NOTIFICATION] Criando notificação interna de teste para:", data.userId);
+      const client = getAuthenticatedClient(data.accessToken);
       let targetQId = data.prayerRequestId;
       if (!targetQId) {
         const { data: qRows } = await client.from("questions").select("id").limit(1);

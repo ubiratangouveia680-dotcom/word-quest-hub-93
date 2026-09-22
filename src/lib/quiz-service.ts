@@ -17,7 +17,11 @@ function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    const current = arr[i];
+    const replacement = arr[j];
+    if (current === undefined || replacement === undefined) continue;
+    arr[i] = replacement;
+    arr[j] = current;
   }
   return arr;
 }
@@ -77,7 +81,7 @@ export async function fetchQuizQuestions(
     const shuffled = shuffleArray(originalOptions);
 
     const options = shuffled.map((item, index) => ({
-      letter: LETTERS[index],
+      letter: LETTERS[index] ?? "A",
       text: item.text,
       originalLetter: item.originalLetter,
     }));
@@ -215,7 +219,7 @@ export async function submitQuizAttempt(
       correctAnswerText: correctText,
       isCorrect,
       explanation: q.explanation,
-      biblicalReference: q.biblical_reference,
+      ...(q.biblical_reference ? { biblicalReference: q.biblical_reference } : {}),
     });
   });
 
