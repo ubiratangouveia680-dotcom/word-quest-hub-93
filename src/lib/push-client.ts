@@ -220,7 +220,7 @@ export async function subscribeToDevicePush(options?: {
     }
 
     const subJson = sub.toJSON();
-    if (!subJson.endpoint || !subJson.keys?.p256dh || !subJson.keys?.auth) {
+    if (!subJson.endpoint || !subJson.keys?.["p256dh"] || !subJson.keys?.["auth"]) {
       return { success: false, message: "Falha ao gerar credenciais da inscrição Push." };
     }
 
@@ -245,8 +245,8 @@ export async function subscribeToDevicePush(options?: {
       userId: effectiveUserId,
       deviceId,
       endpoint: subJson.endpoint,
-      p256dh: subJson.keys.p256dh,
-      auth: subJson.keys.auth,
+      p256dh: subJson.keys["p256dh"],
+      auth: subJson.keys["auth"],
       deviceName,
       userAgent,
       prayerNotificationsEnabled: prayerVal,
@@ -270,7 +270,7 @@ export async function subscribeToDevicePush(options?: {
             body: JSON.stringify(payload),
             updated_at: new Date().toISOString(),
           })
-          .eq("id", existingRows[0].id);
+          .eq("id", existingRows[0]?.id ?? "");
         console.log("[PUSH] Subscrição atualizada no Supabase com sucesso:", title);
       } else if (effectiveUserId) {
         await supabase.from("questions").insert({
@@ -291,8 +291,8 @@ export async function subscribeToDevicePush(options?: {
         userId: effectiveUserId,
         deviceId,
         endpoint: subJson.endpoint,
-        p256dh: subJson.keys.p256dh,
-        auth: subJson.keys.auth,
+        p256dh: subJson.keys["p256dh"],
+        auth: subJson.keys["auth"],
         deviceName,
         userAgent,
         prayerNotificationsEnabled: prayerVal,
@@ -322,7 +322,7 @@ export async function subscribeToDevicePush(options?: {
  */
 export async function subscribeToPrayerPush(userId?: string): Promise<{ success: boolean; message: string }> {
   setStoredPrayerPushState(true);
-  return subscribeToDevicePush({ userId, prayerEnabled: true });
+  return subscribeToDevicePush({ ...(userId ? { userId } : {}), prayerEnabled: true });
 }
 
 /**
@@ -344,19 +344,19 @@ export async function unsubscribeFromPrayerPush(userId?: string): Promise<{ succ
           .limit(1);
 
         if (rows && rows.length > 0) {
-          const parsed = JSON.parse(rows[0].body);
+          const parsed = JSON.parse(rows[0]?.body ?? "{}");
           parsed.prayerNotificationsEnabled = false;
           parsed.updatedAt = new Date().toISOString();
-          await supabase.from("questions").update({ body: JSON.stringify(parsed) }).eq("id", rows[0].id);
+          await supabase.from("questions").update({ body: JSON.stringify(parsed) }).eq("id", rows[0]?.id ?? "");
         }
       } catch {}
     }
 
     await updateDevicePushPreferences({
       data: {
-        endpoint: sub?.endpoint,
         deviceId,
-        userId,
+        ...(sub?.endpoint ? { endpoint: sub.endpoint } : {}),
+        ...(userId ? { userId } : {}),
         prayerEnabled: false,
       },
     }).catch(() => {});
@@ -384,7 +384,7 @@ export async function unsubscribeFromPrayerPush(userId?: string): Promise<{ succ
  */
 export async function subscribeToVersePush(userId?: string): Promise<{ success: boolean; message: string }> {
   setStoredVersePushState(true);
-  return subscribeToDevicePush({ userId, verseEnabled: true });
+  return subscribeToDevicePush({ ...(userId ? { userId } : {}), verseEnabled: true });
 }
 
 /**
@@ -406,19 +406,19 @@ export async function unsubscribeFromVersePush(userId?: string): Promise<{ succe
           .limit(1);
 
         if (rows && rows.length > 0) {
-          const parsed = JSON.parse(rows[0].body);
+          const parsed = JSON.parse(rows[0]?.body ?? "{}");
           parsed.dailyVerseNotificationsEnabled = false;
           parsed.updatedAt = new Date().toISOString();
-          await supabase.from("questions").update({ body: JSON.stringify(parsed) }).eq("id", rows[0].id);
+          await supabase.from("questions").update({ body: JSON.stringify(parsed) }).eq("id", rows[0]?.id ?? "");
         }
       } catch {}
     }
 
     await updateDevicePushPreferences({
       data: {
-        endpoint: sub?.endpoint,
         deviceId,
-        userId,
+        ...(sub?.endpoint ? { endpoint: sub.endpoint } : {}),
+        ...(userId ? { userId } : {}),
         verseEnabled: false,
       },
     }).catch(() => {});
@@ -449,9 +449,9 @@ export async function checkDeviceNotificationStatus(userId?: string): Promise<{
 
     const res = await getDeviceNotificationStatus({
       data: {
-        endpoint: sub?.endpoint,
         deviceId,
-        userId,
+        ...(sub?.endpoint ? { endpoint: sub.endpoint } : {}),
+        ...(userId ? { userId } : {}),
       },
     });
 
@@ -487,15 +487,15 @@ export async function testPrayerPush(userId?: string): Promise<{ success: boolea
     }
 
     const subJson = sub?.toJSON();
-    if (!subJson?.endpoint || !subJson?.keys?.p256dh || !subJson?.keys?.auth) {
+    if (!subJson?.endpoint || !subJson?.keys?.["p256dh"] || !subJson?.keys?.["auth"]) {
       return { success: false, message: "Inscrição de push não encontrada para teste." };
     }
 
     return await sendTestPushToDevice({
       data: {
         endpoint: subJson.endpoint,
-        p256dh: subJson.keys.p256dh,
-        auth: subJson.keys.auth,
+        p256dh: subJson.keys["p256dh"],
+        auth: subJson.keys["auth"],
       },
     });
   } catch (err: any) {
@@ -523,15 +523,15 @@ export async function testDailyVersePush(userId?: string): Promise<{ success: bo
     }
 
     const subJson = sub?.toJSON();
-    if (!subJson?.endpoint || !subJson?.keys?.p256dh || !subJson?.keys?.auth) {
+    if (!subJson?.endpoint || !subJson?.keys?.["p256dh"] || !subJson?.keys?.["auth"]) {
       return { success: false, message: "Inscrição de push não encontrada para teste." };
     }
 
     return await sendTestVersePushToDevice({
       data: {
         endpoint: subJson.endpoint,
-        p256dh: subJson.keys.p256dh,
-        auth: subJson.keys.auth,
+        p256dh: subJson.keys["p256dh"],
+        auth: subJson.keys["auth"],
       },
     });
   } catch (err: any) {

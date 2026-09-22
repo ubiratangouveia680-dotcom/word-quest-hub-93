@@ -204,7 +204,7 @@ export function subscribeToUserNotifications(
       },
       (payload) => {
         if (payload.eventType === "INSERT") {
-          console.log(`[NOTIFICATION REALTIME] INSERT recebido: ${payload.new?.id || "desconhecido"}`);
+          console.log(`[NOTIFICATION REALTIME] INSERT recebido: ${payload.new?.["id"] || "desconhecido"}`);
         }
         onNotificationChange(payload);
       }
@@ -250,10 +250,10 @@ export async function dispatchPrayerNotificationFallback(
     await notifyNewPrayerRequest({
       data: {
         authorId,
-        authorName,
         prayerRequestId: prayerId,
         content: prayerContent || "",
-        accessToken: token,
+        ...(authorName ? { authorName } : {}),
+        ...(token ? { accessToken: token } : {}),
       },
     });
   } catch (err) {

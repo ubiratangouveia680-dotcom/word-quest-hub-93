@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/cron/daily-verse")({
         }
 
         try {
-          const result = await dispatchDailyVersePush({ force: false });
+          const result = await dispatchDailyVersePush({ data: { force: false } });
           return new Response(JSON.stringify(result), {
             status: 200,
             headers: { "Content-Type": "application/json" },
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/cron/daily-verse")({
         }
 
         try {
-          const result = await dispatchDailyVersePush({ force: true });
+          const result = await dispatchDailyVersePush({ data: { force: true } });
           return new Response(JSON.stringify(result), {
             status: 200,
             headers: { "Content-Type": "application/json" },

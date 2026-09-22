@@ -302,7 +302,7 @@ export function BibleMaterialsAdminSection() {
                     setEditingMaterial({
                       ...editingMaterial,
                       title,
-                      slug: editingMaterial.id ? editingMaterial.slug : slugify(title),
+                      slug: editingMaterial.id ? (editingMaterial.slug ?? "") : slugify(title),
                     });
                   }}
                   placeholder="Ex: A Armadura de Deus: Firmeza Espiritual"
@@ -677,11 +677,12 @@ export function BibleMaterialsAdminSection() {
                         <Link
                           to={
                             item.type === "escola-dominical"
-                              ? `/estudos/escola-dominical/${item.slug}`
+                              ? "/estudos/escola-dominical/$slug"
                               : item.type === "apostila"
-                              ? `/estudos/apostilas/${item.slug}`
-                              : `/estudos/${item.slug}`
+                              ? "/estudos/apostilas/$slug"
+                              : "/estudos/$slug"
                           }
+                          params={{ slug: item.slug }}
                           target="_blank"
                           title="Visualizar no site"
                         >
