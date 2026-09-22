@@ -19,8 +19,8 @@ import {
 import {
   isPushNotificationSupported,
   getNotificationPermission,
-  requestNotificationPermission,
-} from "@/lib/notifications";
+  subscribeToPrayerPush,
+} from "@/lib/push-client";
 import {
   registerDevicePushSubscription,
   notifyPrayerSupportInteraction,
@@ -178,29 +178,38 @@ function PrayerWallPage() {
     loadPrayers(true);
   }, [filter, activeSearch, user?.id]);
 
-  // Trata hash navigation (#prayer-ID) para rolar até o pedido referenciado pela notificação
+  // Trata hash navigation (#prayer-ID) ou query param (?id=ID) para rolar até o pedido referenciado pela notificação
   useEffect(() => {
-    const handleHash = () => {
+    const handleTargetPrayer = () => {
       const hash = window.location.hash;
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryId = urlParams.get("id");
+      let targetId: string | null = null;
+
       if (hash && hash.startsWith("#prayer-")) {
-        const targetId = hash.replace("#prayer-", "");
+        targetId = hash.replace("#prayer-", "");
+      } else if (queryId) {
+        targetId = queryId;
+      }
+
+      if (targetId) {
         setHighlightedPrayerId(targetId);
         setTimeout(() => {
           const el = document.getElementById(`prayer-${targetId}`);
           if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "center" });
           }
-        }, 150);
+        }, 200);
       }
     };
 
     if (!isLoading && prayers.length > 0) {
-      handleHash();
+      handleTargetPrayer();
     }
 
-    window.addEventListener("hashchange", handleHash);
+    window.addEventListener("hashchange", handleTargetPrayer);
     return () => {
-      window.removeEventListener("hashchange", handleHash);
+      window.removeEventListener("hashchange", handleTargetPrayer);
     };
   }, [isLoading, prayers]);
 
@@ -258,8 +267,16 @@ function PrayerWallPage() {
       setIsSubmitting(true);
       setFormError("");
 
+      const authorName = isAnonymous
+        ? "Pedido anônimo"
+        : user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email?.split("@")[0] ||
+          "Irmão(ã) em Cristo";
+
       const created = await createPrayerRequest({
         userId: user.id,
+        authorName,
         content: cleanContent,
         verseReference: verseReference.trim() || undefined,
         isAnonymous,
@@ -412,43 +429,16 @@ function PrayerWallPage() {
 
     try {
       setIsActivatingPush(true);
-      const perm = await requestNotificationPermission();
+      const success = await subscribeToPrayerPush(user?.id);
+      const perm = getNotificationPermission();
       setPermissionStatus(perm);
 
-      if (perm === "granted") {
-        toast.success("Notificações ativadas com sucesso!");
-
-        // Try registering this browser/device endpoint if user is logged in
-        if (user?.id && "serviceWorker" in navigator) {
-          try {
-            const reg = await navigator.serviceWorker.ready;
-            const sub = await reg.pushManager.getSubscription();
-            if (sub) {
-              const rawKey = sub.getKey ? sub.getKey("p256dh") : null;
-              const rawAuth = sub.getKey ? sub.getKey("auth") : null;
-              const p256dh = rawKey
-                ? btoa(String.fromCharCode(...new Uint8Array(rawKey)))
-                : "";
-              const auth = rawAuth
-                ? btoa(String.fromCharCode(...new Uint8Array(rawAuth)))
-                : "";
-
-              if (sub.endpoint && p256dh && auth) {
-                await registerDevicePushSubscription({
-                  data: {
-                    userId: user.id,
-                    endpoint: sub.endpoint,
-                    p256dh,
-                    auth,
-                    userAgent: navigator.userAgent,
-                  },
-                });
-              }
-            }
-          } catch {}
-        }
+      if (success) {
+        toast.success("Notificações push ativadas com sucesso neste aparelho!");
       } else if (perm === "denied") {
-        toast.info("As notificações foram bloqueadas nas permissões do navegador.");
+        toast.error("Notificações bloqueadas no navegador. Para ativar, libere as permissões nas configurações do site no seu navegador.");
+      } else {
+        toast.info("Permissão não concedida ou serviço indisponível.");
       }
     } catch {
       toast.error("Não foi possível ativar as notificações.");

@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeText, formatRelativeDate, isQuizInternalRecord } from "@/lib/community";
 import { dispatchPrayerNotificationFallback } from "@/lib/user-notifications";
+import { notifyNewPrayerRequest } from "@/lib/push.functions";
 
 export interface PrayerRequest {
   id: string;
@@ -396,6 +397,7 @@ export interface CreatePrayerInput {
   content: string;
   verseReference?: string | undefined;
   isAnonymous?: boolean | undefined;
+  authorName?: string | undefined;
 }
 
 export async function createPrayerRequest(input: CreatePrayerInput): Promise<PrayerRequest | null> {
@@ -420,6 +422,9 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
 
   const isAnon = Boolean(input.isAnonymous);
   const cleanVerse = input.verseReference ? sanitizeText(input.verseReference.trim()) : null;
+  const authorDisplayName = isAnon
+    ? "Alguém da comunidade"
+    : (input.authorName && input.authorName.trim() ? input.authorName.trim() : "Irmão(ã)");
 
   if (hasDedicatedTable !== false) {
     try {
@@ -442,6 +447,17 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
         hasDedicatedTable = true;
         recordPrayerTimestamp(input.userId);
         dispatchPrayerNotificationFallback(data.id, input.userId).catch(() => {});
+
+        // Disparo de Web Push nativo para os outros dispositivos cadastrados
+        notifyNewPrayerRequest({
+          data: {
+            authorId: input.userId,
+            authorName: authorDisplayName,
+            prayerRequestId: data.id,
+            content: cleanContent,
+          },
+        }).catch((pushErr) => console.warn("notifyNewPrayerRequest error:", pushErr));
+
         return {
           id: data.id,
           user_id: data.user_id,
@@ -453,7 +469,7 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
           prayed_count: 0,
           created_at: data.created_at,
           updated_at: data.updated_at,
-          author_name: isAnon ? "Pedido anônimo" : null,
+          author_name: isAnon ? "Pedido anônimo" : authorDisplayName,
           user_has_prayed: false,
         };
       }
@@ -487,6 +503,17 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
     if (!qError && qData) {
       recordPrayerTimestamp(input.userId);
       dispatchPrayerNotificationFallback(qData.id, input.userId).catch(() => {});
+
+      // Disparo de Web Push nativo para os outros dispositivos cadastrados
+      notifyNewPrayerRequest({
+        data: {
+          authorId: input.userId,
+          authorName: authorDisplayName,
+          prayerRequestId: qData.id,
+          content: cleanContent,
+        },
+      }).catch((pushErr) => console.warn("notifyNewPrayerRequest error:", pushErr));
+
       return {
         id: qData.id,
         user_id: qData.user_id,
@@ -498,7 +525,7 @@ export async function createPrayerRequest(input: CreatePrayerInput): Promise<Pra
         prayed_count: 0,
         created_at: qData.created_at,
         updated_at: qData.updated_at,
-        author_name: isAnon ? "Pedido anônimo" : null,
+        author_name: isAnon ? "Pedido anônimo" : authorDisplayName,
         user_has_prayed: false,
       };
     }

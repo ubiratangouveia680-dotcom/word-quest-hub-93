@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   Settings,
   Bell,
+  HeartHandshake,
   User,
   Shield,
   Palette,
@@ -46,6 +47,16 @@ import {
   DEFAULT_NOTIFICATION_SETTINGS,
   type VerseNotificationSettings,
 } from "@/lib/notifications";
+import {
+  subscribeToPrayerPush,
+  unsubscribeFromPrayerPush,
+  testPrayerPush,
+  getActivePushSubscription,
+} from "@/lib/push-client";
+import {
+  getPrayerNotificationPreferences,
+  savePrayerNotificationPreferences,
+} from "@/lib/push.functions";
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/configuracoes")({
@@ -77,6 +88,11 @@ function SettingsPage() {
   const [permissionStatus, setPermissionStatus] = useState<string>("default");
   const [hasNotificationSupport, setHasNotificationSupport] = useState(false);
 
+  // Notificações de Pedidos de Oração
+  const [prayerPushEnabled, setPrayerPushEnabled] = useState(true);
+  const [isSubscribingPrayerPush, setIsSubscribingPrayerPush] = useState(false);
+  const [isTestingPrayerPush, setIsTestingPrayerPush] = useState(false);
+
   // Exclusão de conta
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
@@ -93,6 +109,23 @@ function SettingsPage() {
     fetchNotificationSettings(user?.id).then((settings) => {
       setNotifSettings(settings);
     });
+
+    // Carrega status da subscrição de push de pedidos de oração
+    getActivePushSubscription().then((sub) => {
+      if (sub) {
+        setPrayerPushEnabled(true);
+      }
+    });
+
+    if (user?.id) {
+      getPrayerNotificationPreferences({ data: { userId: user.id } })
+        .then((pref) => {
+          if (pref) {
+            setPrayerPushEnabled(pref.enabled);
+          }
+        })
+        .catch(() => {});
+    }
   }, [user?.id]);
 
   const updateNotifField = (updates: Partial<VerseNotificationSettings>) => {
@@ -138,6 +171,59 @@ function SettingsPage() {
       toast.error("Erro ao emitir notificação de teste.");
     } finally {
       setIsTestingNotif(false);
+    }
+  };
+
+  // Toggle Push de Pedidos de Oração
+  const handleTogglePrayerPush = async (checked: boolean) => {
+    setIsSubscribingPrayerPush(true);
+    try {
+      if (checked) {
+        const ok = await subscribeToPrayerPush(user?.id);
+        const perm = getNotificationPermission();
+        setPermissionStatus(perm);
+
+        if (ok) {
+          setPrayerPushEnabled(true);
+          await savePrayerNotificationPreferences({
+            data: { userId: user?.id, enabled: true, allRequests: true },
+          }).catch(() => {});
+          toast.success("Notificações push de pedidos de oração ativadas!");
+        } else if (perm === "denied") {
+          toast.error("Notificações bloqueadas nas permissões do navegador.");
+          setPrayerPushEnabled(false);
+        } else {
+          toast.info("Permissão não concedida ou serviço push indisponível.");
+          setPrayerPushEnabled(false);
+        }
+      } else {
+        await unsubscribeFromPrayerPush(user?.id).catch(() => {});
+        await savePrayerNotificationPreferences({
+          data: { userId: user?.id, enabled: false, allRequests: false },
+        }).catch(() => {});
+        setPrayerPushEnabled(false);
+        toast.info("Notificações de pedidos de oração desativadas.");
+      }
+    } catch {
+      toast.error("Erro ao atualizar preferências de notificações push.");
+    } finally {
+      setIsSubscribingPrayerPush(false);
+    }
+  };
+
+  const handleTestPrayerPush = async () => {
+    setIsTestingPrayerPush(true);
+    try {
+      const res = await testPrayerPush(user?.id);
+      if (res.success) {
+        toast.success("Notificação push de teste enviada com sucesso! Verifique sua barra do sistema.");
+      } else {
+        toast.error(res.error || "Não foi possível emitir a notificação push de teste.");
+      }
+    } catch {
+      toast.error("Erro ao disparar teste de notificação push.");
+    } finally {
+      setIsTestingPrayerPush(false);
     }
   };
 
@@ -334,7 +420,84 @@ function SettingsPage() {
           </div>
         </section>
 
-        {/* 2. SEÇÃO DE APARÊNCIA E LEITURA */}
+        {/* 2. SEÇÃO DE NOTIFICAÇÕES DE PEDIDOS DE ORAÇÃO */}
+        <section className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-5">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <HeartHandshake className="size-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Pedidos de Oração (Notificações Push)</h2>
+                <p className="text-xs text-muted-foreground">
+                  Receba uma notificação no seu aparelho sempre que um irmão publicar um novo pedido de oração para intercessão.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {prayerPushEnabled ? "Ativado" : "Desativado"}
+              </span>
+              <Switch
+                checked={prayerPushEnabled}
+                disabled={isSubscribingPrayerPush}
+                onCheckedChange={handleTogglePrayerPush}
+              />
+            </div>
+          </div>
+
+          {/* Status do Navegador / Aparelho */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg bg-accent/40 p-3.5 border border-border/60 text-xs">
+            <div className="flex items-center gap-2">
+              <span
+                className={`size-2.5 rounded-full ${
+                  permissionStatus === "granted" && prayerPushEnabled ? "bg-emerald-500" : "bg-amber-500"
+                }`}
+              />
+              <span>
+                {!hasNotificationSupport
+                  ? "Seu navegador não suporta Notificações Push nativas."
+                  : permissionStatus === "granted"
+                  ? prayerPushEnabled
+                    ? "Notificações push prontas e ativas para este aparelho."
+                    : "Permissão concedida no navegador; ligue a chave acima para receber."
+                  : "Permissão necessária no aparelho para receber avisos na barra do sistema."}
+              </span>
+            </div>
+            {hasNotificationSupport && (
+              <div className="flex items-center gap-2">
+                {permissionStatus !== "granted" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleTogglePrayerPush(true)}
+                    disabled={isSubscribingPrayerPush}
+                    className="h-8 text-xs"
+                  >
+                    {isSubscribingPrayerPush ? "Ativando..." : "Permitir no Aparelho"}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleTestPrayerPush}
+                    disabled={isTestingPrayerPush}
+                    className="h-8 text-xs text-primary font-medium"
+                  >
+                    {isTestingPrayerPush ? "Enviando push..." : "Testar no Meu Aparelho"}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <p className="text-[11px] text-muted-foreground">
+            ℹ️ As notificações push aparecem na barra/central do Android, Windows ou macOS mesmo quando o site estiver fechado. Seus próprios pedidos nunca geram notificações para você.
+          </p>
+        </section>
+
+        {/* 3. SEÇÃO DE APARÊNCIA E LEITURA */}
         <section className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-5">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10 text-primary">
