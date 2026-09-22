@@ -257,20 +257,25 @@ function SettingsPage() {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
       const res = await createTestInternalNotification({
-        data: { userId: user.id, accessToken: token },
+        data: { userId: user.id, ...(token ? { accessToken: token } : {}) },
       });
 
       if (res.success) {
         toast.success("Notificação interna de teste criada com sucesso! Veja o Sininho 🔔 aumentar no topo do site.");
       } else {
         // Fallback resiliente direto no cliente autenticado
-        const { error: directErr } = await supabase.from("notifications").insert({
-          user_id: user.id,
-          actor_id: user.id,
-          type: "reaction",
-          read: false,
-          message: "🙏 Teste do Sininho: Uma nova oração foi compartilhada na comunidade da Bíblia Online.",
-        });
+        const { data: questions } = await supabase.from("questions").select("id").limit(1);
+        const questionId = questions?.[0]?.id;
+        const directErr = questionId
+          ? (await supabase.from("notifications").insert({
+              user_id: user.id,
+              actor_id: user.id,
+              question_id: questionId,
+              type: "reaction",
+              read: false,
+              message: "🙏 Teste do Sininho: Uma nova oração foi compartilhada na comunidade da Bíblia Online.",
+            })).error
+          : new Error("Nenhum tópico disponível para associar à notificação.");
 
         if (directErr) {
           toast.error("Falha ao criar notificação interna: " + directErr.message);

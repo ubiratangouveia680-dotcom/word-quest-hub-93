@@ -706,9 +706,7 @@ export const createTestInternalNotification = createServerFn({ method: "POST" })
       let targetQId = data.prayerRequestId;
       if (!targetQId) {
         const { data: qRows } = await client.from("questions").select("id").limit(1);
-        if (qRows && qRows.length > 0) {
-          targetQId = qRows[0].id;
-        }
+        targetQId = qRows?.[0]?.id;
       }
 
       if (!targetQId) {

@@ -155,13 +155,14 @@ function BibleQuizPage() {
         throw new Error("Para participar do Quiz Bíblico, você precisa criar uma conta gratuita.");
       }
 
-      const answersArray: UserQuizAnswer[] = questions.map((q) => {
+      const answersArray: UserQuizAnswer[] = questions.flatMap((q) => {
         const sel = selectedAnswers[q.id];
-        return {
+        if (!sel) return [];
+        return [{
           questionId: q.id,
           selectedLetter: sel.letter,
           selectedOriginalLetter: sel.originalLetter,
-        };
+        }];
       });
 
       const nameToUse = profile?.name || profile?.username || undefined;

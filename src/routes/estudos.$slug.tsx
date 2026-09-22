@@ -274,11 +274,12 @@ function StudyPage() {
                     key={s.id || s.slug}
                     to={
                       s.type === "escola-dominical"
-                        ? `/estudos/escola-dominical/${s.slug}`
+                        ? "/estudos/escola-dominical/$slug"
                         : s.type === "apostila"
-                        ? `/estudos/apostilas/${s.slug}`
-                        : `/estudos/${s.slug}`
+                        ? "/estudos/apostilas/$slug"
+                        : "/estudos/$slug"
                     }
+                    params={{ slug: s.slug }}
                     className="group rounded-xl border border-border bg-card p-4 text-sm transition-all hover:border-primary/50 hover:shadow-sm"
                   >
                     <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
