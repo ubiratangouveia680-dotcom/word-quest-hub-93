@@ -253,11 +253,29 @@ function SettingsPage() {
     }
     setIsTestingInternalNotif(true);
     try {
-      const res = await createTestInternalNotification({ data: { userId: user.id } });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await createTestInternalNotification({
+        data: { userId: user.id, accessToken: token },
+      });
+
       if (res.success) {
         toast.success("Notificação interna de teste criada com sucesso! Veja o Sininho 🔔 aumentar no topo do site.");
       } else {
-        toast.error("Falha ao criar notificação interna: " + (res.message || "Erro"));
+        // Fallback resiliente direto no cliente autenticado
+        const { error: directErr } = await supabase.from("notifications").insert({
+          user_id: user.id,
+          actor_id: user.id,
+          type: "reaction",
+          read: false,
+          message: "🙏 Teste do Sininho: Uma nova oração foi compartilhada na comunidade da Bíblia Online.",
+        });
+
+        if (directErr) {
+          toast.error("Falha ao criar notificação interna: " + directErr.message);
+        } else {
+          toast.success("Notificação interna de teste criada com sucesso! Veja o Sininho 🔔 aumentar no topo do site.");
+        }
       }
     } catch (e: any) {
       toast.error("Erro ao testar sininho: " + e.message);

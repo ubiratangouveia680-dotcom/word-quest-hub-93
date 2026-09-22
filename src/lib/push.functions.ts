@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import webPush from "web-push";
 import { getDailyRef } from "@/lib/daily-verse";
 
@@ -583,17 +584,31 @@ export const notifyNewPrayerRequest = createServerFn({ method: "POST" })
     return { success: true, pushedDevices: dispatchedCount };
   });
 
+function getAuthenticatedClient(accessToken?: string) {
+  if (!accessToken) return supabase;
+  const url = process.env["SUPABASE_URL"] || "https://nuhbvfbdvzgopoiyyivd.supabase.co";
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"] || "sb_publishable_Zgl_ywSofomOkLX7O1bv9g_OS_nT9Qm";
+  return createClient(url, key, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // 9.1 Test Internal Notification Generator (Sininho 🔔)
 // ---------------------------------------------------------------------------
 export const createTestInternalNotification = createServerFn({ method: "POST" })
-  .validator((payload: { userId: string; prayerRequestId?: string }) => payload)
+  .validator((payload: { userId: string; prayerRequestId?: string; accessToken?: string }) => payload)
   .handler(async ({ data }) => {
     if (!data.userId) throw new Error("Usuário não identificado.");
 
     try {
       console.log("[NOTIFICATION] Criando notificação interna de teste para:", data.userId);
-      const { error } = await supabase.from("notifications").insert({
+      const client = getAuthenticatedClient(data.accessToken);
+      const { error } = await client.from("notifications").insert({
         user_id: data.userId,
         actor_id: data.userId,
         type: "reaction",

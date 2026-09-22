@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useGlobalOnlinePresence } from "@/lib/presence";
+import { dispatchPrayerNotificationFallback } from "@/lib/user-notifications";
+import { notifyNewPrayerRequest } from "@/lib/push.functions";
 
 // Curated Christian reactions
 export const CHRISTIAN_REACTIONS = [
@@ -882,6 +884,25 @@ export async function createQuestion(params: {
     console.error("Error creating question:", error);
     throw error;
   }
+
+  // Disparo automático de notificações para pedidos de oração criados via mural
+  if (data && categoryId === "oracao") {
+    // 1. Notificações internas no banco para o sininho de todos os outros usuários
+    dispatchPrayerNotificationFallback(data.id, params.userId, undefined, sanitizedBody).catch((err) =>
+      console.warn("[NOTIFICATION] Erro ao disparar fallback na comunidade:", err)
+    );
+
+    // 2. Disparo de Web Push nativo para os outros dispositivos cadastrados
+    notifyNewPrayerRequest({
+      data: {
+        authorId: params.userId,
+        authorName: "Alguém da comunidade",
+        prayerRequestId: data.id,
+        content: sanitizedBody,
+      },
+    }).catch((pushErr) => console.warn("[PUSH] notifyNewPrayerRequest error na comunidade:", pushErr));
+  }
+
   return data;
 }
 
