@@ -204,6 +204,8 @@ function BibleQuizPage() {
   };
 
   const handleSubmit = () => {
+    if (submitQuizMutation.isPending || step === "submitting") return;
+
     if (!currentSelected) {
       toast.warning("Por favor, selecione a resposta da última questão.");
       return;
@@ -228,6 +230,7 @@ function BibleQuizPage() {
 
   const handleConfirmGuestName = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (submitQuizMutation.isPending || step === "submitting") return;
     const trimmed = guestName.trim();
     if (!trimmed) {
       toast.warning("Por favor, digite seu nome para registrar sua pontuação no ranking.");
@@ -506,14 +509,29 @@ function BibleQuizPage() {
                     )}
                   </div>
 
-                  <h2 className="mt-4 font-display text-2xl sm:text-3xl font-bold text-foreground">
-                    {finalResult.passed ? "🎉 PARABÉNS, VOCÊ FOI APROVADO!" : "CONTINUE ESTUDANDO!"}
+                  <h2
+                    className={`mt-4 font-display text-2xl sm:text-3xl font-bold tracking-tight ${
+                      finalResult.passed
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-rose-600 dark:text-rose-400"
+                    }`}
+                  >
+                    {finalResult.passed ? "APROVADO" : "NÃO APROVADO"}
                   </h2>
 
-                  <p className="mt-2 text-base text-muted-foreground">
+                  <div className="mt-3 space-y-1.5">
+                    <p className="text-lg sm:text-xl font-bold text-foreground">
+                      Você acertou {finalResult.score} de 10 perguntas
+                    </p>
+                    <p className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                      Pontuação desta rodada: +{finalResult.score} {finalResult.score === 1 ? "ponto" : "pontos"}
+                    </p>
+                  </div>
+
+                  <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
                     {finalResult.passed
-                      ? "Excelente desempenho! Você demonstrou sólido conhecimento das Escrituras."
-                      : "Não desanime! A leitura constante da Palavra de Deus fortalece a memória e a fé."}
+                      ? "Excelente desempenho! Sua pontuação desta rodada foi somada à sua pontuação total no Ranking."
+                      : "Continue praticando! Mesmo não aprovado nesta tentativa, seus acertos foram somados ao seu total no Ranking."}
                   </p>
 
                   {/* CARDS DE ESTATÍSTICA DO RESULTADO */}
@@ -544,10 +562,10 @@ function BibleQuizPage() {
                         className={`block text-xs font-bold uppercase mt-2 ${
                           finalResult.passed
                             ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-amber-600 dark:text-amber-400"
+                            : "text-rose-600 dark:text-rose-400"
                         }`}
                       >
-                        {finalResult.passed ? "Aprovado" : "Reprovado"}
+                        {finalResult.passed ? "APROVADO" : "NÃO APROVADO"}
                       </span>
                       <span className="text-[11px] text-muted-foreground">Resultado</span>
                     </div>
@@ -685,7 +703,7 @@ function BibleQuizPage() {
                     Quadro de Honra — Ranking Bíblico
                   </h2>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Classificação oficial dos participantes pelo número máximo de acertos e aproveitamento.
+                    Classificação oficial dos participantes pela maior pontuação total acumulada. A cada quiz realizado, os pontos conquistados são somados ao ranking.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -725,9 +743,9 @@ function BibleQuizPage() {
                     <tr>
                       <th className="p-3 w-12 text-center">Pos.</th>
                       <th className="p-3">Participante</th>
-                      <th className="p-3 text-center">Maior Pontuação</th>
+                      <th className="p-3 text-center">Pontuação Total</th>
+                      <th className="p-3 text-center">Quizzes Aprovados</th>
                       <th className="p-3 text-center">Provas Feitas</th>
-                      <th className="p-3 text-center">Aprovações</th>
                       <th className="p-3 text-right">Aproveitamento</th>
                     </tr>
                   </thead>
@@ -789,16 +807,18 @@ function BibleQuizPage() {
                               </div>
                             </td>
 
-                            <td className="p-3 text-center font-bold text-emerald-600 dark:text-emerald-400">
-                              {r.bestScore} / 10
-                            </td>
-
-                            <td className="p-3 text-center text-muted-foreground">
-                              {r.totalAttempts}
+                            <td className="p-3 text-center font-bold text-foreground">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold text-xs sm:text-sm">
+                                {r.totalScore} {r.totalScore === 1 ? "ponto" : "pontos"}
+                              </span>
                             </td>
 
                             <td className="p-3 text-center text-muted-foreground">
                               {r.passedAttempts}
+                            </td>
+
+                            <td className="p-3 text-center text-muted-foreground">
+                              {r.totalAttempts}
                             </td>
 
                             <td className="p-3 text-right font-bold text-primary">

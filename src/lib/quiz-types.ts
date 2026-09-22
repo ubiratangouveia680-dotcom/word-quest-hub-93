@@ -70,8 +70,10 @@ export interface QuizRankingItem {
   totalAttempts: number;
   passedAttempts: number;
   totalScore: number;
-  winRate: number; // percentual de acertos ou aprovações
+  totalCorrectAnswers?: number;
+  winRate: number; // percentual de aproveitamento
   lastAttemptAt: string;
+  firstScoreAt?: string;
 }
 
 // Estatísticas pessoais do usuário

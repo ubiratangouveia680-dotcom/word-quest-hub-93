@@ -101,6 +101,9 @@ export async function fetchQuizQuestions(
 // Helper para manter histórico pessoal de tentativas localmente (apenas para estatísticas do próprio dispositivo)
 const LOCAL_ATTEMPTS_KEY = 'bo:quiz_attempts';
 
+// Cache em memória para evitar duplicações por duplo clique ou requisições paralelas
+const recentSubmissionsCache = new Map<string, { result: QuizFinalResult; timestamp: number }>();
+
 function saveLocalAttempt(attempt: any) {
   if (typeof window === 'undefined') return;
   try {
@@ -160,6 +163,14 @@ export async function submitQuizAttempt(
   userDisplayName?: string,
   userAvatarUrl?: string | null
 ): Promise<QuizFinalResult> {
+  // Deduplicação para evitar duplicação de pontos em caso de envio duplo ou cliques repetidos
+  const answersHash = answers.map((a) => `${a.questionId}:${a.selectedOriginalLetter}`).sort().join('|');
+  const dedupeKey = `${userId || userDisplayName || 'anon'}_${answersHash}`;
+  const cached = recentSubmissionsCache.get(dedupeKey);
+  if (cached && Date.now() - cached.timestamp < 10000) {
+    return cached.result;
+  }
+
   const questionIds = answers.map((a) => a.questionId);
 
   // Busca as questões completas com gabarito
@@ -277,22 +288,31 @@ export async function submitQuizAttempt(
         } catch {}
 
         const prevBest = Number(prevBody.bestScore ?? prevBody.score ?? 0);
+        const prevTotalScore = Number(prevBody.totalScore ?? prevBest ?? 0);
+        const prevTotalAttempts = Number(prevBody.totalAttempts ?? 0);
+        const prevPassedAttempts = Number(prevBody.passedAttempts ?? 0);
+        const prevTotalCorrect = Number(prevBody.totalCorrectAnswers ?? prevTotalScore ?? 0);
+        const firstScoreAt = prevBody.firstScoreAt || (existingRecord as any).created_at || now;
+
         const newBestScore = Math.max(prevBest, score);
-        const newTotalAttempts = Number(prevBody.totalAttempts || 1) + 1;
-        const newPassedAttempts = Number(prevBody.passedAttempts || 0) + (passed ? 1 : 0);
-        const newTotalScore = Number(prevBody.totalScore || prevBest) + score;
-        const newWinRate = Math.round((newTotalScore / (newTotalAttempts * 10)) * 100);
+        const newTotalAttempts = prevTotalAttempts + 1;
+        const newPassedAttempts = prevPassedAttempts + (passed ? 1 : 0);
+        const newTotalScore = prevTotalScore + score; // Pontuação acumulativa: cada tentativa gera pontos que somam ao TOTAL
+        const newTotalCorrect = prevTotalCorrect + score;
+        const newWinRate = Math.round((newTotalCorrect / (newTotalAttempts * 10)) * 100);
 
         const updatedPayload = {
           displayName,
           avatarUrl: userAvatarUrl || prevBody.avatarUrl || null,
           bestScore: newBestScore,
-          score,
+          score, // pontuação da rodada atual
           totalAttempts: newTotalAttempts,
           passedAttempts: newPassedAttempts,
           totalScore: newTotalScore,
+          totalCorrectAnswers: newTotalCorrect,
           winRate: newWinRate,
           lastAttemptAt: now,
+          firstScoreAt,
           userId: effectiveUserId,
         };
 
@@ -308,12 +328,14 @@ export async function submitQuizAttempt(
           displayName,
           avatarUrl: userAvatarUrl || null,
           bestScore: score,
-          score,
+          score, // pontuação da rodada atual
           totalAttempts: 1,
           passedAttempts: passed ? 1 : 0,
           totalScore: score,
+          totalCorrectAnswers: score,
           winRate: Math.round((score / 10) * 100),
           lastAttemptAt: now,
+          firstScoreAt: now,
           userId: effectiveUserId,
         };
 
@@ -400,7 +422,7 @@ export async function submitQuizAttempt(
     }
   } catch {}
 
-  return {
+  const finalResult: QuizFinalResult = {
     attemptId,
     score,
     totalQuestions,
@@ -410,18 +432,28 @@ export async function submitQuizAttempt(
     questions: resultItems,
     completedAt: now,
   };
+
+  recentSubmissionsCache.set(dedupeKey, { result: finalResult, timestamp: Date.now() });
+  if (recentSubmissionsCache.size > 200) {
+    const nowTs = Date.now();
+    for (const [k, v] of recentSubmissionsCache.entries()) {
+      if (nowTs - v.timestamp > 30000) recentSubmissionsCache.delete(k);
+    }
+  }
+
+  return finalResult;
 }
 
 /**
  * Busca o ranking público REAL diretamente do banco de dados compartilhado na nuvem (Supabase).
  * NÃO utiliza localStorage. Sincroniza entre todos os dispositivos em tempo real.
- * Ordenado por:
- * 1. best_score DESC (maior pontuação)
- * 2. win_rate DESC (melhor aproveitamento)
- * 3. total_attempts DESC (mais provas realizadas)
- * 4. last_attempt_at DESC (mais recente)
  *
- * Se um usuário fizer mais de uma prova, mantém apenas a sua MAIOR pontuação.
+ * CRITÉRIOS OFICIAIS DE CLASSIFICAÇÃO E DESEMPATE:
+ * 1. Maior pontuação TOTAL acumulada (não limitada a 10 pontos).
+ * 2. Se empatar, maior número de quizzes aprovados.
+ * 3. Se continuar empatado, maior número total de respostas corretas.
+ * 4. Se continuar empatado, manter quem alcançou a pontuação primeiro (mais antigo primeiro).
+ *
  * NUNCA retorna dados fictícios ou usuários simulados.
  */
 export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
@@ -448,9 +480,11 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
           const bestScore = Number(parsed.bestScore ?? parsed.score ?? 0);
           const totalAttempts = Number(parsed.totalAttempts || 1);
           const passedAttempts = Number(parsed.passedAttempts || (bestScore >= 5 ? 1 : 0));
-          const totalScore = Number(parsed.totalScore || bestScore);
-          const winRate = Number(parsed.winRate || Math.round((bestScore / 10) * 100));
+          const totalScore = Number(parsed.totalScore ?? bestScore);
+          const totalCorrectAnswers = Number(parsed.totalCorrectAnswers ?? totalScore);
+          const winRate = Number(parsed.winRate ?? Math.round((totalCorrectAnswers / (totalAttempts * 10)) * 100));
           const lastAttemptAt = parsed.lastAttemptAt || row.updated_at || row.created_at;
+          const firstScoreAt = parsed.firstScoreAt || row.created_at || lastAttemptAt;
 
           const existing = map.get(key);
           if (existing) {
@@ -458,9 +492,13 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
             existing.totalAttempts = Math.max(existing.totalAttempts, totalAttempts);
             existing.passedAttempts = Math.max(existing.passedAttempts, passedAttempts);
             existing.totalScore = Math.max(existing.totalScore, totalScore);
+            existing.totalCorrectAnswers = Math.max(existing.totalCorrectAnswers || 0, totalCorrectAnswers);
             existing.winRate = Math.max(existing.winRate, winRate);
             if (new Date(lastAttemptAt).getTime() > new Date(existing.lastAttemptAt).getTime()) {
               existing.lastAttemptAt = lastAttemptAt;
+            }
+            if (new Date(firstScoreAt).getTime() < new Date(existing.firstScoreAt || firstScoreAt).getTime()) {
+              existing.firstScoreAt = firstScoreAt;
             }
           } else {
             map.set(key, {
@@ -471,8 +509,10 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
               totalAttempts,
               passedAttempts,
               totalScore,
+              totalCorrectAnswers,
               winRate,
               lastAttemptAt,
+              firstScoreAt,
             });
           }
         } catch {}
@@ -487,7 +527,7 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
     const { data: dedicatedRows, error: dError } = await (supabase as any)
       .from('bible_quiz_rankings')
       .select('*')
-      .order('best_score', { ascending: false })
+      .order('total_score', { ascending: false })
       .limit(limit);
 
     if (!dError && dedicatedRows && Array.isArray(dedicatedRows)) {
@@ -499,9 +539,11 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
         const bestScore = Number(r.best_score || 0);
         const totalAttempts = Number(r.total_attempts || 1);
         const passedAttempts = Number(r.passed_attempts || 0);
-        const totalScore = Number(r.total_score || 0);
+        const totalScore = Number(r.total_score || bestScore);
+        const totalCorrectAnswers = Number(r.total_correct_answers || totalScore);
         const winRate = Number(r.win_rate || 0);
         const lastAttemptAt = r.last_attempt_at || new Date().toISOString();
+        const firstScoreAt = r.created_at || lastAttemptAt;
 
         const existing = map.get(key);
         if (existing) {
@@ -509,9 +551,13 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
           existing.totalAttempts = Math.max(existing.totalAttempts, totalAttempts);
           existing.passedAttempts = Math.max(existing.passedAttempts, passedAttempts);
           existing.totalScore = Math.max(existing.totalScore, totalScore);
+          existing.totalCorrectAnswers = Math.max(existing.totalCorrectAnswers || 0, totalCorrectAnswers);
           existing.winRate = Math.max(existing.winRate, winRate);
           if (new Date(lastAttemptAt).getTime() > new Date(existing.lastAttemptAt).getTime()) {
             existing.lastAttemptAt = lastAttemptAt;
+          }
+          if (new Date(firstScoreAt).getTime() < new Date(existing.firstScoreAt || firstScoreAt).getTime()) {
+            existing.firstScoreAt = firstScoreAt;
           }
         } else {
           map.set(key, {
@@ -522,8 +568,10 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
             totalAttempts,
             passedAttempts,
             totalScore,
+            totalCorrectAnswers,
             winRate,
             lastAttemptAt,
+            firstScoreAt,
           });
         }
       }
@@ -532,16 +580,30 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
 
   const list = Array.from(map.values());
 
-  // Ordenação global da classificação:
-  // 1º Maior pontuação (bestScore DESC)
-  // 2º Aproveitamento (winRate DESC)
-  // 3º Mais tentativas (totalAttempts DESC)
-  // 4º Mais recente (lastAttemptAt DESC)
+  // CRITÉRIOS OFICIAIS DE CLASSIFICAÇÃO E DESEMPATE:
+  // 1. Maior pontuação TOTAL acumulada.
+  // 2. Se empatar, maior número de quizzes aprovados.
+  // 3. Se continuar empatado, maior número total de respostas corretas.
+  // 4. Se continuar empatado, manter quem alcançou a pontuação primeiro.
   list.sort((a, b) => {
-    if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
-    if (b.winRate !== a.winRate) return b.winRate - a.winRate;
-    if (b.totalAttempts !== a.totalAttempts) return b.totalAttempts - a.totalAttempts;
-    return new Date(b.lastAttemptAt).getTime() - new Date(a.lastAttemptAt).getTime();
+    // 1. Maior pontuação total acumulada
+    if (b.totalScore !== a.totalScore) {
+      return b.totalScore - a.totalScore;
+    }
+    // 2. Se empatar, maior número de quizzes aprovados
+    if (b.passedAttempts !== a.passedAttempts) {
+      return b.passedAttempts - a.passedAttempts;
+    }
+    // 3. Se continuar empatado, maior número total de respostas corretas
+    const aCorrect = a.totalCorrectAnswers ?? a.totalScore;
+    const bCorrect = b.totalCorrectAnswers ?? b.totalScore;
+    if (bCorrect !== aCorrect) {
+      return bCorrect - aCorrect;
+    }
+    // 4. Se continuar empatado, manter quem alcançou a pontuação primeiro
+    const aTime = new Date(a.firstScoreAt || a.lastAttemptAt).getTime();
+    const bTime = new Date(b.firstScoreAt || b.lastAttemptAt).getTime();
+    return aTime - bTime;
   });
 
   return list.slice(0, limit);
