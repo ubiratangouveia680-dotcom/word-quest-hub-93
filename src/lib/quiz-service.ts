@@ -133,17 +133,40 @@ export async function submitQuizAttempt(
 ): Promise<QuizFinalResult> {
   // 1. Verificação obrigatória de autenticação no backend/banco
   const { data: sessionData } = await supabase.auth.getSession();
-  const sessionUser = sessionData?.session?.user;
-  const effectiveUserId = sessionUser?.id || (userId && userId.trim() ? userId : null);
+  let sessionUser = sessionData?.session?.user;
+  if (!sessionUser) {
+    const { data: userData } = await supabase.auth.getUser();
+    sessionUser = userData?.user;
+  }
 
-  if (!effectiveUserId) {
+  // REGRAS DO QUIZ:
+  // - O usuário precisa estar cadastrado/logado para participar do quiz e salvar pontuação.
+  // - NÃO permitir que usuários não cadastrados salvem pontuação.
+  if (!sessionUser?.id) {
     throw new Error(
-      "Para participar do Quiz Bíblico e registrar pontuação no Ranking, você precisa criar uma conta gratuita."
+      "Para participar do Quiz Bíblico e registrar pontuação no Ranking, você precisa criar uma conta gratuita e estar conectado."
     );
   }
+
+  // REGRAS DO QUIZ:
+  // - NÃO permitir que um usuário salve uma pontuação para outro usuário.
+  // - Associa a pontuação estritamente ao ID do usuário autenticado na sessão atual.
+  const effectiveUserId = sessionUser.id;
+
+  // Resolução robusta do nome de exibição
+  let resolvedDisplayName = (userDisplayName && userDisplayName.trim()) ? userDisplayName.trim() : '';
+  if (!resolvedDisplayName || resolvedDisplayName === 'Participante') {
+    resolvedDisplayName =
+      (sessionUser.user_metadata?.name as string)?.trim() ||
+      (sessionUser.user_metadata?.full_name as string)?.trim() ||
+      sessionUser.email?.split('@')[0] ||
+      'Participante';
+  }
+  const displayName = resolvedDisplayName;
+
   // Deduplicação para evitar duplicação de pontos em caso de envio duplo ou cliques repetidos
   const answersHash = answers.map((a) => `${a.questionId}:${a.selectedOriginalLetter}`).sort().join('|');
-  const dedupeKey = `${userId || userDisplayName || 'anon'}_${answersHash}`;
+  const dedupeKey = `${effectiveUserId}_${answersHash}`;
   const cached = recentSubmissionsCache.get(dedupeKey);
   if (cached && Date.now() - cached.timestamp < 10000) {
     return cached.result;
@@ -177,7 +200,7 @@ export async function submitQuizAttempt(
   const questionsMap = new Map<string, QuizQuestionRaw>();
   fullQuestions.forEach((q) => questionsMap.set(q.id, q));
 
-  let score = 0;
+  let rawScore = 0;
   const resultItems: QuizResultItem[] = [];
 
   answers.forEach((ans) => {
@@ -187,7 +210,7 @@ export async function submitQuizAttempt(
     // A resposta original que o usuário selecionou ('A', 'B', 'C' ou 'D' no banco original)
     const isCorrect = ans.selectedOriginalLetter === q.correct_answer;
     if (isCorrect) {
-      score += 1;
+      rawScore += 1;
     }
 
     // Texto da resposta do usuário
@@ -223,19 +246,24 @@ export async function submitQuizAttempt(
     });
   });
 
-  const totalQuestions = answers.length;
-  const wrongCount = totalQuestions - score;
+  // REGRAS DO QUIZ:
+  // - Cada quiz possui exatamente 10 perguntas.
+  // - Cada resposta correta vale 1 ponto.
+  // - Pontuação máxima = 10 pontos.
+  // - Impedir pontuações inválidas: menor que 0; maior que 10; valores não numéricos.
+  const score = Number.isFinite(rawScore) ? Math.max(0, Math.min(10, Math.floor(rawScore))) : 0;
+  const totalQuestions = answers.length > 0 ? answers.length : 10;
+  const wrongCount = Math.max(0, totalQuestions - score);
   const percentage = Math.round((score / totalQuestions) * 100);
   const passed = score >= 5;
   const now = new Date().toISOString();
-  const displayName = (userDisplayName && userDisplayName.trim()) ? userDisplayName.trim() : 'Participante';
 
   let attemptId: string = `attempt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
   // Salva no histórico de tentativas local do dispositivo
   saveLocalAttempt({
     id: attemptId,
-    userId: userId || null,
+    userId: effectiveUserId,
     displayName,
     score,
     totalQuestions,
@@ -243,16 +271,20 @@ export async function submitQuizAttempt(
     completedAt: now,
   });
 
-  // 1. Grava no banco compartilhado na nuvem (Supabase - Bridge em questions)
+  // 1. Grava no banco compartilhado na nuvem (Supabase - questions com category_id = 'conhecimento')
   try {
     if (effectiveUserId) {
-      // Procura se já existe um registro deste usuário/nome no ranking
-      const { data: existingRows } = await supabase
+      // Procura se já existe um registro DESTE usuário específico pelo user_id (evita colisão de nomes e violação de RLS)
+      const { data: existingRows, error: searchError } = await supabase
         .from('questions')
-        .select('id, user_id, title, body')
+        .select('id, user_id, title, body, created_at')
         .eq('category_id', 'conhecimento')
-        .ilike('title', `[QUIZ_RANKING] ${displayName}`)
+        .eq('user_id', effectiveUserId)
         .limit(1);
+
+      if (searchError) {
+        console.warn('[Quiz] Aviso ao consultar pontuação anterior no ranking:', searchError);
+      }
 
       const existingRecord = existingRows && existingRows.length > 0 ? existingRows[0] : null;
 
@@ -280,7 +312,7 @@ export async function submitQuizAttempt(
           displayName,
           avatarUrl: userAvatarUrl || prevBody.avatarUrl || null,
           bestScore: newBestScore,
-          score, // pontuação da rodada atual
+          score, // pontuação da rodada atual (0 a 10)
           totalAttempts: newTotalAttempts,
           passedAttempts: newPassedAttempts,
           totalScore: newTotalScore,
@@ -291,19 +323,25 @@ export async function submitQuizAttempt(
           userId: effectiveUserId,
         };
 
-        await supabase
+        const { error: updateError } = await supabase
           .from('questions')
           .update({
+            title: `[QUIZ_RANKING] ${displayName}`,
             body: JSON.stringify(updatedPayload),
             updated_at: now,
           })
           .eq('id', existingRecord.id);
+
+        if (updateError) {
+          console.error('[Quiz] Erro ao atualizar ranking do usuário:', updateError);
+          throw updateError;
+        }
       } else {
         const newPayload = {
           displayName,
           avatarUrl: userAvatarUrl || null,
           bestScore: score,
-          score, // pontuação da rodada atual
+          score, // pontuação da rodada atual (0 a 10)
           totalAttempts: 1,
           passedAttempts: passed ? 1 : 0,
           totalScore: score,
@@ -314,7 +352,7 @@ export async function submitQuizAttempt(
           userId: effectiveUserId,
         };
 
-        await supabase
+        const { error: insertError } = await supabase
           .from('questions')
           .insert([
             {
@@ -324,10 +362,16 @@ export async function submitQuizAttempt(
               body: JSON.stringify(newPayload),
             },
           ]);
+
+        if (insertError) {
+          console.error('[Quiz] Erro ao cadastrar nova pontuação no ranking:', insertError);
+          throw insertError;
+        }
       }
     }
   } catch (bridgeErr) {
-    console.warn('[Quiz] Falha ao sincronizar registro na nuvem:', bridgeErr);
+    console.error('[Quiz] Falha ao sincronizar registro na nuvem:', bridgeErr);
+    throw bridgeErr;
   }
 
   // 2. Grava na tabela dedicada bible_quiz_rankings e bible_quiz_attempts caso ela já exista
@@ -453,7 +497,8 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
           const displayName = (parsed.displayName || row.title.replace('[QUIZ_RANKING]', '')).trim();
           if (!displayName) continue;
 
-          const key = displayName.toLowerCase();
+          // Chave única por USUÁRIO (user_id): impede colisões entre usuários com o mesmo nome ou nome padrão
+          const key = String(rawUserId);
           const bestScore = Number(parsed.bestScore ?? parsed.score ?? 0);
           const totalAttempts = Number(parsed.totalAttempts || 1);
           const passedAttempts = Number(parsed.passedAttempts || (bestScore >= 5 ? 1 : 0));
@@ -465,6 +510,8 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
 
           const existing = map.get(key);
           if (existing) {
+            existing.displayName = displayName || existing.displayName;
+            existing.avatarUrl = parsed.avatarUrl || existing.avatarUrl;
             existing.bestScore = Math.max(existing.bestScore, bestScore);
             existing.totalAttempts = Math.max(existing.totalAttempts, totalAttempts);
             existing.passedAttempts = Math.max(existing.passedAttempts, passedAttempts);
@@ -515,7 +562,7 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
         }
         const displayName = String(r.display_name || '').trim();
         if (!displayName) continue;
-        const key = displayName.toLowerCase();
+        const key = String(r.user_id);
 
         const bestScore = Number(r.best_score || 0);
         const totalAttempts = Number(r.total_attempts || 1);
@@ -528,6 +575,8 @@ export async function fetchQuizRanking(limit = 50): Promise<QuizRankingItem[]> {
 
         const existing = map.get(key);
         if (existing) {
+          existing.displayName = displayName || existing.displayName;
+          existing.avatarUrl = r.avatar_url || existing.avatarUrl;
           existing.bestScore = Math.max(existing.bestScore, bestScore);
           existing.totalAttempts = Math.max(existing.totalAttempts, totalAttempts);
           existing.passedAttempts = Math.max(existing.passedAttempts, passedAttempts);
@@ -623,6 +672,40 @@ export async function fetchUserQuizStats(userId?: string, displayName?: string):
             passed: a.passed,
             completedAt: a.completed_at,
           })),
+        };
+      }
+
+      // Se a tabela bible_quiz_attempts não tiver registros, consulta a tabela de ranking questions
+      const { data: qRows } = await supabase
+        .from('questions')
+        .select('body, created_at, updated_at')
+        .eq('category_id', 'conhecimento')
+        .eq('user_id', userId)
+        .limit(1);
+
+      if (qRows && qRows.length > 0) {
+        const parsed = JSON.parse(qRows[0].body);
+        const totalAttempts = Number(parsed.totalAttempts || 1);
+        const bestScore = Number(parsed.bestScore ?? parsed.score ?? 0);
+        const passedAttempts = Number(parsed.passedAttempts || (bestScore >= 5 ? 1 : 0));
+        const failedAttempts = Math.max(0, totalAttempts - passedAttempts);
+        const totalScore = Number(parsed.totalScore ?? bestScore);
+        const averageScore = Math.round((totalScore / totalAttempts) * 10) / 10;
+
+        return {
+          totalAttempts,
+          bestScore,
+          passedAttempts,
+          failedAttempts,
+          averageScore,
+          recentAttempts: [
+            {
+              id: `cloud_${userId}`,
+              score: Number(parsed.score ?? bestScore),
+              passed: Number(parsed.score ?? bestScore) >= 5,
+              completedAt: parsed.lastAttemptAt || qRows[0].updated_at || qRows[0].created_at,
+            },
+          ],
         };
       }
     } catch {

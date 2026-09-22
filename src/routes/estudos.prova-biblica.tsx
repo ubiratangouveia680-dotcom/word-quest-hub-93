@@ -165,7 +165,13 @@ function BibleQuizPage() {
         }];
       });
 
-      const nameToUse = profile?.name || profile?.username || undefined;
+      const nameToUse =
+        profile?.name?.trim() ||
+        profile?.username?.trim() ||
+        (user.user_metadata?.name as string)?.trim() ||
+        (user.user_metadata?.full_name as string)?.trim() ||
+        user.email?.split('@')[0] ||
+        'Participante';
 
       return await submitQuizAttempt(
         answersArray,
@@ -739,7 +745,7 @@ function BibleQuizPage() {
                     size="sm"
                     onClick={() => {
                       setActiveTab("prova");
-                      if (step === "idle") {
+                      if (step === "idle" || step === "finished") {
                         startQuizMutation.mutate();
                       }
                     }}
