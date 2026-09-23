@@ -230,7 +230,7 @@ function PrayersPage() {
             </p>
             <div className="mt-4 pt-3 border-t border-border/50">
               <Link
-                to="/pergunte"
+                to="/pergunte-a-biblia"
                 className="text-xs font-semibold text-gold hover:underline inline-flex items-center gap-1"
               >
                 Dúvidas sobre oração? Pergunte à Bíblia &rarr;

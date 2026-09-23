@@ -1,33 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMutation } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
-import { Send } from "lucide-react";
-import { SiteLayout } from "@/components/SiteLayout";
-import { AdBanner } from "@/components/Ads";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { askBible } from "@/lib/ai.functions";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/pergunte")({
+  beforeLoad: ({ search }) => {
+    throw redirect({
+      to: "/pergunte-a-biblia",
+      search: search?.q ? { q: search.q } : undefined,
+      statusCode: 301,
+    });
+  },
   validateSearch: (search: Record<string, unknown> = {}): { q?: string } => ({
     q: typeof search?.["q"] === "string" ? search["q"] : "",
   }),
   head: () => ({
     meta: [
-      { title: "Pergunte sobre a Bíblia — tire dúvidas sobre passagens | Bíblia Online" },
-      {
-        name: "description",
-        content:
-          "Faça perguntas sobre passagens, contextos e temas bíblicos e receba explicações com referências às Escrituras.",
-      },
-      { property: "og:title", content: "Pergunte sobre a Bíblia — Bíblia Online" },
-      { property: "og:description", content: "Tire dúvidas sobre passagens e temas bíblicos." },
-      { property: "og:url", content: url("/pergunte") },
+      { name: "robots", content: "noindex,follow" },
     ],
-    links: [{ rel: "canonical", href: url("/pergunte") }],
+    links: [{ rel: "canonical", href: url("/pergunte-a-biblia") }],
   }),
-  component: AskPage,
+  component: () => null,
 });
 
 const EXAMPLES = [

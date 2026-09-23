@@ -41,7 +41,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         addUrl("/termos", "0.3", "yearly");
         addUrl("/cookies", "0.3", "yearly");
 
-        // 2. Temas de Versículos
+        // 2. Temas de Versículos e Páginas Temáticas Canônicas
         for (const t of BIBLE_TOPICS) {
           addUrl(`/versiculos/${t.slug}`, "0.8", "weekly");
           addUrl(`/temas/${t.slug}`, "0.7", "weekly");

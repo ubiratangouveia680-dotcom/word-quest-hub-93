@@ -1,19 +1,24 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { SiteLayout } from "@/components/SiteLayout";
-import { VerseActions } from "@/components/VerseActions";
-import { getBibleTopic } from "@/lib/topics";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { url } from "@/lib/site";
 
 export const Route = createFileRoute("/versiculos-por-tema/$slug")({
-  loader: ({ params }) => { const topic = getBibleTopic(params.slug); if (!topic) throw notFound(); return { topic }; },
-  head: ({ params, loaderData }) => {
-    if (!loaderData) return { meta: [{ title: "Conteúdo não encontrado" }, { name: "robots", content: "noindex" }] };
-    const title = `Versículos sobre ${loaderData.topic.name.toLowerCase()} — Bíblia Online`;
-    const description = `${loaderData.topic.description} Leia passagens selecionadas com reflexão e aplicação prática.`;
-    const path = `/versiculos-por-tema/${params.slug}`;
-    return { meta: [{ title }, { name: "description", content: description }, { property: "og:title", content: title }, { property: "og:description", content: description }, { property: "og:type", content: "article" }, { property: "og:url", content: url(path) }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: url(path) }] };
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: "/versiculos/$slug",
+      params: { slug: params.slug },
+      statusCode: 301,
+    });
   },
-  component: VerseTopicPage,
+  head: ({ params }) => {
+    const canonical = url(`/versiculos/${params.slug}`);
+    return {
+      meta: [
+        { name: "robots", content: "noindex,follow" },
+      ],
+      links: [{ rel: "canonical", href: canonical }],
+    };
+  },
+  component: () => null,
 });
 
 function VerseTopicPage() {
